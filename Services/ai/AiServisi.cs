@@ -27,13 +27,11 @@ namespace Guardia.API.Services.ai
 
             try
             {
-               // 1. PERSONEL BİLGİSİNİ VERİTABANINDAN ÇEKME
                 var personel = _context.Personellers.FirstOrDefault(p => p.SicilNo == istek.SicilNo);
 
                 if (personel == null)
                     return new CevapModeli { Cevap = "Personel kaydı bulunamadı, lütfen sicil numaranızı kontrol edin." };
 
-            // 2. SON MAAŞ BİLGİSİNİ VERİTABANINDAN ÇEKME
                 var sonMaas = _context.Maaslars
                     .Where(m => m.PersonelId == personel.Id)
                     .OrderByDescending(m => m.CreatedAt)
@@ -43,15 +41,12 @@ namespace Guardia.API.Services.ai
                     ? "Son maaşınız başarıyla yatırılmıştır."
                     : "Maaş ödemeleri her ayın 15'inde yapılmaktadır.";
 
-             // 3. GÜNÜN YEMEK MENÜSÜNÜ VERİTABANINDAN ÇEKME
                 string bugunGun = DateTime.Now.ToString("dddd", new CultureInfo("tr-TR"));
                 var yemek = _context.YemekMenusus.FirstOrDefault(y => y.Gun == bugunGun);
 
                 string menuMesaji = (yemek != null)
                     ? $"Bugün menüde {yemek.Corba}, {yemek.AnaYemek}, {yemek.YanUrun} ve {yemek.IcecekTatli} var."
                     : "Bugün için henüz yemek menüsü girilmemiş.";
-
-                // 4. SİSTEM TALİMATINI OLUŞTURMA
                
                 string systemPrompt = $@"Sen Guardia şirketinin akıllı asistanısın. 
                 SADECE aşağıdaki veritabanı bilgilerini kullanarak kullanıcıya yanıt ver:
@@ -67,7 +62,6 @@ namespace Guardia.API.Services.ai
                 2. Yemek sormuyorsa yemekten, vardiya sormuyorsa vardiyadan asla bahsetme.
                 3. Cevapların çok nazik ama kısa (en fazla 1-2 cümle) olsun.";
 
-                // 5. MISTRAL AI API İSTEĞİ
                 using var client = new HttpClient();
                 client.DefaultRequestHeaders.Add("Authorization", $"Bearer {_mistralKey}");
 
@@ -103,7 +97,6 @@ namespace Guardia.API.Services.ai
             }
             catch (Exception ex)
             {
-                // Hata durumunda güvenli bir mesaj dönüyoruz
                 return new CevapModeli { Cevap = "Bir bağlantı hatası oluştu. Lütfen daha sonra tekrar deneyiniz." };
             }
         }
