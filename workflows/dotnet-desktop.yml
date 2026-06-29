@@ -2,11 +2,11 @@ name: Guardia Regresyon Testi
 
 on:
   push:
-    branches: [ "master", "main" ] # Hangi branch'e push atıyorsan onu yaz
+    branches: [ "master", "main" ] 
 
 jobs:
   build:
-    runs-on: windows-latest # .NET projesi olduğu için Windows sunucusu seçtik
+    runs-on: windows-latest 
 
     steps:
     - uses: actions/checkout@v4
@@ -14,7 +14,7 @@ jobs:
     - name: .NET Kurulumu
       uses: actions/setup-dotnet@v4
       with:
-        dotnet-version: 8.0.x # Projenin versiyonu 6.0 ise 6.0.x yapabilirsin
+        dotnet-version: 8.0.x 
 
     - name: Bağımlılıkları Yükle
       run: dotnet restore
