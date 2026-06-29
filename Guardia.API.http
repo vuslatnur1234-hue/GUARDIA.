@@ -1,0 +1,6 @@
+@Guardia.API_HostAddress = http://localhost:5009
+
+GET {{Guardia.API_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
