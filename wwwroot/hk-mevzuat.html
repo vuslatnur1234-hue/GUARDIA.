@@ -1,0 +1,1111 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <script>
+        if (!localStorage.getItem('token')) {
+            window.location.href = 'admin-login.html';
+        }
+    </script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Guardia | Mevzuat Takibi</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/ik-sidebar.css">
+    <link rel="stylesheet" href="css/dept-common.css">
+    <style>
+        :root {
+            --sidebar: #0f172a;
+            --text-main: #1e293b;
+            --text-sub: #64748b;
+            --white: #fff;
+        }
+
+        .hero {
+            margin-bottom: 24px;
+        }
+
+            .hero h2 {
+                margin: 0 0 6px 0;
+                font-size: 1.5rem;
+                color: var(--sidebar);
+            }
+
+            .hero p {
+                margin: 0;
+                font-size: 0.9rem;
+                color: var(--text-sub);
+            }
+
+        .feed {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .feed-item {
+            background: var(--white);
+            padding: 20px;
+            border-radius: 16px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+            border-left: 4px solid var(--accent);
+        }
+
+            .feed-item h4 {
+                margin: 0 0 8px 0;
+                font-size: 1rem;
+                color: var(--sidebar);
+            }
+
+            .feed-item p {
+                margin: 0;
+                font-size: 0.9rem;
+                color: var(--text-sub);
+            }
+
+            .feed-item small {
+                color: #94a3b8;
+                font-size: 0.8rem;
+            }
+
+
+
+        .filter-btn {
+            padding: 8px 18px;
+            border-radius: 20px;
+            border: 1px solid #e2e8f0;
+            background: white;
+            color: #64748b;
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+            .filter-btn.active, .filter-btn:hover {
+                background: #0f172a;
+                color: white;
+                border-color: #0f172a;
+            }
+
+        /* Kartların Önem Derecesine Göre Renkleri */
+        .feed-item.urgent {
+            border-left: 5px solid #ef4444;
+        }
+        /* Acil - Kırmızı */
+        .feed-item.info {
+            border-left: 5px solid #3b82f6;
+        }
+        /* Bilgi - Mavi */
+        .feed-item.update {
+            border-left: 5px solid #10b981;
+        }
+        /* Güncelleme - Yeşil */
+
+        /* Arama Kutusu Mevzuat İçin */
+        .mevzuat-search {
+            margin-bottom: 20px;
+            position: relative;
+        }
+
+            .mevzuat-search input {
+                width: 100%;
+                padding: 12px 20px 12px 45px;
+                border-radius: 12px;
+                border: 1px solid #e2e8f0;
+                outline: none;
+            }
+
+            .mevzuat-search i {
+                position: absolute;
+                left: 15px;
+                top: 15px;
+                color: #94a3b8;
+            }
+        /* MEVZUAT AKSİYON BUTONLARI */
+        .action-icon-btn {
+            width: 36px;
+            height: 36px;
+            border-radius: 10px;
+            border: none;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            background: #f8fafc; /* Hafif gri arka plan */
+            color: #64748b; /* İkon rengi */
+        }
+
+            .action-icon-btn:hover {
+                background: #e2e8f0;
+                color: #0f172a;
+                transform: translateY(-2px);
+            }
+
+        /* İndir butonu için özel hover rengi (PDF kırmızısı gibi) */
+        .btn-download:hover {
+            background: #fee2e2 !important;
+            color: #ef4444 !important;
+        }
+
+        /* Göz/Bağlantı butonu için özel hover rengi (Mavi) */
+        .btn-view:hover {
+            background: #eff6ff !important;
+            color: #3b82f6 !important;
+        }
+        /* 1. Ana içerik alanını ekran yüksekliğine sabitleyelim */
+        .ik-content {
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden; /* Dışarıdaki genel kaydırmayı kapatma */
+        }
+
+
+
+        /* Chrome, Safari ve Opera için kaydırma çubuğunu gizle */
+        .feed::-webkit-scrollbar {
+            display: none;
+        }
+
+        /* 3. Arama ve Filtrelerin kaymamasını zaten flex yapı ile sağladık */
+        .mevzuat-search, .filter-bar {
+            flex-shrink: 0; /* Bunlar asla küçülmez ve yerinde çakılı kalır */
+        }
+        /* TÜM İÇERİĞİ AYNI HİZADA TUTAN ANA KAP (CONTAINER) */
+        .mevzuat-container {
+            max-width: 1100px; /* Bu değeri ekranına göre biraz artırıp azaltabilirsin */
+            margin: 0 auto; /* Sayfayı ortalar */
+            padding: 0 20px; /* Kenarlardan nefes payı */
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* ARAMA VE FİLTRE BARINI KAPINA UYDUR */
+        .mevzuat-search, .filter-bar {
+            width: 100%; /* Kapsayıcının %100'ünü kapla (1100px içinde kalır) */
+            box-sizing: border-box;
+            margin-left: 0;
+            margin-right: 0;
+            margin-bottom: 12px;
+        }
+
+        /* Kartların genel aralığı */
+        .feed {
+            display: flex;
+            flex-direction: column;
+            gap: 12px; /* 16px olan bu değeri 12px yapıyoruz */
+            width: 100%;
+            flex: 1;
+            overflow-y: auto;
+            scrollbar-width: none;
+            padding-bottom: 50px;
+        }
+
+        /* Kartın altındaki fazlalık boşluk */
+        .feed-item {
+            width: 100%;
+            box-sizing: border-box;
+            margin-bottom: 0px; /* 12px olan bu değeri 0px yapıyoruz çünkü gap zaten boşluk veriyor */
+        }
+
+        .filter-bar {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 25px; /* 25px olan bu değeri 40px yapma */
+            flex-wrap: wrap;
+        }
+    </style>
+</head>
+<body class="ik-layout">
+    <div class="ik-sidebar">
+        <h2>🛡️ Guardia HK</h2>
+        <ul class="ik-nav-links">
+            <li><a href="hk-index.html" style="text-decoration:none;color:inherit;display:flex;align-items:center;gap:12px;"><i class="fa-solid fa-chart-line"></i> Genel Bakış</a></li>
+            <li><a href="hk-sozlesme.html" style="text-decoration:none;color:inherit;display:flex;align-items:center;gap:12px;"><i class="fa-solid fa-file-signature"></i> Sözleşmeler</a></li>
+            <li><a href="hk-dava.html" style="text-decoration:none;color:inherit;display:flex;align-items:center;gap:12px;"><i class="fa-solid fa-scale-balanced"></i> Dava Dosyaları</a></li>
+            <li class="active"><i class="fa-solid fa-book"></i> Mevzuat Takibi</li>
+            <li><a href="hk-arsiv.html" style="text-decoration:none;color:inherit;display:flex;align-items:center;gap:12px;"><i class="fa-solid fa-folder-open"></i> Arşiv</a></li>
+        </ul>
+        <div class="ik-user-tag">
+            <div class="ik-user-avatar"><img src="img/selin_aksoy.jpg" alt=""></div>
+            <div class="ik-user-info"><span id="sidebarAdSoyad">Selin Aksoy</span><small id="sidebarDepartman">Hukuk Danışmanı</small></div>
+        </div>
+    </div>
+
+
+    <div class="ik-content">
+        <div class="dept-header">
+            <div class="page-title-group">
+                <h1>Hukuki Güncellemeler</h1>
+                <p class="page-desc">Resmi Gazete ve mevzuat değişikliklerini buradan takip edin.</p>
+            </div>
+
+            <div class="notif-container">
+                <input type="checkbox" id="notif-toggle" aria-hidden="true" style="display:none;">
+                <label for="notif-toggle" class="notif-trigger">
+                    <i class="fa-solid fa-bell"></i>
+                    <span class="notif-badge">2</span>
+                </label>
+                <div class="notif-dropdown">
+                    <h4>Mesaj Merkezi</h4>
+
+                    <div id="notif-incoming-list" class="notif-list">
+                        <div class="notif-item" onclick="openReplyModal('HUKUK & MEVZUAT', 'Bugün yayınlanan 32450 sayılı Resmi Gazete\'de Bilişim Sistemleri Güvenliği ile ilgili yeni bir yönetmelik yer alıyor. İnceleyip teknik görüş bildirir misiniz?')" style="cursor: pointer;">
+                            <span class="notif-status" style="background: #334155;"></span> <strong>RESMİ GAZETE</strong>
+                            <span>Yeni bir yönetmelik yayınlandı.</span>
+                            <small style="display:block; color: #94a3b8; font-size: 0.75rem; margin-top: 5px;">
+                                <i class="fa-regular fa-clock"></i> 07:15
+                            </small>
+                        </div>
+
+                        <div class="notif-item" onclick="openReplyModal('KVKK KURULU', 'Veri Sorumluları Sicili (VERBİS) hakkında uygulama rehberi güncellendi. Mevcut kayıtlarımızın uyumluluğunu kontrol etmeliyiz.')" style="cursor: pointer;">
+                            <span class="notif-status" style="background: #0ea5e9;"></span> <strong>KVKK</strong>
+                            <span>Rehber güncellendi.</span>
+                            <small style="display:block; color: #94a3b8; font-size: 0.75rem; margin-top: 5px;">
+                                <i class="fa-regular fa-clock"></i> 10:50
+                            </small>
+                        </div>
+                    </div>
+
+                    <div id="notif-outgoing-list" class="notif-list" style="display:none;">
+                        <div class="notif-item">
+                            <strong>SİZDEN -> DANIŞMANLIK</strong>
+                            <span>Yıllık siber güvenlik denetim raporu taslağı paylaşıldı.</span>
+                            <small style="display:block; color: #94a3b8; font-size: 0.75rem; margin-top: 5px;">
+                                <i class="fa-regular fa-clock"></i> 3 saat önce
+                            </small>
+                        </div>
+                    </div>
+
+                    <div class="notif-footer">
+                        <button type="button" class="notif-action-btn" onclick="showIncoming()">
+                            <i class="fa-solid fa-bell"></i> Gelenler
+                        </button>
+                        <button type="button" class="notif-action-btn" onclick="showOutgoing()">
+                            <i class="fa-solid fa-paper-plane"></i> Gidenler
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="mevzuat-search">
+            <i class="fa-solid fa-magnifying-glass"></i>
+            <input type="text" id="mevzuatInput" onkeyup="mevzuatAra()" placeholder="Mevzuat başlığı veya içerik ara...">
+        </div>
+
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; width: 100%;">
+
+            <div class="filter-bar" style="margin-bottom: 0; display: flex; gap: 10px; flex: 1;">
+                <button type="button" class="filter-btn active" onclick="filterMevzuat('all', this)">Tümü</button>
+                <button type="button" class="filter-btn" onclick="filterMevzuat('iş', this)">İş Hukuku</button>
+                <button type="button" class="filter-btn" onclick="filterMevzuat('kvkk', this)">KVKK</button>
+                <button type="button" class="filter-btn" onclick="filterMevzuat('ticaret', this)">Ticaret</button>
+                <button type="button" class="filter-btn" onclick="filterMevzuat('vergi', this)">Vergi & Maliye</button>
+                <button type="button" class="filter-btn" onclick="filterMevzuat('tüketici', this)">Tüketici Hukuku</button>
+            </div>
+
+            <div style="flex-shrink: 0; margin-left: 20px;">
+                <button class="add-mevzuat-btn" onclick="openMevzuatModal()" style="background: #0f172a; color: white; border: none; height: 42px; padding: 0 20px; border-radius: 12px; cursor: pointer; display: flex; align-items: center; gap: 10px; font-weight: 600; white-space: nowrap; transition: all 0.2s; box-shadow: 0 4px 12px rgba(15, 23, 42, 0.15);">
+                    <i class="fa-solid fa-plus"></i> Yeni Mevzuat Ekle
+                </button>
+            </div>
+
+        </div>
+        <div class="feed" id="mevzuatFeed">
+
+            <div class="feed-item urgent" data-cat="iş">
+                <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                    <h4>İş Kanunu Güncellemesi: Asgari Ücret Desteği</h4>
+                    <div style="display: flex; gap: 10px;">
+                        <button class="action-icon-btn btn-view" title="Resmi Gazete'ye Git" onclick="resmiGazeteGit('https://www.resmigazete.gov.tr/')">
+                            <i class="fa-solid fa-arrow-up-right-from-square"></i>
+                        </button>
+                        <button class="action-icon-btn btn-download" title="PDF İndir" onclick="alert('İş Kanunu Ek Tebliği indiriliyor...')">
+                            <i class="fa-solid fa-file-pdf"></i>
+                        </button>
+                    </div>
+                </div>
+                <p>İşverenlere sağlanan asgari ücret desteği tutarları ve başvuru şartları yeniden düzenlendi. <b>Acil bildirim yapılması gerekmektedir.</b></p>
+                <div style="margin-top: 10px; display: flex; justify-content: space-between; align-items: center;">
+                    <small><i class="fa-solid fa-calendar-days"></i> 21.03.2026</small>
+                    <small style="color: #ef4444; font-weight: 800; letter-spacing: 0.5px;">#ACİL AKSİYON</small>
+                </div>
+            </div>
+
+            <div class="feed-item info" data-cat="kvkk">
+                <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                    <h4>KVKK Yeni Kurul Kararı: Veri İşleme Rehberi</h4>
+                    <div style="display: flex; gap: 10px;">
+                        <button class="action-icon-btn btn-view" title="Kaynağa Git" onclick="resmiGazeteGit('https://www.kvkk.gov.tr/')">
+                            <i class="fa-solid fa-arrow-up-right-from-square"></i>
+                        </button>
+                        <button class="action-icon-btn btn-download" title="PDF İndir" onclick="alert('KVKK Uygulama Rehberi indiriliyor...')">
+                            <i class="fa-solid fa-file-pdf"></i>
+                        </button>
+                    </div>
+                </div>
+                <p>Bulut bilişim sistemlerinde kişisel verilerin korunmasına yönelik teknik tedbirler rehberi güncellendi.</p>
+                <div style="margin-top: 10px; display: flex; justify-content: space-between; align-items: center;">
+                    <small><i class="fa-solid fa-calendar-days"></i> 20.03.2026</small>
+                    <small style="color: #3b82f6; font-weight: 800; letter-spacing: 0.5px;">#BİLGİ</small>
+                </div>
+            </div>
+
+            <div class="feed-item update" data-cat="ticaret">
+                <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                    <h4>Ticaret Sicili Yönetmeliği Değişikliği</h4>
+                    <div style="display: flex; gap: 10px;">
+                        <button class="action-icon-btn btn-view" title="İncele" onclick="resmiGazeteGit('https://www.resmigazete.gov.tr/')">
+                            <i class="fa-solid fa-arrow-up-right-from-square"></i>
+                        </button>
+                        <button class="action-icon-btn btn-download" title="Yönetmeliği İndir" onclick="alert('Ticaret Sicil Yönetmeliği indiriliyor...')">
+                            <i class="fa-solid fa-file-pdf"></i>
+                        </button>
+                    </div>
+                </div>
+                <p>Şirketlerin genel kurul toplantılarının elektronik ortamda yapılmasına dair usullerde sadeleştirmeye gidildi.</p>
+                <div style="margin-top: 10px; display: flex; justify-content: space-between; align-items: center;">
+                    <small><i class="fa-solid fa-calendar-days"></i> 19.03.2026</small>
+                    <small style="color: #10b981; font-weight: 800; letter-spacing: 0.5px;">#GÜNCELLEME</small>
+                </div>
+            </div>
+
+            <div class="feed-item info" data-cat="vergi">
+                <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                    <h4>KDV Tevkifat Uygulaması Hakkında Tebliğ</h4>
+                    <div style="display: flex; gap: 10px;">
+                        <button class="action-icon-btn btn-view" onclick="resmiGazeteGit()"><i class="fa-solid fa-arrow-up-right-from-square"></i></button>
+                        <button class="action-icon-btn btn-download" onclick="alert('Vergi Tebliği indiriliyor...')"><i class="fa-solid fa-file-pdf"></i></button>
+                    </div>
+                </div>
+                <p>Kısmi tevkifat uygulanacak işlemler ve sınır tutarlarında yapılan güncellemeler yayınlandı.</p>
+                <div style="margin-top: 10px; display: flex; justify-content: space-between;">
+                    <small><i class="fa-solid fa-calendar-days"></i> 18.03.2026</small>
+                    <small style="color: #3b82f6; font-weight: 800;">#BİLGİ</small>
+                </div>
+            </div>
+
+            <div class="feed-item update" data-cat="tüketici">
+                <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                    <h4>Tüketici Hakem Heyeti Sınırları Güncellendi</h4>
+                    <div style="display: flex; gap: 10px;">
+                        <button class="action-icon-btn btn-view" onclick="resmiGazeteGit()"><i class="fa-solid fa-arrow-up-right-from-square"></i></button>
+                        <button class="action-icon-btn btn-download" onclick="alert('PDF İndiriliyor...')"><i class="fa-solid fa-file-pdf"></i></button>
+                    </div>
+                </div>
+                <p>2026 yılı için Tüketici Hakem Heyetlerine yapılacak başvurularda parasal sınırlar %25 oranında artırılmıştır.</p>
+                <div style="margin-top: 10px; display: flex; justify-content: space-between;">
+                    <small><i class="fa-solid fa-calendar-days"></i> 15.03.2026</small>
+                    <small style="color: #10b981; font-weight: 800;">#GÜNCELLEME</small>
+                </div>
+            </div>
+
+            <div class="feed-item info" data-cat="ticaret">
+                <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                    <h4>E-Ticaret Lisans Ücretleri Hakkında Karar</h4>
+                    <div style="display: flex; gap: 10px;">
+                        <button class="action-icon-btn btn-view" onclick="resmiGazeteGit()"><i class="fa-solid fa-arrow-up-right-from-square"></i></button>
+                        <button class="action-icon-btn btn-download" onclick="alert('PDF İndiriliyor...')"><i class="fa-solid fa-file-pdf"></i></button>
+                    </div>
+                </div>
+                <p>Elektronik Ticaretin Düzenlenmesi Hakkında Kanun kapsamında lisans ücreti muafiyetleri genişletildi.</p>
+                <div style="margin-top: 10px; display: flex; justify-content: space-between;">
+                    <small><i class="fa-solid fa-calendar-days"></i> 10.03.2026</small>
+                    <small style="color: #3b82f6; font-weight: 800;">#BİLGİ</small>
+                </div>
+            </div>
+
+            <div class="feed-item urgent" data-cat="vergi">
+                <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                    <h4>Dijital Hizmet Vergisi Beyanname Değişikliği</h4>
+                    <div style="display: flex; gap: 10px;">
+                        <button class="action-icon-btn btn-view" onclick="resmiGazeteGit()"><i class="fa-solid fa-arrow-up-right-from-square"></i></button>
+                        <button class="action-icon-btn btn-download" onclick="alert('PDF İndiriliyor...')"><i class="fa-solid fa-file-pdf"></i></button>
+                    </div>
+                </div>
+                <p>Dijital hizmet vergisi mükellefleri için yeni beyanname formatı yürürlüğe girdi. <b>Son gün: 30 Mart!</b></p>
+                <div style="margin-top: 10px; display: flex; justify-content: space-between;">
+                    <small><i class="fa-solid fa-calendar-days"></i> 05.03.2026</small>
+                    <small style="color: #ef4444; font-weight: 800;">#ACİL AKSİYON</small>
+                </div>
+            </div>
+        </div>
+
+
+        <div id="note-sent">Notunuz seçilen birimlere iletildi.</div>
+        <div id="replyModal" class="reply-modal">
+            <div class="reply-content">
+                <div class="reply-header">
+                    <i class="fa-solid fa-reply"></i>
+                    <h3 id="replyTarget">HUKUK Birimine Cevap Yaz</h3>
+                </div>
+
+                <div id="replyOriginalMessage" class="original-msg-preview">
+                    "5 adet yeni iş sözleşmesi onaylandı."
+                </div>
+
+                <textarea id="replyText" class="reply-textarea" placeholder="Cevabınızı buraya yazın..."></textarea>
+
+                <div class="reply-actions">
+                    <button class="btn-reply-cancel" onclick="closeReplyModal()">Vazgeç</button>
+                    <button class="btn-reply-send" onclick="sendReply()">Cevapla</button>
+                </div>
+            </div>
+        </div>
+
+
+        <div id="mevzuatModal" class="reply-modal" style="display: none; align-items: center; justify-content: center; background: rgba(15, 23, 42, 0.6); backdrop-filter: blur(4px);">
+            <div class="reply-content" style="max-width: 500px; width: 90%; border-radius: 24px; padding: 35px; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25); border: 1px solid rgba(255,255,255,0.1);">
+                <div class="reply-header" style="border-bottom: 2px solid #f1f5f9; padding-bottom: 15px; margin-bottom: 25px;">
+                    <i class="fa-solid fa-file-circle-plus" style="font-size: 1.5rem; color: #0f172a;"></i>
+                    <h3 style="font-weight: 700; color: #0f172a; margin: 0;">Yeni Mevzuat Kaydı</h3>
+                </div>
+
+                <div style="display: flex; flex-direction: column; gap: 18px;">
+                    <div>
+                        <label style="display: block; font-size: 0.8rem; font-weight: 700; color: #64748b; margin-bottom: 8px; margin-left: 5px;">MEVZUAT BAŞLIĞI</label>
+                        <input type="text" id="m-baslik" placeholder="Örn: 7445 Sayılı İş Kanunu Değişikliği" style="width: 100%; padding: 14px; border-radius: 12px; border: 1.5px solid #e2e8f0; font-family: inherit; outline: none; transition: border-color 0.2s; box-sizing: border-box;">
+                    </div>
+
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                        <div>
+                            <label style="display: block; font-size: 0.8rem; font-weight: 700; color: #64748b; margin-bottom: 8px; margin-left: 5px;">KATEGORİ</label>
+                            <select id="m-kategori" onchange="kategoriUrlOner()" style="width: 100%; padding: 14px; border-radius: 12px; border: 1.5px solid #e2e8f0; background: white; font-family: inherit; outline: none; cursor: pointer; box-sizing: border-box;">
+                                <option value="iş">İş Hukuku</option>
+                                <option value="kvkk">KVKK</option>
+                                <option value="ticaret">Ticaret</option>
+                                <option value="vergi">Vergi & Maliye</option>
+                                <option value="tüketici">Tüketici Hukuku</option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <label style="display: block; font-size: 0.8rem; font-weight: 700; color: #64748b; margin-bottom: 8px; margin-left: 5px;">ÖNEM DERECESİ</label>
+                            <select id="m-durum" style="width: 100%; padding: 14px; border-radius: 12px; border: 1.5px solid #e2e8f0; background: white; font-family: inherit; outline: none; cursor: pointer; box-sizing: border-box;">
+                                <option value="urgent">Acil Aksiyon</option>
+                                <option value="info">Bilgi</option>
+                                <option value="update">Güncelleme</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label style="display:block; font-size:0.8rem; font-weight:700; color:#475569; margin-bottom:5px;">KAYNAK URL</label>
+                            <input type="text" id="m-url" placeholder="https://www.resmigazete.gov.tr"
+                                   style="width:100%; padding:12px; border-radius:10px; border:1px solid #e2e8f0; outline:none; box-sizing:border-box; font-size:0.9rem;">
+                        </div>
+                    </div>
+
+                    <div>
+                        <label style="display: block; font-size: 0.8rem; font-weight: 700; color: #64748b; margin-bottom: 8px; margin-left: 5px;">KISA ÖZET</label>
+                        <textarea id="m-ozet" placeholder="Habere dair kısa notunuzu buraya yazın..." style="width: 100%; padding: 14px; border-radius: 12px; border: 1.5px solid #e2e8f0; height: 100px; font-family: inherit; outline: none; resize: none; box-sizing: border-box;"></textarea>
+                    </div>
+                </div>
+
+                <div class="reply-actions" style="margin-top: 30px; border-top: 1px solid #f1f5f9; padding-top: 20px;">
+                    <button class="btn-reply-cancel" onclick="closeMevzuatModal()" style="background: #f8fafc; color: #64748b; border: 1px solid #e2e8f0; font-weight: 600;">Vazgeç</button>
+                    <button class="btn-reply-send" onclick="saveMevzuat()" style="background: #0f172a; color: white; border: none; font-weight: 600; padding: 12px 25px; box-shadow: 0 4px 12px rgba(15, 23, 42, 0.2);">Sisteme Kaydet</button>
+                </div>
+            </div>
+        </div>
+
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+        <script>
+          
+            const kanal = new BroadcastChannel('guardia-hk');
+
+            kanal.onmessage = (e) => {
+                console.log("Sistem Güncellemesi Alındı:", e.data.tip);
+                if (typeof loadTumDashboard === 'function') loadTumDashboard();
+                if (typeof sozlesmeleriYukle === 'function') sozlesmeleriYukle();
+                if (typeof davaYukle === 'function') davaYukle();
+                if (typeof arsivListesiniYukle === 'function') arsivListesiniYukle();
+            };
+
+            function apiFetch(url, options = {}) {
+                const token = localStorage.getItem('token');
+
+         
+                let sayfaBirim = "HUKUK";
+                if (window.location.href.includes("ik-") || window.location.href.includes("ik-index")) {
+                    sayfaBirim = "INSAN_KAYNAKLARI"; 
+                }
+
+                options.headers = {
+                    ...options.headers,
+                    'Authorization': 'Bearer ' + token,
+                    'X-Aktif-Birim': sayfaBirim,
+                    'Content-Type': 'application/json'
+                };
+
+                return fetch(url, options).then(res => {
+                    if (!res.ok) {
+                        throw new Error(`HTTP Hatası! Durum: ${res.status}`);
+                    }
+                    return res;
+                });
+            }
+
+            function kategoriUrlOner() {
+                const kategori = document.getElementById('m-kategori').value;
+                const urlInput = document.getElementById('m-url');
+                const urlMap = {
+                    'iş': 'https://www.resmigazete.gov.tr',
+                    'kvkk': 'https://www.kvkk.gov.tr',
+                    'ticaret': 'https://www.ticaret.gov.tr',
+                    'vergi': 'https://www.gib.gov.tr',
+                    'tüketici': 'https://tuketicisikayeti.ticaret.gov.tr'
+                };
+                if (urlInput) urlInput.value = urlMap[kategori] || 'https://www.resmigazete.gov.tr';
+            }
+
+        
+            function mevzuatPdfIndir(baslik, ozet, kategori, onem, tarih, url) {
+                if (event) event.stopPropagation();
+
+                const katMap = { 'iş': 'İş Hukuku', 'kvkk': 'KVKK', 'ticaret': 'Ticaret', 'vergi': 'Vergi & Maliye', 'tüketici': 'Tüketici Hukuku' };
+                const kategoriAdi = katMap[kategori] || kategori;
+
+          
+                const element = document.createElement('div');
+                element.innerHTML = `
+                        <div style="font-family: Arial, sans-serif; color: #1e293b; padding: 40px; line-height: 1.6;">
+                            <div style="border-bottom: 2px solid #0f172a; padding-bottom: 15px; margin-bottom: 25px; display: flex; justify-content: space-between; align-items: center;">
+                                <span style="font-size: 1.3rem; font-weight: bold; color: #0f172a;">🛡️ GUARDIA HUKUK MÜŞAVİRLİĞİ</span>
+                                <span style="font-size: 0.85rem; color: #64748b;">Mevzuat Bilgi Formu</span>
+                            </div>
+
+                            <h2 style="font-size: 1.6rem; color: #0f172a; margin-top: 0; margin-bottom: 20px;">${baslik}</h2>
+
+                            <table style="width: 100%; border-collapse: collapse; margin-bottom: 25px; font-size: 0.9rem;">
+                                <tr>
+                                    <td style="padding: 10px; border: 1px solid #e2e8f0; font-weight: bold; background: #f8fafc; width: 25%;">Yayın Tarihi</td>
+                                    <td style="padding: 10px; border: 1px solid #e2e8f0;">${tarih}</td>
+                                    <td style="padding: 10px; border: 1px solid #e2e8f0; font-weight: bold; background: #f8fafc; width: 25%;">Hukuk Kategorisi</td>
+                                    <td style="padding: 10px; border: 1px solid #e2e8f0;">${kategoriAdi.toUpperCase()}</td>
+                                </tr>
+                                <tr>
+                                    <td style="padding: 10px; border: 1px solid #e2e8f0; font-weight: bold; background: #f8fafc;">Önem Derecesi</td>
+                                    <td style="padding: 10px; border: 1px solid #e2e8f0;">${onem.toUpperCase()}</td>
+                                    <td style="padding: 10px; border: 1px solid #e2e8f0; font-weight: bold; background: #f8fafc;">Kaynak Adresi</td>
+                                    <td style="padding: 10px; border: 1px solid #e2e8f0; color: #3b82f6; font-size:0.8rem; word-break: break-all;">${url}</td>
+                                </tr>
+                            </table>
+
+                            <div style="font-weight: bold; margin-bottom: 8px; font-size: 1rem; color: #0f172a;">Mevzuat Özeti / Aksiyon Notu:</div>
+                            <div style="background: #f8fafc; border-left: 4px solid #0f172a; padding: 15px; font-size: 1rem; color: #334155; min-height: 120px; border-radius: 0 8px 8px 0;">
+                                ${ozet}
+                            </div>
+
+                            <div style="margin-top: 60px; font-size: 0.75rem; color: #94a3b8; text-align: center; border-top: 1px solid #e2e8f0; padding-top: 15px;">
+                                Bu doküman Guardia HK Dijital Paneli üzerinden üretilmiştir. Güvenli elektronik takip içindir.
+                            </div>
+                        </div>
+                    `;
+
+                const ayarlar = {
+                    margin: 10,
+                    filename: `${tarih}_mevzuat_raporu.pdf`,
+                    image: { type: 'jpeg', quality: 0.98 },
+                    html2canvas: { scale: 2, useCORS: true },
+                    jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+                };
+
+                html2pdf().set(ayarlar).from(element).save();
+            }
+
+            async function mevzuatlariYukle() {
+                const feed = document.getElementById('mevzuatFeed');
+                if (!feed) return;
+
+                feed.innerHTML = '<div class="feed-item info"><p>Mevzuat güncellemeleri yükleniyor...</p></div>';
+
+                try {
+                    const response = await apiFetch('/api/HukukKontrolcusu/mevzuat-dashboard');
+                    const data = await response.json();
+
+                    feed.innerHTML = '';
+                    const liste = data.mevzuatlar ?? data.Mevzuatlar ?? [];
+
+                    if (liste.length === 0) {
+                        feed.innerHTML = '<div class="feed-item info"><p>Sistemde kayıtlı mevzuat bulunamadı.</p></div>';
+                        return;
+                    }
+
+                    const durumMap = {
+                        'Acil Aksiyon': { cls: 'urgent', tag: '#ACİL AKSİYON', color: '#ef4444' },
+                        'Bilgi': { cls: 'info', tag: '#BİLGİ', color: '#3b82f6' },
+                        'Güncelleme': { cls: 'update', tag: '#GÜNCELLEME', color: '#10b981' }
+                    };
+                    liste.forEach(m => {
+                        const baslik = m.baslik ?? m.Baslik ?? '';
+                        const ozet = m.ozet ?? m.Ozet ?? '';
+                        const kategori = m.kategori ?? m.Kategori ?? '';
+                        const onem = m.onemDerecesi ?? m.OnemDerecesi ?? 'Bilgi';
+                        const tarih = m.tarih ?? m.Tarih ?? '';
+                        const url = m.kaynakUrl ?? m.KaynakUrl ?? 'https://www.resmigazete.gov.tr';
+
+                        const dm = durumMap[onem] || durumMap['Bilgi'];
+
+                        const item = document.createElement('div');
+                        item.className = 'feed-item ' + dm.cls;
+                        item.setAttribute('data-cat', kategori);
+
+                 
+                        item.dataset.baslik = baslik;
+                        item.dataset.ozet = ozet;
+                        item.dataset.kategori = kategori;
+                        item.dataset.onem = onem;
+                        item.dataset.tarih = tarih;
+                        item.dataset.url = url;
+
+                        item.innerHTML = `
+                            <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+                                <h4>${baslik}</h4>
+                                <div style="display:flex; gap:10px;">
+                                    <button type="button" class="action-icon-btn btn-view" title="Kaynağa Git"
+                                        onclick="event.stopPropagation(); window.open('${url}','_blank')">
+                                        <i class="fa-solid fa-arrow-up-right-from-square"></i>
+                                    </button>
+                                    <button type="button" class="action-icon-btn btn-download" title="PDF İndir">
+                                        <i class="fa-solid fa-file-pdf"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            <p>${ozet}</p>
+                            <div style="margin-top:10px; display:flex; justify-content:space-between; align-items:center;">
+                                <small><i class="fa-solid fa-calendar-days"></i> ${tarih}</small>
+                                <small style="font-weight:800; letter-spacing:0.5px; color:${dm.color}">${dm.tag}</small>
+                            </div>
+                        `;
+
+                      
+                        item.querySelector('.btn-download').addEventListener('click', function (e) {
+                            e.stopPropagation();
+                            const p = this.closest('.feed-item').dataset;
+                            mevzuatPdfIndir(p.baslik, p.ozet, p.kategori, p.onem, p.tarih, p.url);
+                        });
+
+                        feed.appendChild(item);
+                    });
+
+                    mevzuatAra();
+                } catch (err) {
+                    console.error("Mevzuat yükleme hatası:", err);
+                    feed.innerHTML = `
+                            <div class="feed-item urgent">
+                                <h4>Veri Bağlantı Hatası</h4>
+                                <p>Mevzuat verileri backend sunucusundan çekilemedi. Lütfen oturumunuzu (Token) ve API endpoint tanımınızı kontrol edin.</p>
+                                <small>${err.message}</small>
+                            </div>`;
+                }
+            }
+
+   
+            function openLiveTracking() { document.getElementById('liveTrackingModal').style.display = 'flex'; }
+            function closeLiveTracking() { document.getElementById('liveTrackingModal').style.display = 'none'; }
+
+          
+            let aktifIletisimBirimi = "";
+
+         
+            async function showIncoming() {
+                const incoming = document.getElementById('notif-incoming-list');
+                const outgoing = document.getElementById('notif-outgoing-list');
+                const btnIn = document.querySelector('.notif-action-btn[onclick="showIncoming()"]');
+                const btnOut = document.querySelector('.notif-action-btn[onclick="showOutgoing()"]');
+
+                if (incoming && outgoing) {
+                    incoming.style.display = 'block';
+                    outgoing.style.display = 'none';
+                    if (btnIn) btnIn.classList.add('active');
+                    if (btnOut) btnOut.classList.remove('active');
+                }
+
+                try {
+                    const response = await apiFetch('/api/IkIstatistikKontrolcusu/mesajlar');
+                    const veriler = await response.json();
+
+                    if (incoming) {
+                        incoming.innerHTML = "";
+                        if (veriler.length === 0) {
+                            incoming.innerHTML = '<div class="notif-item"><span>Gelen kutunuz temiz. 📬</span></div>';
+                        } else {
+                            incoming.innerHTML = veriler.map(msg => {
+                                const temizMesaj = msg.mesaj.replace(/'/g, "\\'").replace(/"/g, '\\"');
+                                const durumRengi = msg.okunduMu ? '#cbd5e1' : '#3b82f6';
+
+                                return `
+                        <div class="notif-item" onclick="openReplyModal('${msg.birim}', '${temizMesaj}', this, ${msg.id})" style="cursor: pointer;">
+                            <span class="notif-status" style="background: ${durumRengi}; display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 5px;"></span>
+                            <strong>${msg.birim}</strong>
+                            <span>${msg.mesaj}</span>
+                            <small style="display:block; color: #94a3b8; font-size: 0.75rem; margin-top: 5px;">
+                                <i class="fa-regular fa-clock"></i> ${msg.saat}
+                            </small>
+                        </div>`;
+                            }).join('');
+                        }
+                    }
+
+                    guncelleCanSayaci(veriler);
+
+                } catch (err) {
+                    console.error("Gelen mesajlar veritabanından alınamadı:", err);
+                }
+            }
+
+
+            function guncelleCanSayaci(veriler) {
+                const okunmamislar = veriler.filter(m => !m.okunduMu).length;
+                const badge = document.querySelector('.notif-container .notif-badge');
+
+                if (badge) {
+                    badge.innerText = okunmamislar;
+                    badge.style.display = okunmamislar > 0 ? 'flex' : 'none';
+                }
+            }
+
+       
+            async function showOutgoing() {
+                const incoming = document.getElementById('notif-incoming-list');
+                const outgoing = document.getElementById('notif-outgoing-list');
+                const btnIn = document.querySelector('.notif-action-btn[onclick="showIncoming()"]');
+                const btnOut = document.querySelector('.notif-action-btn[onclick="showOutgoing()"]');
+
+                if (incoming && outgoing) {
+                    incoming.style.display = 'none';
+                    outgoing.style.display = 'block';
+                    if (btnOut) btnOut.classList.add('active');
+                    if (btnIn) btnIn.classList.remove('active');
+                }
+
+                try {
+                    const response = await apiFetch('/api/IkIstatistikKontrolcusu/giden-mesajlar');
+                    const veriler = await response.json();
+
+                    if (outgoing) {
+                        if (veriler.length === 0) {
+                            outgoing.innerHTML = '<div class="notif-item"><span>Henüz bir departmana not göndermediniz.</span></div>';
+                        } else {
+                            outgoing.innerHTML = veriler.map(msg => `
+                    <div class="notif-item">
+                        <strong>SİZDEN -> ${msg.birim}</strong>
+                        <span>${msg.mesaj}</span>
+                        <small style="display:block; color: #94a3b8; font-size: 0.75rem; margin-top: 5px;">
+                            <i class="fa-regular fa-clock"></i> ${msg.saat}
+                        </small>
+                    </div>
+                `).join('');
+                        }
+                    }
+                } catch (err) {
+                    console.error("Giden mesajlar veritabanından alınamadı:", err);
+                }
+            }
+
+        
+            function openReplyModal(sender, originalMessage, element, mesajId) {
+                aktifIletisimBirimi = sender.replace("SİZDEN ->", "").trim();
+
+                document.getElementById('replyTarget').innerText = aktifIletisimBirimi + " Birimine Cevap Yaz";
+                document.getElementById('replyOriginalMessage').innerText = '"' + originalMessage + '"';
+                document.getElementById('replyModal').style.display = 'flex';
+
+                if (element) {
+                    const statusDot = element.querySelector('.notif-status');
+
+                    if (statusDot && (statusDot.style.background === 'rgb(59, 130, 246)' || statusDot.style.background === '#3b82f6' || statusDot.style.background.includes('3b82f6'))) {
+
+                        statusDot.style.background = '#cbd5e1';
+
+                        const badge = document.querySelector('.notif-container .notif-badge');
+                        if (badge && parseInt(badge.innerText) > 0) {
+                            const yeniSayi = parseInt(badge.innerText) - 1;
+                            badge.innerText = yeniSayi;
+                            if (yeniSayi === 0) badge.style.display = 'none';
+                        }
+
+                        if (mesajId) {
+                            apiFetch(`/api/IkIstatistikKontrolcusu/mesaj-okundu/${mesajId}`, {
+                                method: 'POST'
+                            }).catch(e => console.error("Mesaj okundu işareti veritabanına iletilemedi:", e));
+                        }
+                    }
+                }
+            }
+
+            function closeReplyModal() {
+                document.getElementById('replyModal').style.display = 'none';
+                const input = document.getElementById('replyText');
+                if (input) input.value = '';
+                aktifIletisimBirimi = "";
+            }
+
+     
+            async function sendReply() {
+                const replyInput = document.getElementById('replyText');
+                if (!replyInput) return;
+
+                const text = replyInput.value.trim();
+                if (text === "") {
+                    alert("Lütfen boş bir mesaj göndermeyin.");
+                    return;
+                }
+
+                const suAnkiSaat = new Date().toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' });
+
+                const gonderilecekCevapPaketi = {
+                    Birim: aktifIletisimBirimi,
+                    Mesaj: text,
+                    Saat: suAnkiSaat
+                };
+
+                try {
+                    const response = await apiFetch('/api/IkIstatistikKontrolcusu/mesaj-gonder', {
+                        method: 'POST',
+                        body: JSON.stringify(gonderilecekCevapPaketi)
+                    });
+
+                    if (response.ok) {
+                        alert(`${aktifIletisimBirimi} birimine cevabınız başarıyla iletildi!`);
+                        closeReplyModal();
+                        await showIncoming();
+                    } else {
+                        alert("Cevap iletilirken sunucu katmanında bir hata oluştu.");
+                    }
+                } catch (err) {
+                    console.error("Cevap gönderme hatası:", err);
+                    alert("Bağlantı hatası! Cevap gönderilemedi.");
+                }
+            }
+
+            window.onclick = function (event) {
+                let liveModal = document.getElementById('liveTrackingModal');
+                let replyModal = document.getElementById('replyModal');
+                if (event.target == liveModal) { liveModal.style.display = "none"; }
+                if (event.target == replyModal) { replyModal.style.display = "none"; }
+            }
+
+         
+            document.addEventListener('DOMContentLoaded', function () {
+
+                const adminAdSoyad = localStorage.getItem('adminAdSoyad');
+                const adminDepartman = localStorage.getItem('adminDepartman');
+
+                if (adminAdSoyad) {
+                    document.getElementById('sidebarAdSoyad').textContent = adminAdSoyad;
+                }
+                if (adminDepartman) {
+                    document.getElementById('sidebarDepartman').textContent = adminDepartman;
+                }
+                // Sayfaya özel verilerin yüklenmesi
+                if (typeof mevzuatlariYukle === 'function') mevzuatlariYukle();
+
+          
+                showIncoming();
+
+           
+                const notifTrigger = document.querySelector('.notif-trigger');
+                const notifDropdown = document.querySelector('.notif-dropdown');
+
+                if (notifTrigger) {
+                    notifTrigger.removeAttribute('for');
+                    notifTrigger.addEventListener('click', function (e) {
+                        e.preventDefault();
+                        e.stopPropagation();
+
+                 
+                        if (notifDropdown) {
+                            if (notifDropdown.classList.contains('active')) {
+                                notifDropdown.style.removeProperty('display');
+                                notifDropdown.classList.remove('active');
+                            } else {
+                                notifDropdown.style.setProperty('display', 'block', 'important');
+                                notifDropdown.classList.add('active');
+                            }
+                        }
+
+                       
+                        const badge = document.querySelector('.notif-container .notif-badge');
+                        if (badge) badge.style.display = 'none';
+                    });
+                }
+
+            
+                const notifContainer = document.querySelector('.notif-container');
+                if (notifDropdown) notifDropdown.addEventListener('click', e => e.stopPropagation());
+                if (notifContainer) notifContainer.addEventListener('click', e => e.stopPropagation());
+
+                // Ekranda boş bir yere tıklanırsa menüleri kapat
+                document.addEventListener('click', function (event) {
+                    const replyModal = document.getElementById('replyModal');
+                    const mevzuatModal = document.getElementById('mevzuatModal');
+
+                    // Bildirim Menüsünü Kapat
+                    if (notifDropdown) {
+                        notifDropdown.style.removeProperty('display');
+                        notifDropdown.classList.remove('active');
+                    }
+
+                    // Modalları Kapat
+                    if (event.target === replyModal) closeReplyModal();
+                    if (event.target === mevzuatModal) closeMevzuatModal();
+                });
+            });
+
+            var mevzuatAktifCat = 'all';
+
+            function filterMevzuat(cat, btnEl) {
+                mevzuatAktifCat = cat;
+                document.querySelectorAll('.filter-bar .filter-btn').forEach(function (btn) {
+                    btn.classList.remove('active');
+                });
+                if (btnEl) btnEl.classList.add('active');
+                mevzuatAra();
+            }
+
+            function mevzuatAra() {
+                var needle = document.getElementById('mevzuatInput').value.toLocaleUpperCase('tr-TR');
+                document.querySelectorAll('#mevzuatFeed .feed-item').forEach(function (item) {
+                    var matchCat = mevzuatAktifCat === 'all' || item.getAttribute('data-cat') === mevzuatAktifCat;
+                    var matchSearch = !needle || item.innerText.toLocaleUpperCase('tr-TR').indexOf(needle) > -1;
+                    item.style.display = (matchCat && matchSearch) ? '' : 'none';
+                });
+            }
+
+            function resmiGazeteGit(url) {
+                window.open(url || 'https://www.resmigazete.gov.tr/', '_blank');
+                if (event) event.stopPropagation();
+            }
+
+            function openMevzuatModal() {
+                document.getElementById('mevzuatModal').style.display = 'flex';
+            }
+
+            function closeMevzuatModal() {
+                document.getElementById('mevzuatModal').style.display = 'none';
+            }
+
+           
+            async function saveMevzuat() {
+                const baslik = document.getElementById('m-baslik').value.trim();
+                if (!baslik) { alert("Lütfen en azından bir başlık giriniz."); return; }
+
+                const ozet = document.getElementById('m-ozet').value.trim() || 'Mevzuat kaydı eklendi.';
+
+              
+                const hamKategori = document.getElementById('m-kategori').value;
+                const katBüyütMap = {
+                    'iş': 'İş Hukuku',
+                    'kvkk': 'KVKK',
+                    'ticaret': 'Ticaret',
+                    'vergi': 'Vergi & Maliye',
+                    'tüketici': 'Tüketici Hukuku'
+                };
+                const kategori = katBüyütMap[hamKategori] || hamKategori;
+
+                const durum = document.getElementById('m-durum').value;
+                const url = document.getElementById('m-url').value.trim() || 'https://www.resmigazete.gov.tr';
+
+                const onemMap = { urgent: 'Acil Aksiyon', info: 'Bilgi', update: 'Güncelleme' };
+                const durumMap = {
+                    urgent: { cls: 'urgent', tag: '#ACİL AKSİYON', color: '#ef4444' },
+                    info: { cls: 'info', tag: '#BİLGİ', color: '#3b82f6' },
+                    update: { cls: 'update', tag: '#GÜNCELLEME', color: '#10b981' }
+                };
+                const dm = durumMap[durum] || durumMap.info;
+
+          
+                const d = new Date();
+                const tarihStr = String(d.getDate()).padStart(2, '0') + '.' + String(d.getMonth() + 1).padStart(2, '0') + '.' + d.getFullYear();
+
+                try {
+                    const backendPort = "7183";
+                    const res = await apiFetch(`https://localhost:${backendPort}/api/HukukKontrolcusu/mevzuat-ekle`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            Baslik: baslik,
+                            Kategori: kategori,
+                            Ozet: ozet,
+                            OnemDerecesi: onemMap[durum] || 'Bilgi',
+                            KaynakUrl: url,
+                            Tarih: tarihStr
+                        })
+                    });
+
+                    
+                    if (res.ok) {
+                        const feed = document.getElementById('mevzuatFeed');
+                        if (feed) {
+                            const item = document.createElement('div');
+                            item.className = 'feed-item ' + dm.cls;
+                            item.setAttribute('data-cat', hamKategori);
+
+                        
+                            item.dataset.baslik = baslik;
+                            item.dataset.ozet = ozet;
+                            item.dataset.kategori = hamKategori;
+                            item.dataset.onem = onemMap[durum] || 'Bilgi';
+                            item.dataset.tarih = tarihStr;
+                            item.dataset.url = url;
+
+                            item.innerHTML = `
+                    <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+                        <h4>${baslik}</h4>
+                        <div style="display:flex; gap:10px;">
+                            <button type="button" class="action-icon-btn btn-view" title="Kaynağa Git" onclick="event.stopPropagation(); window.open('${url}','_blank')">
+                                <i class="fa-solid fa-arrow-up-right-from-square"></i>
+                            </button>
+                            <button type="button" class="action-icon-btn btn-download" title="PDF İndir">
+                                <i class="fa-solid fa-file-pdf"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <p>${ozet}</p>
+                    <div style="margin-top:10px; display:flex; justify-content:space-between; align-items:center;">
+                        <small><i class="fa-solid fa-calendar-days"></i> ${tarihStr}</small>
+                        <small style="font-weight:800; letter-spacing:0.5px; color:${dm.color}">${dm.tag}</small>
+                    </div>
+                `;
+
+                         
+                            item.querySelector('.btn-download').addEventListener('click', function (e) {
+                                e.stopPropagation();
+                                const p = this.closest('.feed-item').dataset;
+                                mevzuatPdfIndir(p.baslik, p.ozet, p.kategori, p.onem, p.tarih, p.url);
+                            });
+
+                            feed.insertBefore(item, feed.firstChild);
+                        }
+
+                       
+                        document.getElementById('m-baslik').value = '';
+                        document.getElementById('m-ozet').value = '';
+                        document.getElementById('m-url').value = '';
+                        document.getElementById('m-kategori').selectedIndex = 0;
+                        document.getElementById('m-durum').selectedIndex = 0;
+
+                        closeMevzuatModal();
+                        mevzuatAra();
+
+                        alert("Yeni mevzuat başarıyla sisteme eklendi ve veritabanına kaydedildi!");
+
+                        kanal.postMessage({ tip: 'mevzuat-eklendi' });
+
+                     
+                        await mevzuatlariYukle();
+                    } else {
+                        alert("Sunucu hata döndürdü: " + res.status);
+                    }
+                } catch (err) {
+                    console.error("Mevzuat kayıt hatası:", err);
+                    alert("Bir hata oluştu! Detayları görmek için F12 basıp Console sekmesine bakın.\n\nHata: " + err.message);
+                }
+            }
+
+        </script>
+</body>
+</html>

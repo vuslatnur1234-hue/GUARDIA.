@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="tr">
+
+<head>
+
+    <script>
+        if (!localStorage.getItem('token')) {
+            window.location.href = 'p-login.html';
+        }
+    </script>
+
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Guardia | Arıza Bildirimi</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/personel-style.css">
+    <style>
+        /* Butonun alt menüye çarpmasını engeller */
+        .container {
+            padding-bottom: 100px;
+        }
+
+        /* Başlık ve Geri Butonu Yerleşimi */
+        header {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 25px;
+            padding-top: 15px;
+        }
+
+        .back-btn {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: var(--card);
+            border: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            color: var(--accent);
+        }
+
+        /* Form Elemanları Etiketleri (Küçük ve Kalın Font) */
+        .input-label {
+            font-size: 0.75rem;
+            color: var(--sub);
+            font-weight: 600;
+            margin-left: 10px;
+            margin-bottom: 8px;
+            display: block;
+            text-transform: uppercase;
+        }
+
+        /* Giriş Elemanları */
+        select,
+        textarea {
+            width: 100%;
+            padding: 15px;
+            border-radius: 18px;
+            background: var(--card);
+            border: 1px solid var(--border);
+            color: var(--text);
+            font-family: 'Poppins';
+            margin-bottom: 20px;
+            outline: none;
+            font-size: 0.9rem;
+            resize: none;
+            appearance: none;
+            -webkit-appearance: none;
+        }
+
+        /* Fotoğraf Yükleme Alanı */
+        .photo-upload {
+            width: 100%;
+            height: 120px;
+            border: 2px dashed var(--border);
+            border-radius: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            color: var(--sub);
+            cursor: pointer;
+            transition: 0.3s;
+            margin-bottom: 25px;
+            background: rgba(255, 255, 255, 0.02);
+            position: relative;
+            overflow: hidden;
+        }
+
+            .photo-upload:hover {
+                border-color: var(--accent);
+                color: var(--accent);
+                background: rgba(56, 189, 248, 0.05);
+            }
+
+            .photo-upload i {
+                font-size: 1.5rem;
+            }
+
+        /* Aciliyet Seçimi buton dizilimi */
+        .priority-group {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 30px;
+        }
+
+        .priority-btn {
+            flex: 1;
+            padding: 12px;
+            border-radius: 15px;
+            border: 1px solid var(--border);
+            background: var(--card);
+            color: var(--sub);
+            font-size: 0.8rem;
+            text-align: center;
+            cursor: pointer;
+            transition: 0.3s;
+            font-weight: 600;
+        }
+
+            /* Aktiflik Durumları: Düşük (Mavi), Normal (Yeşil), Kritik (Kırmızı) */
+            .priority-btn.active.low-level {
+                border-color: #38bdf8;
+                color: #38bdf8;
+                background: rgba(56, 189, 248, 0.1);
+            }
+
+            .priority-btn.active.medium-level {
+                border-color: #10b981;
+                color: #10b981;
+                background: rgba(16, 185, 129, 0.1);
+            }
+
+            .priority-btn.active.high-level {
+                border-color: #ef4444;
+                color: #ef4444;
+                background: rgba(239, 68, 68, 0.1);
+            }
+
+        /* Kaydı Aç Butonu */
+        .btn-glow {
+            width: 100%;
+            padding: 18px;
+            border: none;
+            border-radius: 22px;
+            background: linear-gradient(135deg, #ef4444 0%, #b91c1c 100%);
+            color: white;
+            font-weight: 700;
+            font-size: 1rem;
+            cursor: pointer;
+            box-shadow: 0 10px 25px rgba(239, 68, 68, 0.2);
+            text-transform: uppercase;
+        }
+        /* TÜM SAYFADAKİ KAYDIRMA ÇUBUKLARINI GİZLE (Jilet Etkisi) */
+
+        /* 1. Chrome, Safari ve Yeni Edge için */
+        ::-webkit-scrollbar {
+            display: none !important;
+        }
+
+        /* 2. Firefox ve IE/Edge için */
+        html, body {
+            scrollbar-width: none !important; /* Firefox */
+            -ms-overflow-style: none !important; /* IE ve Edge */
+            overflow-y: scroll; /* Kaydırma özelliğini korur ama çubuğu saklar */
+        }
+
+        /* Sayfanın titremesini engellemek için ana taşıyıcıyı mühürleyelim */
+        .container {
+            overflow-x: hidden; /* Yatayda asla titreme yapmaz */
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="container">
+        <header>
+            <div class="back-btn" onclick="history.back()"><i class="fa-solid fa-chevron-left"></i></div>
+            <h2 style="margin:0; font-size:1.2rem; font-weight:600; color:var(--text);">Arıza Bildir</h2>
+        </header>
+
+        <span class="input-label">Makine / Lokasyon</span>
+        <select id="makine">
+            <option value="cnc">CNC Hattı - Üretim A</option>
+            <option value="lazer">Lazer Kesim Ünitesi</option>
+            <option value="montaj">Montaj Bandı - Hattat 2</option>
+            <option value="depo">Depo / Sevkiyat Alanı</option>
+            <option value="idari">İdari Bina / Ofisler</option>
+            <option value="diger">Diğer (Detayda Belirtin)</option>
+        </select>
+
+        <span class="input-label">Arıza Tipi</span>
+        <select id="tip">
+            <option value="mekanik">Mekanik (Sıkışma, Ses, Kırılma)</option>
+            <option value="elektrik">Elektrik & Sensör Arızası</option>
+            <option value="yazilim">Yazılım & Panel Hatası</option>
+            <option value="pnomatik">Pnömatik / Hidrolik (Sızıntı, Basınç)</option>
+            <option value="isg">İSG / Güvenlik Riski</option>
+            <option value="bakim">Genel Temizlik & Bakım</option>
+        </select>
+
+        <span class="input-label">Durum Fotoğrafı</span>
+        <div class="photo-upload" onclick="document.getElementById('fileInput').click()">
+            <i class="fa-solid fa-camera" id="photo-icon"></i>
+            <span id="photo-status" style="font-size: 0.8rem; text-align: center; padding: 0 10px;">Fotoğraf Ekle
+                (Opsiyonel)</span>
+            <input type="file" id="fileInput" accept="image/*" style="display:none" onchange="dosyaSecildi(this)">
+        </div>
+
+        <span class="input-label">Aciliyet</span>
+        <div class="priority-group">
+            <div class="priority-btn low-level" onclick="setPriority('low-level', this)">Düşük</div>
+            <div class="priority-btn medium-level" onclick="setPriority('medium-level', this)">Normal</div>
+            <div class="priority-btn high-level" onclick="setPriority('high-level', this)">Kritik</div>
+        </div>
+
+        <span class="input-label">Arıza Detayı</span>
+        <textarea id="detay" rows="3" placeholder="Sorunu kısaca tarif ediniz..."></textarea>
+
+        <button class="btn-glow" onclick="arizaGonder()">Arıza Kaydını Aç</button>
+    </div>
+    <script>
+
+        function apiFetch(url, options = {}) {
+            const token = localStorage.getItem('token');
+
+            // Başlıkları koruyarak Authorization JWT token'ını mühürlüyoruz
+            options.headers = {
+                ...options.headers,
+                'Authorization': 'Bearer ' + token
+            };
+
+            return fetch(url, options).then(res => {
+                if (!res.ok) {
+                    throw new Error(`HTTP Hatası! Durum: ${res.status}`);
+                }
+                return res;
+            });
+        }
+
+        let selectedPriority = "";
+
+        function dosyaSecildi(input) {
+            const status = document.getElementById('photo-status');
+            const icon = document.getElementById('photo-icon');
+            if (input.files && input.files[0]) {
+                status.innerText = "Dosya Seçildi: " + input.files[0].name;
+                status.style.color = "var(--accent)";
+                icon.style.color = "var(--accent)";
+            }
+        }
+
+        function setPriority(p, el) {
+            document.querySelectorAll('.priority-btn').forEach(b => {
+                b.classList.remove('active');
+            });
+            el.classList.add('active');
+            selectedPriority = p;
+        }
+
+        async function arizaGonder() {
+            const makine = document.getElementById('makine').value;
+            const tip = document.getElementById('tip').value;
+            const detay = document.getElementById('detay').value.trim();
+            const dosyaVarMi = document.getElementById('fileInput').files.length > 0;
+            const aktifSicil = localStorage.getItem("aktifKullanici");
+
+            if (!detay) {
+                alert("Lütfen arıza hakkında kısa bir bilgi veriniz.");
+                document.getElementById('detay').focus();
+                return;
+            }
+
+            if (selectedPriority === "") {
+                alert("Lütfen arızanın aciliyet durumunu seçiniz.");
+                return;
+            }
+
+            const gidenVeri = {
+                SicilNo: aktifSicil,
+                Makine: makine,
+                Tip: tip,
+                Aciliyet: selectedPriority,
+                Detay: detay
+            };
+
+            try {
+                const btn = document.querySelector('.btn-glow');
+                btn.innerText = "GÖNDERİLİYOR...";
+                btn.disabled = true;
+
+                const response = await apiFetch('https://localhost:7183/api/ariza/kaydet', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(gidenVeri)
+                });
+
+                if (response.ok) {
+                    const takipNo = "#ARZ-2026-" + Math.floor(Math.random() * 9000 + 1000);
+                    const mesaj = dosyaVarMi ? "Fotoğraflı arıza kaydı iletildi." : "Arıza kaydı iletildi.";
+                    alert(mesaj + "\nTakip No: " + takipNo);
+                    btn.innerText = "ARIZA KAYDI AÇILDI";
+                    btn.style.background = "#10b981";
+                    btn.style.boxShadow = "none";
+                    btn.style.cursor = "default";
+                } else {
+                    alert("Kayıt sırasında sunucu hatası oluştu.");
+                    btn.innerText = "TEKRAR DENE";
+                    btn.disabled = false;
+                }
+            } catch (error) {
+                alert("Sunucuya ulaşılamadı. C# projesi açık mı?");
+                document.querySelector('.btn-glow').innerText = "TEKRAR DENE";
+                document.querySelector('.btn-glow').disabled = false;
+            }
+        }
+
+        if (localStorage.getItem('temaTercihi') === 'light') document.body.classList.add('light-mode');
+    </script>
+</body>
+
+</html>

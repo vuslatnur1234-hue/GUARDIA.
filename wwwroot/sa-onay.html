@@ -1,0 +1,616 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Guardia | Teklif ve Onay Masası</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/ik-sidebar.css">
+    <link rel="stylesheet" href="css/dept-common.css">
+    <style>
+        :root { --sidebar: #0f172a; --text-main: #1e293b; --text-sub: #64748b; --white: #fff; }
+        .hero { margin-bottom: 24px; }
+        .hero h2 { margin: 0 0 6px 0; font-size: 1.5rem; color: var(--sidebar); }
+        .hero p { margin: 0; font-size: 0.9rem; color: var(--text-sub); }
+        /* Kartların yan yana düzgün dizilmesi için */
+.compare-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); /* 320px'den 260px'e düşürdük */
+    gap: 15px; /* Boşluğu biraz azalttık */
+}
+
+.compare-card {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    background: white;
+    padding: 16px;
+    border-radius: 20px;
+    /* Çerçeveyi bir tık daha koyu ve belirgin yaptık */
+    border: 1px solid #e2e8f0; 
+    /* Çok hafif bir derinlik kattık, kartlar 'buradayım' desin */
+    box-shadow: 0 2px 4px rgba(0,0,0,0.02); 
+    transition: all 0.3s ease;
+}
+
+/* Üzerine gelince (Hover) efekti: Selin Hanım hangi kartta olduğunu anlasın */
+.compare-card:hover {
+    border-color: #cbd5e1; /* Fareyle gelince çerçeve biraz daha koyulaşır */
+    transform: translateY(-3px); /* Çok hafif yukarı kalkar */
+    box-shadow: 0 10px 15px -3px rgba(0,0,0,0.05);
+}
+
+/* En ucuz kartın yeşilini de bozmayalım, o yine baskın kalsın */
+.compare-card.en-ucuz {
+    border: 2px solid #22c55e !important;
+    background: #f0fdf4;
+}
+        .compare-card h4 { font-size: 0.9rem; margin-bottom: 5px; }
+.compare-card .fiyat { font-size: 1.2rem; } /* 1.5rem'den 1.2'ye çektik */
+        .compare-card .fiyat span { font-size: 0.9rem; font-weight: 400; color: var(--text-sub); }
+        .btn-onayla { display: inline-block; margin-top: 14px; padding: 10px 20px; border-radius: 12px; background: var(--accent); color: var(--sidebar); font-weight: 600; text-decoration: none; border: none; cursor: pointer; }
+   /* Karşılaştırma Detayları */
+.compare-details {
+    margin: 10px 0;
+    padding: 5px 0;
+}
+.detail-item { font-size: 0.8rem; margin-bottom: 4px; }
+.detail-label { color: var(--text-sub); }
+.detail-value { font-weight: 600; color: var(--text-main); }
+
+/* Skor Rozeti */
+.score-badge {
+    background: #e0e7ff;
+    color: #4338ca;
+    padding: 2px 8px;
+    border-radius: 6px;
+    font-size: 0.75rem;
+    font-weight: 700;
+}
+
+/* Onayla Butonu Modernizasyonu */
+.btn-onayla {
+    padding: 8px; /* 12px'den 8px'e çektik */
+    font-size: 0.85rem;
+}
+.btn-onayla:hover {
+    background: #334155;
+    transform: scale(1.02);
+}
+/* Tüm sayfa için kaydırma çubuğunu gizle */
+html, body {
+    -ms-overflow-style: none;  /* IE ve Edge için */
+    scrollbar-width: none;     /* Firefox için */
+}
+
+/* Chrome, Safari ve Opera için kaydırma çubuğunu gizle */
+body::-webkit-scrollbar {
+    display: none;
+}
+
+/* Eğer sadece içerik alanında (ik-content) kaydırma varsa orayı da temizleyelim */
+.ik-content {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+}
+
+.ik-content::-webkit-scrollbar {
+    display: none;
+}
+
+        /* Başlık + özet kartlar sabit; teklifler ayrı kaydırma alanında */
+        .sa-onay-sticky-top {
+            position: sticky;
+            top: 0;
+            z-index: 30;
+            padding-bottom: 16px;
+            margin-bottom: 0;
+            background: linear-gradient(to bottom, var(--bg, #f1f5f9) 0%, var(--bg, #f1f5f9) 88%, transparent 100%);
+        }
+        .sa-teklifler-scroll {
+            max-height: min(62vh, calc(100vh - 220px));
+            overflow-y: auto;
+            overflow-x: hidden;
+            overscroll-behavior: contain;
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+        .sa-teklifler-scroll::-webkit-scrollbar {
+            display: none;
+        }
+   
+   </style>
+</head>
+<body class="ik-layout">
+    <div class="ik-sidebar">
+        <h2>🛡️ Guardia SA</h2>
+        <ul class="ik-nav-links">
+            <li><a href="sa-index.html" style="text-decoration:none;color:inherit;display:flex;align-items:center;gap:12px;"><i class="fa-solid fa-chart-line"></i> Genel Bakış</a></li>
+            <li><a href="sa-talepler.html" style="text-decoration:none;color:inherit;display:flex;align-items:center;gap:12px;"><i class="fa-solid fa-cart-shopping"></i> Satın Alma Talepleri</a></li>
+            <li class="active"><i class="fa-solid fa-check-double"></i> Onay Bekleyenler</li>
+            <li><a href="sa-tedarikci.html" style="text-decoration:none;color:inherit;display:flex;align-items:center;gap:12px;"><i class="fa-solid fa-truck-fast"></i> Tedarikçi Listesi</a></li>
+            <li><a href="sa-takip.html" style="text-decoration:none;color:inherit;display:flex;align-items:center;gap:12px;"><i class="fa-solid fa-box-open"></i> Sipariş Takibi</a></li>
+            <li><a href="sa-stok.html" style="text-decoration:none;color:inherit;display:flex;align-items:center;gap:12px;"><i class="fa-solid fa-warehouse"></i> Stok Yönetimi</a></li>
+        </ul>
+        <div class="ik-user-tag">
+            <div class="ik-user-avatar"><img src="img/selin_aksoy.jpg" alt=""></div>
+            <div class="ik-user-info"><span>Selin Aksoy</span><small>Satın Alma Uzmanı</small></div>
+        </div>
+    </div>
+
+   <div class="ik-content">
+    <div class="sa-onay-sticky-top">
+    <div class="dept-header">
+        <div class="page-title-group">
+            <h1>Teklif ve Onay Masası</h1>
+            <p class="page-desc">Teklifleri maliyet ve performans kriterlerine göre değerlendirip onaylayın.</p>
+        </div>
+
+        <div class="notif-container">
+            <input type="checkbox" id="notif-toggle" aria-hidden="true" style="display:none;">
+            <label for="notif-toggle" class="notif-trigger">
+                <i class="fa-solid fa-bell"></i>
+                <span class="notif-badge">2</span>
+            </label>
+   
+            <div class="notif-dropdown">
+                <h4>Mesaj Merkezi</h4>
+                
+                <div id="notif-incoming-list" class="notif-list">
+                    <div class="notif-item" onclick="openReplyModal('SİSTEM', 'B firmasından gelen yeni teklif detayları incelenmek üzere hazır.')" style="cursor: pointer;">
+                        <span class="notif-status"></span>
+                        <strong>SİSTEM:</strong>
+                        <span>B firmasından yeni teklif geldi.</span>
+                        <small style="display:block; color: #94a3b8; font-size: 0.75rem; margin-top: 5px;">
+                            <i class="fa-regular fa-clock"></i> 13:45
+                        </small>
+                    </div>
+                    
+                    <div class="notif-item" onclick="openReplyModal('UYARI', 'Rulman talebi onay süreci bugün mesai bitiminde sona erecektir.')" style="cursor: pointer;">
+                        <span class="notif-status"></span>
+                        <strong>UYARI:</strong>
+                        <span>Rulman talebi için son onay günü.</span>
+                        <small style="display:block; color: #94a3b8; font-size: 0.75rem; margin-top: 5px;">
+                            <i class="fa-regular fa-clock"></i> 16:00
+                        </small>
+                    </div>
+                </div>
+
+                <div id="notif-outgoing-list" class="notif-list" style="display:none;">
+                    <div class="notif-item">
+                        <strong>SİZDEN -> YÖNETİM</strong>
+                        <span>B firması teklifi onaya sunuldu.</span>
+                        <small style="display:block; color: #94a3b8; font-size: 0.75rem; margin-top: 5px;">
+                            <i class="fa-regular fa-clock"></i> 14:10
+                        </small>
+                    </div>
+                </div>
+
+                <div class="notif-footer">
+                    <button type="button" class="notif-action-btn" onclick="showIncoming()">
+                        <i class="fa-solid fa-bell"></i> Gelenler
+                    </button>
+                    <button type="button" class="notif-action-btn" onclick="showOutgoing()">
+                        <i class="fa-solid fa-paper-plane"></i> Gidenler
+                    </button>
+                </div>
+            </div> </div> </div> 
+
+            
+<div style="display: flex; gap: 15px; margin-bottom: 0;">
+    <div style="flex: 1; background: #0f172a; color: white; padding: 15px; border-radius: 15px; display: flex; align-items: center; gap: 12px;">
+        <i class="fa-solid fa-wallet" style="font-size: 1.4rem; color: #3b82f6;"></i>
+        <div>
+            <small style="opacity: 0.7; font-size: 0.7rem;">Bugünkü Onay Toplamı</small>
+            <h3 id="totalApproval" style="margin: 0; font-size: 1.1rem;">0,00 ₺</h3>
+        </div>
+    </div>
+    
+    <div style="flex: 1; background: white; padding: 15px; border-radius: 15px; border: 1px solid #e2e8f0; display: flex; align-items: center; gap: 12px;">
+        <i class="fa-solid fa-hourglass-half" style="font-size: 1.4rem; color: #f59e0b;"></i>
+        <div>
+            <small style="color: #64748b; font-size: 0.7rem;">Bekleyen Onay</small>
+            <h3 id="pendingCount" style="margin: 0; font-size: 1.1rem;">3 Adet</h3>
+        </div>
+    </div>
+</div>
+    </div>
+
+<div class="sa-teklifler-scroll" aria-label="Teklif listesi kaydırma alanı">
+ <div class="approval-group" style="background: white; padding: 25px; border-radius: 24px; margin-bottom: 30px; border: 1px solid #e2e8f0; width: 100%;">
+        <p style="margin: 0 0 20px 0; color: var(--text-main); font-weight: 600; font-size: 0.95rem;">
+            <i class="fa-solid fa-box-open" style="margin-right: 8px; color: #3b82f6;"></i> Rulman 6205 — 100 Adet İçin Teklifler
+        </p>
+
+        <div class="compare-grid">
+            <div class="compare-card">
+                <div style="display: flex; justify-content: space-between; align-items: start;">
+                    <h4>Demir Çelik A.Ş.</h4>
+                    <span class="score-badge">⭐ 8.5</span>
+                </div>
+                <p class="fiyat">₺10,20 <span>/ adet</span></p>
+                <div class="compare-details">
+                    <div class="detail-item"><span class="detail-label">Teslim:</span><span class="detail-value">1 İş Günü</span></div>
+                    <div class="detail-item"><span class="detail-label">Vade:</span><span class="detail-value">Peşin</span></div>
+                </div>
+                <button class="btn-onayla" onclick="approve(this, 'Demir Çelik A.Ş.')">Onayla</button>
+            </div>
+
+            <div class="compare-card en-ucuz">
+                <div style="display: flex; justify-content: space-between; align-items: start;">
+                    <h4>Volt Otomasyon <i class="fa-solid fa-circle-check" style="color: #22c55e;"></i></h4>
+                    <span class="score-badge" style="background: #dcfce7; color: #15803d;">⭐ 9.8</span>
+                </div>
+                <p class="fiyat">₺9,50 <span>/ adet</span></p>
+                <div class="compare-details">
+                    <div class="detail-item"><span class="detail-label">Teslim:</span><span class="detail-value">3 İş Günü</span></div>
+                    <div class="detail-item"><span class="detail-label">Vade:</span><span class="detail-value">30 Gün</span></div>
+                </div>
+                <button class="btn-onayla" style="background: #22c55e; border:none; color:white;" onclick="approve(this, 'Volt Otomasyon')">Onayla</button>
+            </div>
+
+            <div class="compare-card">
+                <div style="display: flex; justify-content: space-between; align-items: start;">
+                    <h4>Usta El Aletleri</h4>
+                    <span class="score-badge">⭐ 7.2</span>
+                </div>
+                <p class="fiyat">₺10,00 <span>/ adet</span></p>
+                <div class="compare-details">
+                    <div class="detail-item"><span class="detail-label">Teslim:</span><span class="detail-value">Aynı Gün</span></div>
+                    <div class="detail-item"><span class="detail-label">Vade:</span><span class="detail-value">15 Gün</span></div>
+                </div>
+                <button class="btn-onayla" onclick="approve(this, 'Usta El Aletleri')">Onayla</button>
+            </div>
+        </div>
+    </div>
+
+
+   <div class="approval-group" style="background: white; padding: 25px; border-radius: 24px; margin-bottom: 30px; border: 1px solid #e2e8f0; width: 100%;">
+    <p style="margin: 0 0 20px 0; color: var(--text-main); font-weight: 600; font-size: 0.95rem;">
+        <i class="fa-solid fa-hard-hat" style="margin-right: 8px; color: #f59e0b;"></i> Personel Kaskı — 50 Adet İçin Teklifler
+    </p>
+
+    <div class="compare-grid">
+        <div class="compare-card">
+            <div style="display: flex; justify-content: space-between; align-items: start;">
+                <h4>Güven İş KKD</h4>
+                <span class="score-badge">⭐ 9.2</span>
+            </div>
+            <p class="fiyat">₺250,00 <span>/ adet</span></p>
+            <div class="compare-details">
+                <div class="detail-item"><span class="detail-label">Teslim:</span><span class="detail-value">2 İş Günü</span></div>
+                <div class="detail-item"><span class="detail-label">Vade:</span><span class="detail-value">30 Gün</span></div>
+            </div>
+            <button class="btn-onayla" onclick="approve(this, 'Güven İş KKD')">Onayla</button>
+        </div>
+
+        <div class="compare-card">
+            <div style="display: flex; justify-content: space-between; align-items: start;">
+                <h4>Ofis Market <i class="fa-solid fa-bolt" style="color: #f59e0b;"></i></h4>
+                <span class="score-badge">⭐ 7.5</span>
+            </div>
+            <p class="fiyat">₺265,00 <span>/ adet</span></p>
+            <div class="compare-details">
+                <div class="detail-item"><span class="detail-label">Teslim:</span><span class="detail-value">Aynı Gün</span></div>
+                <div class="detail-item"><span class="detail-label">Vade:</span><span class="detail-value">Peşin</span></div>
+            </div>
+            <button class="btn-onayla" onclick="approve(this, 'Ofis Market')">Onayla</button>
+        </div>
+
+        <div class="compare-card en-ucuz">
+            <div style="display: flex; justify-content: space-between; align-items: start;">
+                <h4>Koruyucu Ekipman <i class="fa-solid fa-circle-check" style="color: #22c55e;"></i></h4>
+                <span class="score-badge" style="background: #dcfce7; color: #15803d;">⭐ 8.9</span>
+            </div>
+            <p class="fiyat">₺235,00 <span>/ adet</span></p>
+            <div class="compare-details">
+                <div class="detail-item"><span class="detail-label">Teslim:</span><span class="detail-value">5 İş Günü</span></div>
+                <div class="detail-item"><span class="detail-label">Vade:</span><span class="detail-value">45 Gün</span></div>
+            </div>
+            <button class="btn-onayla" style="background: #22c55e; border:none; color:white;" onclick="approve(this, 'Koruyucu Ekipman')">Onayla</button>
+        </div>
+
+        <div class="compare-card">
+            <div style="display: flex; justify-content: space-between; align-items: start;">
+                <h4>Endüstri Market</h4>
+                <span class="score-badge">⭐ 8.0</span>
+            </div>
+            <p class="fiyat">₺245,00 <span>/ adet</span></p>
+            <div class="compare-details">
+                <div class="detail-item"><span class="detail-label">Teslim:</span><span class="detail-value">3 İş Günü</span></div>
+                <div class="detail-item"><span class="detail-label">Vade:</span><span class="detail-value">30 Gün</span></div>
+            </div>
+            <button class="btn-onayla" onclick="approve(this, 'Endüstri Market')">Onayla</button>
+        </div>
+    </div>
+</div>
+
+<div class="approval-group" style="background: white; padding: 25px; border-radius: 24px; margin-bottom: 30px; border: 1px solid #e2e8f0; width: 100%;">
+    <p style="margin: 0 0 20px 0; color: var(--text-main); font-weight: 600; font-size: 0.95rem;">
+        <i class="fa-solid fa-oil-can" style="margin-right: 8px; color: #0ea5e9;"></i> Endüstriyel Gres Yağı (20 Varil)
+    </p>
+
+    <div class="compare-grid">
+        <div class="compare-card">
+            <div style="display: flex; justify-content: space-between; align-items: start;">
+                <h4>Yağsan Lübrikant</h4>
+                <span class="score-badge">⭐ 9.5</span>
+            </div>
+            <p class="fiyat">₺1.200,00 <span>/ varil</span></p>
+            <div class="compare-details">
+                <div class="detail-item"><span class="detail-label">Teslim:</span><span class="detail-value">3 İş Günü</span></div>
+                <div class="detail-item"><span class="detail-label">Vade:</span><span class="detail-value">60 Gün</span></div>
+            </div>
+            <button class="btn-onayla" onclick="approve(this, 'Yağsan Lübrikant')">Onayla</button>
+        </div>
+
+        <div class="compare-card en-ucuz">
+            <div style="display: flex; justify-content: space-between; align-items: start;">
+                <h4>Petrol Dünyası <i class="fa-solid fa-circle-check" style="color: #22c55e;"></i></h4>
+                <span class="score-badge" style="background: #dcfce7; color: #15803d;">⭐ 8.7</span>
+            </div>
+            <p class="fiyat">₺1.150,00 <span>/ varil</span></p>
+            <div class="compare-details">
+                <div class="detail-item"><span class="detail-label">Teslim:</span><span class="detail-value">5 İş Günü</span></div>
+                <div class="detail-item"><span class="detail-label">Vade:</span><span class="detail-value">45 Gün</span></div>
+            </div>
+            <button class="btn-onayla" style="background: #22c55e; border:none; color:white;" onclick="approve(this, 'Petrol Dünyası')">Onayla</button>
+        </div>
+    </div>
+</div>
+
+<div style="background: #fffcf5; padding: 15px 25px; border-radius: 18px; border: 1px solid #fef3c7; display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+    <div style="display: flex; align-items: center; gap: 15px;">
+        <div style="background: #fef3c7; width: 40px; height: 40px; border-radius: 12px; display: flex; align-items: center; justify-content: center; color: #92400e;">
+            <i class="fa-solid fa-microchip"></i>
+        </div>
+        <div>
+            <strong style="color: #92400e; font-size: 0.95rem; display: block;">PLC Kontrol Modülü (3 Adet)</strong>
+            <small style="color: #b45309; font-size: 0.8rem;">Elektrik Birimi • Talep No: #EL-441 • Teklif Bekleniyor</small>
+        </div>
+    </div>
+    <span style="background: white; color: #92400e; padding: 6px 14px; border-radius: 10px; font-size: 0.75rem; font-weight: 700; border: 1px solid #fef3c7;">
+        <i class="fa-solid fa-spinner fa-spin"></i> 4 Tedarikçiden Fiyat Bekleniyor
+    </span>
+</div>
+
+<div style="background: #fffcf5; padding: 15px 25px; border-radius: 18px; border: 1px solid #fef3c7; display: flex; justify-content: space-between; align-items: center;">
+    <div style="display: flex; align-items: center; gap: 15px;">
+        <div style="background: #fef3c7; width: 40px; height: 40px; border-radius: 12px; display: flex; align-items: center; justify-content: center; color: #92400e;">
+            <i class="fa-solid fa-wind"></i>
+        </div>
+        <div>
+            <strong style="color: #92400e; font-size: 0.95rem; display: block;">İdari Bina Klima Revizyonu</strong>
+            <small style="color: #b45309; font-size: 0.8rem;">İdari İşler • Talep No: #ID-102 • İncelemede</small>
+        </div>
+    </div>
+    <span style="background: white; color: #92400e; padding: 6px 14px; border-radius: 10px; font-size: 0.75rem; font-weight: 700; border: 1px solid #fef3c7;">
+        <i class="fa-solid fa-magnifying-glass"></i> Teknik Şartname İnceleniyor
+    </span>
+</div>
+</div>
+
+
+
+
+
+
+        <div id="note-sent">Notunuz seçilen birimlere iletildi.</div>
+<div id="replyModal" class="reply-modal">
+    <div class="reply-content">
+        <div class="reply-header">
+            <i class="fa-solid fa-reply"></i>
+            <h3 id="replyTarget">HUKUK Birimine Cevap Yaz</h3>
+        </div>
+        
+        <div id="replyOriginalMessage" class="original-msg-preview">
+            "5 adet yeni iş sözleşmesi onaylandı."
+        </div>
+        
+        <textarea id="replyText" class="reply-textarea" placeholder="Cevabınızı buraya yazın..."></textarea>
+        
+        <div class="reply-actions">
+            <button class="btn-reply-cancel" onclick="closeReplyModal()">Vazgeç</button>
+            <button class="btn-reply-send" onclick="sendReply()">Cevapla</button>
+        </div>
+    </div>
+    </div>
+    <script>
+         /* 1. MEVCUT CANLI TAKİP MODALLARI */
+function openLiveTracking() { document.getElementById('liveTrackingModal').style.display = 'flex'; }
+function closeLiveTracking() { document.getElementById('liveTrackingModal').style.display = 'none'; }
+
+/* 2. BİLDİRİM LİSTESİ GEÇİŞLERİ (Gelen/Giden) */
+function showIncoming() {
+    const incoming = document.getElementById('notif-incoming-list');
+    const outgoing = document.getElementById('notif-outgoing-list');
+    const btnIn = document.querySelector('.notif-action-btn[onclick="showIncoming()"]');
+    const btnOut = document.querySelector('.notif-action-btn[onclick="showOutgoing()"]');
+    if (incoming && outgoing) {
+        incoming.style.display = 'block';
+        outgoing.style.display = 'none';
+        btnIn.classList.add('active');
+        btnOut.classList.remove('active');
+    }
+}
+
+function showOutgoing() {
+    const incoming = document.getElementById('notif-incoming-list');
+    const outgoing = document.getElementById('notif-outgoing-list');
+    const btnIn = document.querySelector('.notif-action-btn[onclick="showIncoming()"]');
+    const btnOut = document.querySelector('.notif-action-btn[onclick="showOutgoing()"]');
+    if (incoming && outgoing) {
+        incoming.style.display = 'none';
+        outgoing.style.display = 'block';
+        btnOut.classList.add('active');
+        btnIn.classList.remove('active');
+    }
+}
+
+/* 3. YENİ HIZLI CEVAPLAMA SİSTEMİ */
+function openReplyModal(sender, message) {
+    document.getElementById('replyTarget').innerText = sender + " Birimine Cevap Yaz";
+    document.getElementById('replyOriginalMessage').innerText = '"' + message + '"';
+    document.getElementById('replyModal').style.display = 'flex';
+}
+
+function closeReplyModal() {
+    document.getElementById('replyModal').style.display = 'none';
+    document.getElementById('replyText').value = '';
+}
+
+function sendReply() {
+    const text = document.getElementById('replyText').value;
+    const target = document.getElementById('replyTarget').innerText.replace(" Cevap Yaz", "");
+    if(text.trim() !== "") {
+        alert("Cevabınız " + target + " birimine iletildi.");
+        closeReplyModal();
+    } else {
+        alert("Lütfen boş bir mesaj göndermeyin.");
+    }
+}
+
+/* 4. GENEL TIKLAMA VE BAŞLANGIÇ AYARLARI */
+window.onclick = function(event) {
+    let liveModal = document.getElementById('liveTrackingModal');
+    let replyModal = document.getElementById('replyModal');
+    
+    // Hangi modal açıksa ve dışına tıklandıysa onu kapat
+    if (event.target == liveModal) { liveModal.style.display = "none"; }
+    if (event.target == replyModal) { replyModal.style.display = "none"; }
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    const btnIn = document.querySelector('.notif-action-btn[onclick="showIncoming()"]');
+    if(btnIn) btnIn.classList.add('active');
+});
+function sendReply() {
+    const text = document.getElementById('replyText').value;
+    
+    // trim() metni temizler, eğer sonuç boş değilse gönderir
+    if(text.trim() !== "") {
+        alert("Cevabınız başarıyla iletildi.");
+        closeReplyModal();
+    } else {
+        // Kutu boşsa burası çalışır ve engeller
+        alert("Lütfen boş bir mesaj göndermeyin.");
+    }
+}
+// Boş alana tıklandığında açık olan her şeyi kapat
+document.addEventListener('click', function(event) {
+    // 1. Checkbox ile açılan menüleri kapat (Bildirimler ve Not Kutusu)
+    const notifToggle = document.getElementById('notif-toggle');
+    const noteToggle = document.getElementById('note-box-toggle');
+    
+    // Bildirimler için: Tıklanan yer bildirim alanı değilse ve menü açıksa kapat
+    const notifContainer = document.querySelector('.notif-container');
+    if (notifToggle.checked && !notifContainer.contains(event.target)) {
+        notifToggle.checked = false;
+    }
+
+    // Not Kutusu için: Tıklanan yer not kutusu veya onu açan buton değilse kapat
+    const msgBox = document.querySelector('.msg-box');
+    const quickNoteBtn = document.querySelector('.quick-note-btn');
+    if (noteToggle.checked && !msgBox.contains(event.target) && !quickNoteBtn.contains(event.target)) {
+        noteToggle.checked = false;
+    }
+
+    // 2. Modal'lar için (Zaten senin kodunda var ama daha temiz hali):
+    const replyModal = document.getElementById('replyModal');
+    if (event.target === replyModal) {
+        closeReplyModal();
+    }
+});
+function confirmOrder(firma, tutar) {
+    const onay = confirm(firma + " firmasından toplam " + tutar + " tutarındaki siparişi onaylıyor musunuz?");
+    if(onay) {
+        alert("Sipariş mühürlendi! Evraklar muhasebe birimine iletildi.");
+        // Gerçek bir sistemde burada kartlar kaybolur ve "Sipariş Takibi"ne veri düşer.
+    }
+}
+// Başlangıç değerlerini sayfa yüklenince otomatik hesaplayalım
+let currentTotal = 0;
+// Şu an onay bekleyen 3 ana grubumuz var: Rulman, Kask ve Gres Yağı
+let pendingCount = 3; 
+
+function approve(element, firmaAdi) {
+    // 1. Karttan fiyatı ve miktar bilgisini çekelim
+    const card = element.closest('.compare-card');
+    const group = element.closest('.approval-group');
+    
+    // Fiyat metnini al (Örn: "₺1.150,00") ve sayıya çevir
+    const fiyatMetin = card.querySelector('.fiyat').innerText;
+    // Temizlik: ₺ sil, noktayı (binlik) sil, virgülü noktaya çevir
+    const birimFiyat = parseFloat(fiyatMetin.replace('₺', '').replace(/\./g, '').replace(',', '.'));
+    let adet = 100; // Rulman için varsayılan
+    if (group.innerText.includes("Kask")) adet = 50;
+    if (group.innerText.includes("Yağ")) adet = 20;
+
+    const toplamTutar = birimFiyat * adet;
+
+    if(confirm(firmaAdi + " firmasından yapılacak bu alımı onaylıyor musunuz?\nToplam Tutar: " + toplamTutar.toLocaleString('tr-TR') + " ₺")) {
+        
+        // 2. Görsel Efekt (Gruptan kurtuluyoruz)
+        group.style.transition = 'all 0.6s ease';
+        group.style.opacity = '0';
+        group.style.transform = 'scale(0.9) translateY(-20px)';
+        
+        // 3. Veri Güncelleme
+        currentTotal += toplamTutar;
+        pendingCount--;
+        
+        // 4. Arayüzü Güncelle (Tepedeki kutular)
+        setTimeout(() => {
+            group.style.display = 'none';
+            
+            // Sayıları animasyonlu gibi güncelle
+            document.getElementById('totalApproval').innerText = currentTotal.toLocaleString('tr-TR', { minimumFractionDigits: 2 }) + " ₺";
+            document.getElementById('pendingCount').innerText = pendingCount + " Adet";
+            
+            // Eğer her şey bittiyse tebrik mesajı
+            if(pendingCount === 0) {
+                const emptyMsg = document.createElement('div');
+                emptyMsg.innerHTML = `
+                    <div style="text-align:center; padding:50px; color:#64748b;">
+                        <i class="fa-solid fa-circle-check" style="font-size:4rem; color:#10b981; margin-bottom:20px;"></i>
+                        <h2>Harika İş!</h2>
+                        <p>Masada onay bekleyen hiçbir dosya kalmadı.</p>
+                    </div>`;
+                document.querySelector('.ik-content').appendChild(emptyMsg);
+            }
+        }, 600);
+    }
+}
+    // Sayfa her açıldığında giden mesajları ortak hafızadan (localStorage) çek
+    document.addEventListener('DOMContentLoaded', function() {
+        updateOutgoingList(); 
+    });
+
+    function updateOutgoingList() {
+        const listContainer = document.getElementById('notif-outgoing-list');
+        if (!listContainer) return;
+
+        // Tarayıcının ortak hafızasından mesajları alınıyor
+        const gidenMesajlar = JSON.parse(localStorage.getItem('guardia_giden_mesajlar') || '[]');
+
+        listContainer.innerHTML = ""; 
+
+        if (gidenMesajlar.length === 0) {
+            listContainer.innerHTML = '<div class="notif-item"><span>Henüz gönderilmiş bir not bulunmuyor.</span></div>';
+        } else {
+            gidenMesajlar.forEach(msg => {
+                listContainer.innerHTML += `
+                    <div class="notif-item">
+                        <strong>SİZDEN -> ${msg.hedef}</strong>
+                        <span>${msg.icerik}</span>
+                        <small style="display:block; color: #94a3b8; font-size: 0.75rem; margin-top: 5px;">
+                            <i class="fa-regular fa-clock"></i> ${msg.saat}
+                        </small>
+                    </div>`;
+            });
+        }
+    }
+</script>
+</body>
+</html>

@@ -1,0 +1,1478 @@
+<!DOCTYPE html>
+<html lang="tr">
+
+<head>
+    <script>
+        if (!localStorage.getItem('token')) {
+            window.location.href = 'admin-login.html';
+        }
+    </script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Guardia | İzin Talepleri</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/ik-sidebar.css">
+    <link rel="stylesheet" href="css/dept-common.css">
+    <style>
+        :root {
+            --sidebar: #0f172a;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #e11d48;
+            --accent: #38bdf8;
+        }
+
+        /* 1. GRID YAPISI */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+            margin-bottom: 25px;
+        }
+
+        /* 2. KARTLAR (Bordro Stili) */
+        .stat-card {
+            background: white;
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.02);
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            border: 1px solid #f1f5f9;
+        }
+
+        /* Kart Renk Şeritleri */
+        .card-pending {
+            border-left: 6px solid var(--accent);
+        }
+
+        /* Bekleyen: Mavi */
+        .card-active {
+            border-left: 6px solid #10b981;
+        }
+
+        /* Bugün İzinde: Yeşil */
+        .card-future {
+            border-left: 6px solid #f59e0b;
+        }
+
+        /* Gelecek: Sarı */
+        .stat-card.card-pending .stat-icon {
+            background: #e0f2fe !important;
+            color: var(--accent) !important;
+        }
+
+        .stat-card:hover.stat-card.active-card {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.06);
+            background-color: #f8fafc;
+            border-bottom: 3px solid var(--accent);
+            /* Hangi karttaysak altı parlasın */
+            background: #f8fafc;
+            transform: translateY(-5px);
+        }
+
+        /* 3. SEÇİLENLERİ ONAYLA BARI  */
+        .bulk-action-container {
+            display: none;
+            /* JS ile açılacak */
+            background: white;
+            padding: 12px 25px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            align-items: center;
+            justify-content: space-between;
+            border: 1px solid #e2e8f0;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+        }
+
+        .btn-bulk-approve {
+            background: #1e293b;
+            /* Koyu Lacivert */
+            color: white;
+            border: none;
+            padding: 10px 22px;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: 0.2s;
+        }
+
+            .btn-bulk-approve:hover {
+                background: #334155;
+            }
+
+        /* TABLO TASARIMI */
+        .table-container {
+            background: white;
+            border-radius: 20px;
+            padding: 0;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+            /* overflow:hidden yapışkan thead’i bazı tarayıcılarda kaydırır; kırpma .izin-table-scroll’ta */
+            overflow: visible;
+        }
+
+        .izin-table-scroll {
+            overflow: auto;
+            padding: 0 20px 20px 20px;
+            overscroll-behavior: contain;
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+            border-radius: 20px;
+            background: #fff;
+            -webkit-overflow-scrolling: touch;
+        }
+
+            .izin-table-scroll::-webkit-scrollbar {
+                display: none;
+            }
+
+        /* Tablo kutusunda kaydırma; başlık satırı sticky, çubuk gizli */
+        .ik-content.ik-izin-page {
+            overflow: hidden !important;
+            display: flex;
+            flex-direction: column;
+            min-height: 0;
+        }
+
+            .ik-content.ik-izin-page > .dept-header,
+            .ik-content.ik-izin-page > .stats-grid,
+            .ik-content.ik-izin-page > .search-wrapper,
+            .ik-content.ik-izin-page > .bulk-action-container {
+                flex-shrink: 0;
+            }
+
+            .ik-content.ik-izin-page > .table-container {
+                flex: 1;
+                min-height: 0;
+                display: flex;
+                flex-direction: column;
+                overflow: visible;
+            }
+
+            .ik-content.ik-izin-page .izin-table-scroll {
+                flex: 1;
+                min-height: 0;
+                max-height: none;
+            }
+
+        #izinTalepleriTable {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+            margin-top: 20px;
+        }
+
+            #izinTalepleriTable thead th {
+                text-align: left;
+                padding: 15px;
+                color: var(--text-sub);
+                border-bottom: 2px solid #f1f5f9;
+                font-size: 0.85rem;
+                text-transform: uppercase;
+                position: -webkit-sticky;
+                position: sticky;
+                top: 0;
+                z-index: 15;
+                background-color: #fff;
+                background-clip: padding-box;
+                box-shadow: 0 1px 0 #f1f5f9;
+            }
+
+            #izinTalepleriTable tbody td {
+                padding: 15px;
+                border-bottom: 1px solid #f1f5f9;
+                font-size: 0.9rem;
+                color: var(--text-main);
+                background: #fff;
+                position: relative;
+                z-index: 0;
+            }
+
+        .row-checkbox {
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+            accent-color: var(--accent);
+        }
+
+        .badge {
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
+        .bg-warning {
+            background: #fff7ed;
+            color: #9a3412;
+        }
+
+        .bg-success {
+            background: #f0fdf4;
+            color: #166534;
+        }
+
+        .bg-danger {
+            background: #fef2f2;
+            color: #991b1b;
+        }
+
+        .btn-action {
+            padding: 8px 14px;
+            border-radius: 8px;
+            border: none;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 0.8rem;
+        }
+
+        .btn-approve {
+            background: var(--success);
+            color: white;
+        }
+
+        .btn-reject {
+            background: var(--danger);
+            color: white;
+            margin-left: 5px;
+        }
+
+        /* MODAL */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(15, 23, 42, 0.7);
+            align-items: center;
+            justify-content: center;
+            backdrop-filter: blur(4px);
+        }
+
+        .modal-content {
+            background: white;
+            padding: 30px;
+            border-radius: 24px;
+            width: 420px;
+            text-align: center;
+        }
+
+        #rejectReason {
+            width: 100%;
+            height: 120px;
+            margin: 15px 0;
+            padding: 12px;
+            border-radius: 12px;
+            border: 1.5px solid #e2e8f0;
+            resize: none;
+            box-sizing: border-box;
+            outline: none;
+        }
+
+        .type-label {
+            font-weight: 600;
+            font-size: 0.85rem;
+        }
+
+        .type-yillik,
+        .type-mazeret,
+        .type-saglik {
+            color: var(--accent);
+            /* Hepsi tek renk: Mavi */
+            font-weight: 600;
+        }
+
+        /* Gerektiğinde sütunları gizlemek için sınıflar */
+        .hide-column {
+            display: none !important;
+        }
+
+        .show-inline {
+            display: inline-block !important;
+        }
+
+        /* Arama Kutusu Konteynırı */
+        .search-wrapper {
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: flex-end;
+        }
+
+        .search-input-group {
+            position: relative;
+            width: 300px;
+        }
+
+            .search-input-group i {
+                position: absolute;
+                left: 12px;
+                top: 50%;
+                transform: translateY(-50%);
+                color: var(--text-sub);
+            }
+
+        .search-control {
+            width: 100%;
+            padding: 10px 10px 10px 35px;
+            border-radius: 10px;
+            border: 1.5px solid #e2e8f0;
+            outline: none;
+            transition: 0.3s;
+        }
+
+            .search-control:focus {
+                border-color: var(--accent);
+                box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.1);
+            }
+
+        /* Kalan İzin Uyarı Stili (Özellik 3) */
+        .low-leave {
+            color: #ef4444 !important;
+            /* Canlı Kırmızı */
+            background: #fef2f2;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-weight: 800 !important;
+        }
+
+        .sicil-badge {
+            background: #f1f5f9;
+            color: #64748b;
+            padding: 2px 8px;
+            border-radius: 6px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            margin-left: 8px;
+            border: 1px solid #e2e8f0;
+        }
+
+        /* Aktif kartların alt çizgileri */
+        .card-pending.active-card {
+            border-bottom: 4px solid #38bdf8 !important;
+            background: #f0f9ff !important;
+        }
+
+        .card-active.active-card {
+            border-bottom: 4px solid #10b981 !important;
+            /* Yeşil */
+            background: #f0fdf4;
+        }
+
+        .card-future.active-card {
+            border-bottom: 4px solid #f59e0b !important;
+            /* Sarı */
+            background: #fffbeb;
+        }
+
+        /* Reddedilenler Arşivi aktifse onun da rengi olsun */
+        .btn-archive-active {
+            background: #fee2e2 !important;
+            color: #ef4444 !important;
+            border-color: #fecaca !important;
+        }
+
+        /* Reddedilme nedenini bir tık aşağı iter */
+        td small {
+            display: inline-block;
+            /* Boşluğun etkili olması için şart */
+            margin-top: 10px !important;
+            /* İstediğin o aralık burada oluşur */
+        }
+    </style>
+</head>
+
+<body class="ik-layout" onload="filterLeaveRequests('all')">
+
+    <div class="ik-sidebar">
+        <h2>🛡️ Guardia İK</h2>
+        <ul class="ik-nav-links">
+            <li>
+                <a href="ik-index.html"
+                   style="text-decoration:none;color:inherit;display:flex;align-items:center;gap:12px;">
+                    <i class="fa-solid fa-chart-line"></i> Genel Bakış
+                </a>
+            </li>
+            <li>
+                <a href="ik-personel-listesi.html"
+                   style="text-decoration:none;color:inherit;display:flex;align-items:center;gap:12px;">
+                    <i class="fa-solid fa-users"></i> Personel Listesi
+                </a>
+            </li>
+            <li class="active"><i class="fa-solid fa-calendar-check"></i> İzin Talepleri</li>
+            <li>
+                <a href="ik-bordro.html"
+                   style="text-decoration:none;color:inherit;display:flex;align-items:center;gap:12px;">
+                    <i class="fa-solid fa-file-invoice-dollar"></i> Bordro Yönetimi
+                </a>
+            </li>
+            <li>
+                <a href="ik-duyuru-yayinla.html"
+                   style="text-decoration:none;color:inherit;display:flex;align-items:center;gap:12px;">
+                    <i class="fa-solid fa-bullhorn"></i> Duyuru Yayınla
+                </a>
+            </li>
+        </ul>
+        <div class="ik-user-tag">
+            <div class="ik-user-avatar" id="sidebarAvatar"><img src="img/erkek_1.jpg.png" alt="Selin Aksoy"></div>
+            <div class="ik-user-info"><span id="sidebarAdSoyad">Selin Aksoy</span><small id="sidebarDepartman">İK Yöneticisi</small></div>
+        </div>
+    </div>
+
+    <div class="ik-content ik-izin-page">
+        <div class="dept-header">
+            <div class="page-title-group">
+                <h1>İzin Takip Sistemi</h1>
+                <p class="page-desc">Personel izin taleplerini onaylayın ve izleyin.</p>
+            </div>
+
+            <div class="notif-container">
+                <input type="checkbox" id="notif-toggle" aria-hidden="true" style="display:none;">
+                <label for="notif-toggle" class="notif-trigger" aria-label="Bildirimler">
+                    <i class="fa-solid fa-bell"></i>
+                    <span class="notif-badge">2</span>
+                </label>
+
+                <div class="notif-dropdown">
+                    <h4>Mesaj Merkezi</h4>
+
+                    <div id="notif-incoming-list" class="notif-list">
+                        <div class="notif-item"
+                             onclick="openReplyModal('HUKUK', 'İzin yönetmeliği değişikliği onaylandı, sisteme yüklenebilir.')"
+                             style="cursor: pointer;">
+                            <span class="notif-status"></span>
+                            <strong>HUKUK</strong>
+                            <span>İzin yönetmeliği değişikliği onaylandı.</span>
+                            <small style="display:block; color: #94a3b8; font-size: 0.75rem; margin-top: 5px;">
+                                <i class="fa-regular fa-clock"></i> 10:45
+                            </small>
+                        </div>
+
+                        <div class="notif-item"
+                             onclick="openReplyModal('BİLGİ İŞLEM', 'İzin takip modülündeki sistemsel hata giderildi.')"
+                             style="cursor: pointer;">
+                            <span class="notif-status"></span>
+                            <strong>BİLGİ İŞLEM</strong>
+                            <span>İzin takip modülü hatası giderildi.</span>
+                            <small style="display:block; color: #94a3b8; font-size: 0.75rem; margin-top: 5px;">
+                                <i class="fa-regular fa-clock"></i> 09:20
+                            </small>
+                        </div>
+                    </div>
+
+                    <div id="notif-outgoing-list" class="notif-list" style="display:none;">
+                        <div class="notif-item">
+                            <strong>SİZDEN -> FİNANS</strong>
+                            <span>İzin ödenek raporları gönderildi.</span>
+                            <small style="display:block; color: #94a3b8; font-size: 0.75rem; margin-top: 5px;">
+                                <i class="fa-regular fa-clock"></i> 14:15
+                            </small>
+                        </div>
+                    </div>
+
+                    <div class="notif-footer">
+                        <button type="button" class="notif-action-btn" onclick="showIncoming()">
+                            <i class="fa-solid fa-bell"></i> Gelenler
+                        </button>
+                        <button type="button" class="notif-action-btn" onclick="showOutgoing()">
+                            <i class="fa-solid fa-paper-plane"></i> Gidenler
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="stats-grid">
+            <div class="stat-card card-pending" onclick="filterLeaveRequests('bekleyen')"
+                 ondblclick="filterLeaveRequests('all')">
+                <div class="stat-icon" style="background: #e0f2fe; color: #0284c7;">
+                    <i class="fa-solid fa-clock"></i>
+                </div>
+                <div><small style="color:var(--text-sub)">Bekleyen Talepler</small><br><strong>0 Talep </strong></div>
+            </div>
+
+            <div class="stat-card card-active" onclick="filterLeaveRequests('izinde')"
+                 ondblclick="filterLeaveRequests('all')">
+                <div class="stat-icon" style="background: #dcfce7; color: var(--success);">
+                    <i class="fa-solid fa-user-check"></i>
+                </div>
+                <div><small style="color:var(--text-sub)">Bugün İzinde Olanlar</small><br><strong>0 Kişi </strong></div>
+            </div>
+
+            <div class="stat-card card-future" onclick="filterLeaveRequests('gelecek')"
+                 ondblclick="filterLeaveRequests('all')">
+                <div class="stat-icon" style="background: #fef9c3; color: #f59e0b;">
+                    <i class="fa-solid fa-calendar-day"></i>
+                </div>
+                <div><small style="color:var(--text-sub)">Gelecek İzinler</small><br><strong> 0 Talep</strong></div>
+            </div>
+        </div>
+
+        <div class="search-wrapper" style="display:flex; gap:10px; align-items:center; justify-content: flex-end;">
+            <button id="btnRed" onclick="filterLeaveRequests('reddedilenler')" class="btn-action"
+                    style="background:#f1f5f9; color:#64748b; border:1px solid #e2e8f0; height:42px; transition: 0.3s; display: flex; align-items: center; gap: 8px;">
+                <i class="fa-solid fa-trash-can"></i> Reddedilenler Arşivi
+            </button>
+            <div class="search-input-group">
+                <i class="fa-solid fa-magnifying-glass"></i>
+                <input type="text" id="personelSearch" class="search-control" placeholder="Personel ismiyle ara..."
+                       onkeyup="searchPersonel()">
+            </div>
+        </div>
+
+        <div id="bulkActionBar" class="bulk-action-container">
+            <div style="color: #64748b; font-weight: 500;">
+                <i class="fa-solid fa-check-circle" style="color: #10b981;"></i>
+                <span id="selectedCount">0</span> kayıt seçildi
+            </div>
+            <button class="btn-bulk-approve" onclick="bulkApprove()">
+                Seçilenleri Onayla
+            </button>
+        </div>
+        <div class="table-container">
+            <div class="izin-table-scroll">
+                <table id="izinTalepleriTable">
+                    <thead>
+                        <tr>
+                            <th class="col-check" style="width: 40px;">
+                                <input type="checkbox" class="row-checkbox"
+                                       onclick="toggleAll(this)">
+                            </th>
+                            <th>Personel Bilgileri</th>
+                            <th>İzin Türü</th>
+                            <th>Başlangıç - Bitiş</th>
+                            <th>Süre</th>
+                            <th>Kalan İzin Hakkı</th>
+                            <th class="col-status">Durum</th>
+                            <th class="col-actions">İşlemler</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr data-id="202401">
+                            <td><input type="checkbox" class="row-checkbox row-select" onclick="updateBulkBar()"></td>
+                            <td>
+                                <strong>Ahmet Yılmaz</strong> <br>
+                                <small style="color: var(--accent); font-weight: 600;">SİCİL: #202401</small><br>
+                                <small style="color: var(--text-sub);">Yazılım Departmanı</small>
+                            </td>
+                            <td><span class="type-label type-yillik">Yıllık İzin</span></td>
+                            <td>12 Mart - 15 Mart</td>
+                            <td><strong>3 Gün</strong></td>
+                            <td><span style="font-weight: 600; color: var(--sidebar);">11 Gün</span></td>
+                            <td><span class="badge bg-warning">Bekliyor</span></td>
+                            <td>
+                                <button class="btn-action btn-approve"
+                                        onclick="approveRequest( this)">
+                                    Onayla
+                                </button>
+                                <button class="btn-action btn-reject" onclick="rejectRequest( this)"
+                                        style="margin-left: 5px;">
+                                    Reddet
+                                </button>
+                            </td>
+                        </tr>
+                        <tr data-id="202402">
+                            <td><input type="checkbox" class="row-checkbox row-select" onclick="updateBulkBar()"></td>
+                            <td>
+                                <strong>Zeynep Kaya</strong> <br>
+                                <small style="color: var(--accent); font-weight: 600;">SİCİL: #202402</small><br>
+                                <small style="color: var(--text-sub);">Üretim Departmanı</small>
+                            </td>
+                            <td><span class="type-label type-yillik">Yıllık İzin</span></td>
+                            <td>28 Mart - 30 Mart</td>
+                            <td><strong>3 Gün</strong></td>
+                            <td><span style="font-weight: 600; color: var(--sidebar);">9 Gün</span></td>
+                            <td><span class="badge bg-warning">Bekliyor</span></td>
+                            <td>
+                                <button class="btn-action btn-approve"
+                                        onclick="approveRequest( this)">
+                                    Onayla
+                                </button>
+                                <button class="btn-action btn-reject" onclick="rejectRequest( this)"
+                                        style="margin-left: 5px;">
+                                    Reddet
+                                </button>
+                            </td>
+                        </tr>
+                        <tr data-id="202403">
+                            <td><input type="checkbox" class="row-checkbox row-select" onclick="updateBulkBar()"></td>
+                            <td>
+                                <strong>Can Öztürk</strong> <br>
+                                <small style="color: var(--accent); font-weight: 600;">SİCİL: #202403</small><br>
+                                <small style="color: var(--text-sub);">İnsan Kaynakları</small>
+                            </td>
+                            <td><span class="type-label type-mazeret">Mazeret İzni</span></td>
+                            <td>26 Mart - 26 Mart</td>
+                            <td><strong>1 Gün</strong></td>
+                            <td><span style="font-weight: 600;">14 Gün</span></td>
+                            <td><span class="badge bg-warning">Bekliyor</span></td>
+                            <td>
+                                <button class="btn-action btn-approve"
+                                        onclick="approveRequest( this)">
+                                    Onayla
+                                </button>
+                                <button class="btn-action btn-reject" onclick="rejectRequest( this)"
+                                        style="margin-left: 5px;">
+                                    Reddet
+                                </button>
+                            </td>
+                        </tr>
+                        <tr data-id="202407">
+                            <td><input type="checkbox" class="row-checkbox row-select" onclick="updateBulkBar()"></td>
+                            <td>
+                                <strong>Elif Şahin</strong> <br>
+                                <small style="color: var(--accent); font-weight: 600;">SİCİL: #202407</small><br>
+                                <small style="color: var(--text-sub);">Lojistik Departmanı</small>
+                            </td>
+                            <td><span class="type-label type-saglik">Sağlık Raporu</span></td>
+                            <td>27 Mart - 29 Mart</td>
+                            <td><strong>3 Gün</strong></td>
+                            <td><span style="font-weight: 600;">12 Gün</span></td>
+                            <td><span class="badge bg-warning">Bekliyor</span></td>
+                            <td>
+                                <button class="btn-action btn-approve"
+                                        onclick="approveRequest( this)">
+                                    Onayla
+                                </button>
+                                <button class="btn-action btn-reject" onclick="rejectRequest(this)"
+                                        style="margin-left: 5px;">
+                                    Reddet
+                                </button>
+                            </td>
+                        </tr>
+                        <tr data-id="202409">
+                            <td><input type="checkbox" class="row-checkbox row-select" onclick="updateBulkBar()"></td>
+                            <td>
+                                <strong>Burak Aydın</strong> <br>
+                                <small style="color: var(--accent); font-weight: 600;">SİCİL: #202409</small><br>
+                                <small style="color: var(--text-sub);">Yazılım Departmanı</small>
+                            </td>
+                            <td><span class="type-label type-yillik">Yıllık İzin</span></td>
+                            <td>12 Nisan - 15 Nisan</td>
+                            <td><strong>5 Gün</strong></td>
+                            <td><span style="font-weight: 600;">6 Gün</span></td>
+                            <td><span class="badge bg-warning">Bekliyor</span></td>
+                            <td>
+                                <button class="btn-action btn-approve"
+                                        onclick="approveRequest( this)">
+                                    Onayla
+                                </button>
+                                <button class="btn-action btn-reject" onclick="rejectRequest( this)"
+                                        style="margin-left: 5px;">
+                                    Reddet
+                                </button>
+                            </td>
+                        </tr>
+                        <tr data-id="202411">
+                            <td><input type="checkbox" class="row-checkbox row-select" onclick="updateBulkBar()"></td>
+                            <td>
+                                <strong>Selin Yıldız</strong> <br>
+                                <small style="color: var(--accent); font-weight: 600;">SİCİL: #202411</small><br>
+                                <small style="color: var(--text-sub);">Pazarlama Departmanı</small>
+                            </td>
+                            <td><span class="type-label type-yillik">Yıllık İzin</span></td>
+                            <td>18 Nisan - 22 Nisan</td>
+                            <td><strong>5 Gün</strong></td>
+                            <td><span style="font-weight: 600;">4 Gün</span></td>
+                            <td><span class="badge bg-warning">Bekliyor</span></td>
+                            <td>
+                                <button class="btn-action btn-approve"
+                                        onclick="approveRequest( this)">
+                                    Onayla
+                                </button>
+                                <button class="btn-action btn-reject" onclick="rejectRequest( this)"
+                                        style="margin-left: 5px;">
+                                    Reddet
+                                </button>
+                            </td>
+                        </tr>
+
+
+
+                    </tbody>
+
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div id="rejectModal" class="modal">
+        <div class="modal-content">
+            <div style="color: var(--danger); font-size: 3rem; margin-bottom: 10px;">
+                <i class="fa-solid fa-circle-xmark"></i>
+            </div>
+            <h3>Talebi Reddet</h3>
+            <p id="rejectingName" style="color: var(--text-sub); font-size: 0.9rem;"></p>
+
+            <textarea id="rejectReason" placeholder="Reddetme nedenini yazınız..."></textarea>
+            <div style="display: flex; gap: 10px;">
+                <button onclick="closeReject()"
+                        style="flex:1; padding:12px; border:none; border-radius:10px; cursor:pointer; background:#f1f5f9;">
+                    İptal
+                </button>
+                <button onclick="confirmReject()"
+                        style="flex:1; padding:12px; border:none; border-radius:10px; background:var(--danger); color:white; cursor:pointer; font-weight:600;">
+                    Reddet
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div id="note-sent">Notunuz seçilen birimlere iletildi.</div>
+    <div id="replyModal" class="reply-modal">
+        <div class="reply-content">
+            <div class="reply-header">
+                <i class="fa-solid fa-reply"></i>
+                <h3 id="replyTarget">HUKUK Birimine Cevap Yaz</h3>
+            </div>
+
+            <div id="replyOriginalMessage" class="original-msg-preview">
+                "5 adet yeni iş sözleşmesi onaylandı."
+            </div>
+
+            <textarea id="replyText" class="reply-textarea" placeholder="Cevabınızı buraya yazın..."></textarea>
+
+            <div class="reply-actions">
+                <button class="btn-reply-cancel" onclick="closeReplyModal()">Vazgeç</button>
+                <button class="btn-reply-send" onclick="sendReply()">Cevapla</button>
+            </div>
+        </div>
+    </div>
+    <script>
+        const ikKanali = new BroadcastChannel('guardia-ik');
+        ikKanali.onmessage = (e) => {
+            if (e.data.tip === 'izin-guncellendi' || e.data.tip === 'personel-guncellendi') {
+                updateStats();
+                izinListesiniYukle();
+            }
+        };
+
+
+        function apiFetch(url, options = {}) {
+            const token = localStorage.getItem('token');
+
+
+            let sayfaBirim = "HUKUK";
+            if (window.location.href.includes("ik-") || window.location.href.includes("ik-index")) {
+                sayfaBirim = "INSAN_KAYNAKLARI";
+            }
+
+            options.headers = {
+                ...options.headers,
+                'Authorization': 'Bearer ' + token,
+                'X-Aktif-Birim': sayfaBirim,
+                'Content-Type': 'application/json'
+            };
+
+            return fetch(url, options).then(res => {
+                if (!res.ok) {
+                    throw new Error(`HTTP Hatası! Durum: ${res.status}`);
+                }
+                return res;
+            });
+        }
+
+        const API_URL = '/api/IkIzinKontrolcusu';
+        let currentFilter = 'all';
+
+        const TR_AY_INDEKSI = {
+            ocak: 0, oca: 0, şubat: 1, şub: 1, subat: 1, sub: 1, mart: 2, mar: 2,
+            nisan: 3, nis: 3, mayıs: 4, may: 4, mayis: 4, haziran: 5, haz: 5,
+            temmuz: 6, tem: 6, ağustos: 7, ağu: 7, agustos: 7, agu: 7,
+            eylül: 8, eyl: 8, eylul: 8, ekim: 9, eki: 9, kasım: 10, kas: 10, kasim: 10,
+            aralık: 11, ara: 11, aralik: 11
+        };
+
+
+        document.addEventListener('DOMContentLoaded', function () {
+            const adminAdSoyad = localStorage.getItem('adminAdSoyad');
+            const adminDepartman = localStorage.getItem('adminDepartman');
+
+            if (adminAdSoyad) {
+                document.getElementById('sidebarAdSoyad').textContent = adminAdSoyad;
+            }
+            if (adminDepartman) {
+                document.getElementById('sidebarDepartman').textContent = adminDepartman;
+            }
+
+
+
+            filterLeaveRequests('all');
+            setTimeout(() => updateStatsFromTable(), 50);
+            updateStats();
+            izinListesiniYukle();
+
+            // Otomatik polling: her 15 saniyede yeni izin taleplerini kontrol et
+            setInterval(function () {
+                izinListesiniYukle();
+            }, 15000);
+
+
+            showIncoming();
+
+
+            const searchInput = document.getElementById('personelSearch');
+            if (searchInput) {
+                searchInput.addEventListener('input', searchPersonel);
+            }
+
+            const notifTrigger = document.querySelector('.notif-trigger');
+            const notifDropdown = document.querySelector('.notif-dropdown');
+            const notifContainer = document.querySelector('.notif-container');
+
+            if (notifTrigger) {
+                notifTrigger.removeAttribute('for');
+                notifTrigger.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+
+
+                    if (notifDropdown && notifDropdown.classList.contains('active')) {
+                        notifKapat();
+                    } else {
+                        notifAc();
+                    }
+
+
+                    const badge = document.querySelector('.notif-container .notif-badge');
+                    if (badge) badge.style.display = 'none';
+                });
+            }
+
+
+            if (notifDropdown) notifDropdown.addEventListener('click', e => e.stopPropagation());
+            if (notifContainer) notifContainer.addEventListener('click', e => e.stopPropagation());
+
+
+            document.addEventListener('click', function () {
+                if (typeof notifKapat === 'function') {
+                    notifKapat();
+                }
+            });
+        });
+
+        function searchPersonel() {
+            const input = document.getElementById('personelSearch').value.toLowerCase().trim();
+            const rows = document.querySelectorAll('#izinTalepleriTable tbody tr[data-id]');
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+
+            rows.forEach(row => {
+                const nameCell = row.cells[1];
+                const personelText = nameCell ? nameCell.innerText.toLowerCase() : "";
+                const badge = row.querySelector('.badge');
+                const statusText = badge ? badge.innerText.trim().toLowerCase() : "";
+
+                const dateRangeText = row.cells[3] ? row.cells[3].innerText : "";
+                const parts = dateRangeText.split('-');
+
+                // Güvenli parse işlemi
+                const startDate = parts[0] ? parseDate(parts[0].trim()) : new Date();
+                const endDate = parts[1] ? parseDate(parts[1].trim()) : startDate;
+
+                startDate.setHours(0, 0, 0, 0);
+                endDate.setHours(0, 0, 0, 0);
+
+                const isApproved = (statusText === 'onaylandı' || statusText === 'onaylandi');
+                const isRejected = statusText.includes('reddedildi');
+
+                let matchesFilter = false;
+                if (currentFilter === 'all') matchesFilter = true;
+                else if (currentFilter === 'bekleyen') matchesFilter = (statusText === 'bekliyor');
+                else if (currentFilter === 'izinde') matchesFilter = (isApproved && today >= startDate && today <= endDate);
+                else if (currentFilter === 'future' || currentFilter === 'gelecek') matchesFilter = (isApproved && startDate > today);
+                else if (currentFilter === 'reddedilenler') matchesFilter = isRejected;
+
+                row.style.display = (matchesFilter && personelText.includes(input)) ? '' : 'none';
+            });
+        }
+
+        //SEÇİM SIFIRLAMA
+        function clearSelections() {
+            const checkboxes = document.querySelectorAll('.row-select');
+            checkboxes.forEach(cb => cb.checked = false);
+            const selectAll = document.querySelector('.col-check input');
+            if (selectAll) selectAll.checked = false;
+            updateBulkBar();
+        }
+
+        function parseDate(dateStr) {
+            if (!dateStr) return new Date();
+            let cleanStr = dateStr.trim().toLowerCase();
+
+            if (cleanStr.includes('.')) {
+                const parts = cleanStr.split('.');
+                return new Date(parseInt(parts[2]), parseInt(parts[1]) - 1, parseInt(parts[0]));
+            }
+
+            const parts = cleanStr.split(/\s+/);
+            const day = parseInt(parts[0]);
+            const monthKey = parts[1];
+
+            const month = TR_AY_INDEKSI[monthKey] !== undefined ? TR_AY_INDEKSI[monthKey] : 0;
+            return new Date(2026, month, day);
+        }
+
+        // ANA FİLTRELEME UI YÖNETİMİ
+        function filterLeaveRequests(type, options) {
+            const skipToggle = options && options.skipToggle;
+            if (!skipToggle) {
+                if (currentFilter === type && type !== 'all') type = 'all';
+                currentFilter = type;
+            }
+
+            document.querySelectorAll('.stat-card').forEach(c => c.classList.remove('active-card'));
+            const btnRed = document.getElementById('btnRed');
+            if (btnRed) btnRed.classList.remove('btn-archive-active');
+
+            if (currentFilter === 'reddedilenler') {
+                if (btnRed) btnRed.classList.add('btn-archive-active');
+            } else if (currentFilter !== 'all') {
+                const activeCard = document.querySelector(`.card-${type === 'bekleyen' ? 'pending' : (type === 'izinde' ? 'active' : 'future')}`);
+                if (activeCard) activeCard.classList.add('active-card');
+            }
+
+            const actionHeader = document.querySelector('#izinTalepleriTable thead th:last-child');
+            const selectAllTh = document.querySelector('.col-check');
+
+            if (currentFilter === 'bekleyen') {
+                if (actionHeader) actionHeader.style.display = '';
+                if (selectAllTh) selectAllTh.style.display = '';
+            } else {
+                if (actionHeader) actionHeader.style.display = 'none';
+                if (selectAllTh) selectAllTh.style.display = 'none';
+            }
+
+            document.querySelectorAll('#izinTalepleriTable tbody tr[data-id]').forEach(row => {
+                const checkTd = row.cells[0];
+                const actionTd = row.cells[7];
+                if (checkTd) checkTd.style.display = (currentFilter === 'bekleyen') ? '' : 'none';
+                if (actionTd) actionTd.style.display = (currentFilter === 'bekleyen') ? '' : 'none';
+            });
+
+            clearSelections();
+            searchPersonel();
+        }
+
+        function updateBulkBar() {
+            const selectedCount = document.querySelectorAll('.row-select:checked').length;
+            const countSpan = document.getElementById('selectedCount');
+            const bulkBar = document.getElementById('bulkActionBar');
+            if (countSpan) countSpan.innerText = selectedCount;
+            if (bulkBar) {
+                bulkBar.style.display = (selectedCount > 0 && currentFilter === 'bekleyen') ? 'flex' : 'none';
+            }
+        }
+
+        function toggleAll(source) {
+            const checkboxes = document.querySelectorAll('.row-select');
+            checkboxes.forEach(cb => {
+                if (cb.closest('tr').style.display !== 'none') cb.checked = source.checked;
+            });
+            updateBulkBar();
+        }
+
+        // BACKEND API TETİKLEYİCİLERİ
+        async function bulkApprove() {
+            const selected = Array.from(document.querySelectorAll('.row-select:checked'));
+            if (selected.length === 0) return alert("Personel seçin.");
+            if (confirm(`Seçili ${selected.length} talebi onaylıyor musunuz?`)) {
+                for (const cb of selected) {
+                    const row = cb.closest('tr');
+
+                    const res = await apiFetch(`${API_URL}/izin-onayla/${row.getAttribute('data-id')}`, { method: 'POST' });
+                    if (res.ok) finalizeRowAction(row, "Onaylandı", "bg-success", "check", "var(--success)");
+                }
+                ikKanali.postMessage({ tip: 'izin-guncellendi' });
+                refreshAfterStatusChange();
+                clearSelections();
+                alert("Toplu onay tamamlandı.");
+            }
+        }
+
+        async function approveRequest(id, name, btn) {
+            if (confirm(`${name} onaylıyor musunuz?`)) {
+                const res = await apiFetch(`${API_URL}/izin-onayla/${id}`, { method: 'POST' });
+                if (res.ok) {
+                    ikKanali.postMessage({ tip: 'izin-guncellendi' });
+                    finalizeRowAction(btn.closest('tr'), "Onaylandı", "bg-success", "check", "var(--success)");
+                    refreshAfterStatusChange();
+                    clearSelections();
+                }
+            }
+        }
+
+        let activeRejectRow = null;
+        function rejectRequest(btn) {
+            activeRejectRow = btn.closest('tr');
+            document.getElementById('rejectingName').innerText = activeRejectRow.querySelector('strong').innerText + " için red nedeni:";
+            document.getElementById('rejectModal').style.display = 'flex';
+        }
+
+        async function confirmReject() {
+            const reason = document.getElementById('rejectReason').value.trim();
+            if (!reason) {
+                alert("Lütfen red nedenini belirtiniz.");
+                return;
+            }
+            try {
+                const id = activeRejectRow.getAttribute('data-id');
+
+                const res = await apiFetch(`${API_URL}/izin-reddet/${id}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(reason)
+                });
+                if (res.ok) {
+                    ikKanali.postMessage({ tip: 'izin-guncellendi' });
+                    finalizeRowAction(activeRejectRow, "Reddedildi", "bg-danger", "circle-xmark", "var(--danger)", reason);
+                    document.getElementById('rejectModal').style.display = 'none';
+                    document.getElementById('rejectReason').value = '';
+                    refreshAfterStatusChange();
+                    clearSelections();
+                } else {
+                    const errorText = await res.text();
+                    alert("İşlem başarısız: " + errorText);
+                }
+            } catch (err) {
+                console.error("Reddetme işlemi sırasında hata:", err);
+                alert("Sunucu bağlantısı kurulamadı.");
+            }
+        }
+
+        async function izinListesiniYukle() {
+            try {
+                const res = await apiFetch(`${API_URL}/izin-listesi-getir`);
+                if (!res.ok) throw new Error('Sunucu hatası: ' + res.status);
+                const liste = await res.json();
+
+                const tbody = document.querySelector('#izinTalepleriTable tbody');
+                const thead = document.querySelector('#izinTalepleriTable thead');
+                if (!tbody || !thead) return;
+
+                thead.innerHTML = `
+        <tr>
+            <th class="col-check" style="display:${currentFilter === 'bekleyen' ? '' : 'none'}; width: 40px; text-align: center;"><input type="checkbox" class="row-checkbox" onclick="toggleAll(this)"></th>
+            <th style="text-align: left; padding-left: 15px;">Personel Bilgileri</th>
+            <th style="text-align: left; padding-left: 20px;">İzin Türü</th>
+            <th style="text-align: left; padding-left: 20px;">Başlangıç - Bitiş</th>
+            <th style="text-align: left; padding-left: 20px;">Süre</th>
+            <th style="text-align: left; padding-left: 20px;">Kalan İzin Hakkı</th>
+            <th style="text-align: left; padding-left: 45px;">Durum</th>
+            <th style="display:${currentFilter === 'bekleyen' ? '' : 'none'}; text-align: left; padding-left: 20px;">İşlemler</th>
+        </tr>
+        `;
+
+                tbody.innerHTML = '';
+
+                if (liste.length === 0) {
+                    tbody.innerHTML = `<tr><td colspan="8" style="text-align:center; padding:30px; color:var(--text-sub);">Kayıtlı izin talebi bulunmuyor.</td></tr>`;
+                    return;
+                }
+
+                liste.forEach(talep => {
+                    const statusLower = talep.durum.toLowerCase();
+                    let badgeClass = 'bg-warning', badgeText = 'Bekliyor', actionContent = '', rejectReasonHtml = '';
+                    const sicilGoster = talep.sicilNo ? (String(talep.sicilNo).startsWith('#') ? talep.sicilNo : '#' + talep.sicilNo) : '';
+
+                    if (statusLower === 'onaylandi' || statusLower === 'onaylandı') {
+                        badgeClass = 'bg-success'; badgeText = 'Onaylandı';
+                        actionContent = `<span style="color:var(--success); font-weight:600; padding-left:20px;"><i class="fa-solid fa-check"></i> Onaylandı</span>`;
+                    } else if (statusLower === 'reddedildi') {
+                        badgeClass = 'bg-danger'; badgeText = 'Reddedildi';
+                        actionContent = `<span style="color:var(--danger); font-weight:600; padding-left:20px;"><i class="fa-solid fa-circle-xmark"></i> Reddedildi</span>`;
+                        if (talep.aciklama) rejectReasonHtml = `<div style="margin-top: 4px; padding-left: 45px; color:#ef4444; font-size:0.75rem; font-style:italic;">Neden: ${talep.aciklama}</div>`;
+                    } else {
+                        actionContent = `
+        <div style="padding-left: 20px;">
+            <button class="btn-action btn-approve" onclick="approveRequest(${talep.id}, '${talep.personelAd}', this)">Onayla</button>
+            <button class="btn-action btn-reject" onclick="rejectRequest(this)" style="margin-left:5px;">Reddet</button>
+        </div>`;
+                    }
+
+                    tbody.innerHTML += `
+        <tr data-id="${talep.id}" style="border-bottom: 1px solid #f1f5f9;">
+            <td style="display:${currentFilter === 'bekleyen' ? '' : 'none'}; vertical-align: middle; text-align: center;">
+                <input type="checkbox" class="row-checkbox row-select" onclick="updateBulkBar()">
+            </td>
+            <td style="padding: 12px 15px; vertical-align: middle; text-align: left;">
+                <div style="display: flex; flex-direction: column; line-height: 1.4;">
+                    <strong style="color: #1e293b; font-size: 0.95rem; font-weight: 700;">${talep.personelAd}</strong>
+                    <span style="color: #0ea5e9; font-size: 0.75rem; font-weight: 700; text-transform: uppercase;">SİCİL: ${sicilGoster}</span>
+                    <span style="color: #64748b; font-size: 0.75rem;">${talep.departman}</span>
+                </div>
+            </td>
+            <td style="vertical-align: middle; text-align: left; padding-left: 20px;">
+                <span class="type-label type-yillik">${talep.izinTuru}</span>
+            </td>
+            <td style="vertical-align: middle; text-align: left; padding-left: 20px; color: #475569; font-weight: 500;">
+                ${talep.tarihAraligi}
+            </td>
+            <td style="vertical-align: middle; text-align: left; padding-left: 20px;">
+                <strong style="color: #1e293b;">${talep.sure} Gün</strong>
+            </td>
+            <td style="vertical-align: middle; text-align: left; padding-left: 20px; font-weight: 600; color: #475569;">
+                ${talep.kalanGun} Gün
+            </td>
+
+<td style="vertical-align: middle; text-align: left; padding-left: 45px;">
+        <div style="display: flex; flex-direction: column; align-items: flex-start; gap: 4px;">
+            <span class="badge ${badgeClass}" style="display: flex; align-items: center; justify-content: center; width: 85px; height: 24px; border-radius: 50px; font-weight: 700; font-size: 0.75rem;">
+                ${badgeText}
+            </span>
+            ${rejectReasonHtml ? rejectReasonHtml : ''}
+        </div>
+</td>
+            <td style="display:${currentFilter === 'bekleyen' ? '' : 'none'}; vertical-align: middle; text-align: left;">
+                ${actionContent}
+            </td>
+        </tr>`;
+                });
+
+                searchPersonel();
+                updateStatsFromTable();
+
+            } catch (err) {
+                console.error('Hata:', err);
+            }
+        }
+
+        function finalizeRowAction(row, statusText, badgeClass, icon, color, reason = null) {
+            const statusCell = row.cells[6];
+            const actionCell = row.cells[7];
+
+
+            if (statusText === "Reddedildi" && reason) {
+                statusCell.innerHTML = `
+            <div style="display: flex; flex-direction: column; align-items: flex-start; gap: 4px;">
+                <span class="badge ${badgeClass}" style="display: flex; align-items: center; justify-content: center; width: 85px; height: 24px; border-radius: 50px; font-weight: 700; font-size: 0.75rem;">${statusText}</span>
+                <span class="reject-reason" style="color:#ef4444; font-size:0.75rem; font-style:italic;">Neden: ${reason}</span>
+            </div>`;
+            } else {
+                statusCell.innerHTML = `
+            <div style="display: flex; flex-direction: column; align-items: flex-start;">
+                <span class="badge ${badgeClass}" style="display: flex; align-items: center; justify-content: center; width: 85px; height: 24px; border-radius: 50px; font-weight: 700; font-size: 0.75rem;">${statusText}</span>
+            </div>`;
+            }
+
+            if (actionCell) {
+                actionCell.innerHTML = `<span style="color:${color}; font-weight:600;"><i class="fa-solid fa-${icon}"></i> ${statusText}</span>`;
+            }
+            if (row.cells[0]) row.cells[0].style.display = "none";
+        }
+
+        function refreshAfterStatusChange() { updateStats(); searchPersonel(); }
+
+        async function updateStats() {
+            try {
+                const res = await apiFetch(`${API_URL}/izin-istatistikleri`);
+                const d = await res.json();
+                document.querySelector('.card-pending strong').innerText = (d.bekleyenCount || 0) + " Talep";
+                document.querySelector('.card-active strong').innerText = (d.izindeCount || 0) + " Kişi";
+                document.querySelector('.card-future strong').innerText = (d.gelecekCount || 0) + " Talep";
+            } catch (e) {
+                updateStatsFromTable();
+            }
+        }
+
+        function updateStatsFromTable() {
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+
+            const rows = document.querySelectorAll('#izinTalepleriTable tbody tr[data-id]');
+            let bekleyen = 0, izinde = 0, gelecek = 0;
+
+            rows.forEach(row => {
+                const badge = row.querySelector('.badge');
+                const statusText = badge ? badge.innerText.trim().toLowerCase() : "";
+
+                const dateRangeText = row.cells[3] ? row.cells[3].innerText : "";
+                const parts = dateRangeText.split('-');
+                const startDate = parts[0] ? parseDate(parts[0].trim()) : new Date();
+                const endDate = parts[1] ? parseDate(parts[1].trim()) : startDate;
+
+                startDate.setHours(0, 0, 0, 0);
+                endDate.setHours(0, 0, 0, 0);
+
+                if (statusText === 'bekliyor') {
+                    bekleyen++;
+                } else if (statusText === 'onaylandı' || statusText === 'onaylendi') {
+                    if (today >= startDate && today <= endDate) {
+                        izinde++;
+                    } else if (startDate > today) {
+                        gelecek++;
+                    }
+                }
+            });
+
+            const pendingCard = document.querySelector('.card-pending strong');
+            const activeCard = document.querySelector('.card-active strong');
+            const futureCard = document.querySelector('.card-future strong');
+
+            if (pendingCard) pendingCard.innerText = bekleyen + " Talep";
+            if (activeCard) activeCard.innerText = izinde + " Kişi";
+            if (futureCard) futureCard.innerText = gelecek + " Talep";
+        }
+
+        //  MESAJ MERKEZİ
+        async function bildirimleriYukle() {
+            try {
+                const response = await apiFetch('/api/IkIstatistikKontrolcusu/mesajlar');
+                const veriler = await response.json();
+                const container = document.getElementById('notif-incoming-list');
+                if (container) {
+                    container.innerHTML = veriler.map(m => `
+        <div class="notif-item"
+             onclick="openReplyModal('${m.birim}', '${m.mesaj.replace(/'/g, " \\'")}')"
+             style="cursor:pointer; padding:10px; border-bottom:1px solid #f1f5f9;">
+            <div style="display:flex; justify-content:space-between;">
+                <strong style="color:#3b82f6;">${m.birim}</strong>
+                <small style="color:#94a3b8;">${m.saat}</small>
+            </div>
+            <span style="display:block; font-size:0.85rem; margin-top:3px;">${m.mesaj}</span>
+        </div>`).join('');
+                }
+            } catch (e) { console.error("Mesajlar yüklenemedi:", e); }
+        }
+
+        function updateOutgoingList() {
+            const listContainer = document.getElementById('notif-outgoing-list');
+            if (!listContainer) return;
+            const gidenlerHafiza = JSON.parse(localStorage.getItem('guardia_giden_mesajlar') || '[]');
+            listContainer.innerHTML = gidenlerHafiza.length === 0
+                ? '<div class="notif-item"><span>Henüz gönderilmiş bir not bulunmuyor.</span></div>'
+                : gidenlerHafiza.map(msg => `
+        <div class="notif-item">
+            <strong>SİZDEN -> ${msg.hedef}</strong>
+            <span>${msg.icerik}</span>
+            <small style="display:block; color:#94a3b8; font-size:0.75rem; margin-top:5px;">
+                <i class="fa-regular fa-clock"></i> ${msg.saat}
+            </small>
+        </div>`).join('');
+        }
+
+
+        let aktifIletisimBirimi = "";
+
+        /* 1. GELEN MESAJLARI ÇEKER VE ÇAN SAYACINI GÜNCELLER */
+        async function showIncoming() {
+            const incoming = document.getElementById('notif-incoming-list');
+            const outgoing = document.getElementById('notif-outgoing-list');
+            const btnIn = document.querySelector('.notif-action-btn[onclick="showIncoming()"]');
+            const btnOut = document.querySelector('.notif-action-btn[onclick="showOutgoing()"]');
+
+            if (incoming && outgoing) {
+                incoming.style.display = 'block';
+                outgoing.style.display = 'none';
+                if (btnIn) btnIn.classList.add('active');
+                if (btnOut) btnOut.classList.remove('active');
+            }
+
+            try {
+                const response = await apiFetch('/api/IkIstatistikKontrolcusu/mesajlar');
+                const veriler = await response.json();
+
+                if (incoming) {
+                    incoming.innerHTML = "";
+                    if (veriler.length === 0) {
+                        incoming.innerHTML = '<div class="notif-item"><span>Gelen kutunuz temiz. 📬</span></div>';
+                    } else {
+                        incoming.innerHTML = veriler.map(msg => {
+                            const temizMesaj = msg.mesaj.replace(/'/g, "\\'").replace(/"/g, '\\"');
+                            const durumRengi = msg.okunduMu ? '#cbd5e1' : '#3b82f6';
+
+                            return `
+                            <div class="notif-item" onclick="openReplyModal('${msg.birim}', '${temizMesaj}', this, ${msg.id})" style="cursor: pointer;">
+                                <span class="notif-status" style="background: ${durumRengi}; display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 5px;"></span>
+                                <strong>${msg.birim}</strong>
+                                <span>${msg.mesaj}</span>
+                                <small style="display:block; color: #94a3b8; font-size: 0.75rem; margin-top: 5px;">
+                                    <i class="fa-regular fa-clock"></i> ${msg.saat}
+                                </small>
+                            </div>`;
+                        }).join('');
+                    }
+                }
+
+                guncelleCanSayaci(veriler);
+
+            } catch (err) {
+                console.error("Gelen mesajlar veritabanından alınamadı:", err);
+            }
+        }
+
+        /*  2. ÇAN SİMGESİ SAYACINI YÖNETEN FONKSİYON */
+        function guncelleCanSayaci(veriler) {
+            const okunmamislar = veriler.filter(m => !m.okunduMu).length;
+            const badge = document.querySelector('.notif-container .notif-badge');
+
+            if (badge) {
+                badge.innerText = okunmamislar;
+                badge.style.display = okunmamislar > 0 ? 'flex' : 'none';
+            }
+        }
+
+        /* 3. GİDEN MESAJLARI LİSTELER */
+        async function showOutgoing() {
+            const incoming = document.getElementById('notif-incoming-list');
+            const outgoing = document.getElementById('notif-outgoing-list');
+            const btnIn = document.querySelector('.notif-action-btn[onclick="showIncoming()"]');
+            const btnOut = document.querySelector('.notif-action-btn[onclick="showOutgoing()"]');
+
+            if (incoming && outgoing) {
+                incoming.style.display = 'none';
+                outgoing.style.display = 'block';
+                if (btnOut) btnOut.classList.add('active');
+                if (btnIn) btnIn.classList.remove('active');
+            }
+
+            try {
+                const response = await apiFetch('/api/IkIstatistikKontrolcusu/giden-mesajlar');
+                const veriler = await response.json();
+
+                if (outgoing) {
+                    if (veriler.length === 0) {
+                        outgoing.innerHTML = '<div class="notif-item"><span>Henüz bir departmana not göndermediniz.</span></div>';
+                    } else {
+                        outgoing.innerHTML = veriler.map(msg => `
+                        <div class="notif-item">
+                            <strong>SİZDEN -> ${msg.birim}</strong>
+                            <span>${msg.mesaj}</span>
+                            <small style="display:block; color: #94a3b8; font-size: 0.75rem; margin-top: 5px;">
+                                <i class="fa-regular fa-clock"></i> ${msg.saat}
+                            </small>
+                        </div>
+                    `).join('');
+                    }
+                }
+            } catch (err) {
+                console.error("Giden mesajlar veritabanından alınamadı:", err);
+            }
+        }
+
+        /*  4. TIKLANAN MESAJI "OKUNDU" YAPAR VE CEVAP MODALINI AÇAR */
+        function openReplyModal(sender, originalMessage, element, mesajId) {
+            aktifIletisimBirimi = sender.replace("SİZDEN ->", "").trim();
+
+            document.getElementById('replyTarget').innerText = aktifIletisimBirimi + " Birimine Cevap Yaz";
+            document.getElementById('replyOriginalMessage').innerText = '"' + originalMessage + '"';
+            document.getElementById('replyModal').style.display = 'flex';
+
+            if (element) {
+                const statusDot = element.querySelector('.notif-status');
+
+                if (statusDot && (statusDot.style.background === 'rgb(59, 130, 246)' || statusDot.style.background === '#3b82f6' || statusDot.style.background.includes('3b82f6'))) {
+
+                    statusDot.style.background = '#cbd5e1';
+
+                    const badge = document.querySelector('.notif-container .notif-badge');
+                    if (badge && parseInt(badge.innerText) > 0) {
+                        const yeniSayi = parseInt(badge.innerText) - 1;
+                        badge.innerText = yeniSayi;
+                        if (yeniSayi === 0) badge.style.display = 'none';
+                    }
+
+                    if (mesajId) {
+                        apiFetch(`/api/IkIstatistikKontrolcusu/mesaj-okundu/${mesajId}`, {
+                            method: 'POST'
+                        }).catch(e => console.error("Mesaj okundu işareti veritabanına iletilemedi:", e));
+                    }
+                }
+            }
+        }
+
+        function closeReplyModal() {
+            document.getElementById('replyModal').style.display = 'none';
+            const input = document.getElementById('replyText');
+            if (input) input.value = '';
+            aktifIletisimBirimi = "";
+        }
+
+        /* 5. C# APİ'SİNE CEVAP GÖNDERİR */
+        async function sendReply() {
+            const replyInput = document.getElementById('replyText');
+            if (!replyInput) return;
+
+            const text = replyInput.value.trim();
+            if (text === "") {
+                alert("Lütfen boş bir mesaj göndermeyin.");
+                return;
+            }
+
+            const suAnkiSaat = new Date().toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' });
+
+            const gonderilecekCevapPaketi = {
+                Birim: aktifIletisimBirimi,
+                Mesaj: text,
+                Saat: suAnkiSaat
+            };
+
+            try {
+                const response = await apiFetch('/api/IkIstatistikKontrolcusu/mesaj-gonder', {
+                    method: 'POST',
+                    body: JSON.stringify(gonderilecekCevapPaketi)
+                });
+
+                if (response.ok) {
+                    alert(`${aktifIletisimBirimi} birimine cevabınız başarıyla iletildi!`);
+                    closeReplyModal();
+                    await showIncoming();
+                } else {
+                    alert("Cevap iletilirken sunucu katmanında bir hata oluştu.");
+                }
+            } catch (err) {
+                console.error("Cevap gönderme hatası:", err);
+                alert("Bağlantı hatası! Cevap gönderilemedi.");
+            }
+        }
+
+
+        function showToast(msg, type = 'success') {
+            const oldToast = document.querySelector('.toast-notification');
+            if (oldToast) oldToast.remove();
+            const toast = document.createElement('div');
+            toast.className = 'toast-notification';
+            toast.innerText = msg;
+            const bgColor = type === 'success' ? '#10b981' : '#ef4444';
+            toast.style.cssText = `
+        position:fixed; bottom:30px; right:90px;
+        background:${bgColor}; color:white; padding:12px 24px;
+        font-size:14px; border-radius:10px; z-index:999999;
+        font-weight:600; box-shadow:0 10px 25px rgba(0,0,0,0.2);
+        opacity:0; transition:all 0.4s ease; transform:translateY(20px);
+        `;
+            document.body.appendChild(toast);
+            setTimeout(() => { toast.style.opacity = '1'; toast.style.transform = 'translateY(0)'; }, 100);
+            setTimeout(() => {
+                toast.style.opacity = '0'; toast.style.transform = 'translateY(20px)';
+                setTimeout(() => toast.remove(), 400);
+            }, 2000);
+        }
+
+        function notifAc() {
+            const notifDropdown = document.querySelector('.notif-dropdown');
+            if (!notifDropdown) return;
+            notifDropdown.style.setProperty('display', 'block', 'important');
+            notifDropdown.classList.add('active');
+            bildirimleriYukle();
+            updateOutgoingList();
+        }
+
+        function notifKapat() {
+            const notifDropdown = document.querySelector('.notif-dropdown');
+            if (!notifDropdown) return;
+            notifDropdown.style.removeProperty('display');
+            notifDropdown.classList.remove('active');
+        }</script>
+</body>
+</html>

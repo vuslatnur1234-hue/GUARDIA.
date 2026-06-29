@@ -1,0 +1,1067 @@
+<!DOCTYPE html>
+<html lang="tr">
+
+<head>
+    <script>
+        if (!localStorage.getItem('token')) {
+            window.location.href = 'admin-login.html';
+        }
+    </script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Guardia | Duyuru Yayınla</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/ik-sidebar.css">
+    <link rel="stylesheet" href="css/dept-common.css">
+    <style>
+        :root {
+            --sidebar: #0f172a;
+            --text-main: #1e293b;
+            --text-sub: #64748b;
+        }
+
+        /* Sol sütun: yayın formu ile duyuru detayı aynı kart boyutu ve kaydırma */
+        .announcement-form,
+        #announcement-view {
+            flex: 2;
+            min-width: 0;
+            min-height: 0;
+            align-self: stretch;
+            height: 100%;
+            background: white;
+            padding: 25px !important;
+            border-radius: 24px;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.01);
+            border: 1px solid #f1f5f9;
+            box-sizing: border-box;
+            overflow-x: hidden;
+            overflow-y: auto;
+            position: relative;
+        }
+
+        #announcement-view {
+            flex-direction: column;
+        }
+
+        .form-group {
+            margin-bottom: 22px;
+        }
+
+            .form-group label {
+                display: block;
+                margin-bottom: 10px;
+                color: var(--text-main);
+                font-weight: 600;
+                font-size: 0.9rem;
+            }
+
+            .form-group input,
+            .form-group select,
+            .form-group textarea {
+                width: 100%;
+                padding: 14px 16px;
+                border: 1.5px solid #e2e8f0;
+                border-radius: 12px;
+                outline: none;
+                font-family: inherit;
+                box-sizing: border-box;
+                transition: all 0.3s ease;
+                background: #f8fafc;
+                color: var(--text-main);
+            }
+
+                .form-group input:focus,
+                .form-group select:focus,
+                .form-group textarea:focus {
+                    border-color: var(--accent);
+                    background: white;
+                    box-shadow: 0 0 0 4px rgba(56, 189, 248, 0.15);
+                }
+
+            .form-group textarea {
+                height: 140px;
+                resize: none;
+            }
+
+        /* Checkbox Alanı */
+        .checkbox-group {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 25px;
+            padding: 20px;
+            background: #f8fafc;
+            border-radius: 16px;
+            border: 1px dashed #cbd5e1;
+        }
+
+        .checkbox-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 0.9rem;
+            font-weight: 500;
+            color: var(--text-main);
+            cursor: pointer;
+        }
+
+            .checkbox-item input {
+                width: 18px;
+                height: 18px;
+                cursor: pointer;
+                accent-color: var(--accent);
+            }
+
+        /* Sağ Taraf: Geçmiş Duyurular (yükseklik sol sütunla hizalı) */
+        .history-panel {
+            flex: 1.2;
+            min-width: 0;
+            min-height: 0;
+            align-self: stretch;
+            height: 100%;
+            background: white;
+            padding: 25px !important;
+            border-radius: 24px;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.01);
+            border: 1px solid #f1f5f9;
+            box-sizing: border-box;
+            overflow-x: hidden;
+            overflow-y: auto;
+            position: sticky;
+            top: 90px;
+        }
+
+        .history-title {
+            font-weight: 700;
+            font-size: 1.1rem;
+            margin-bottom: 25px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            color: var(--sidebar);
+        }
+
+        .announcement-item {
+            background: #f8fafc;
+            padding: 16px;
+            border-radius: 14px;
+            margin-bottom: 14px;
+            border-left: 4px solid var(--accent) !important;
+            /* Buradaki !important tümünü maviye zorlar */
+            transition: 0.25s;
+            cursor: pointer;
+        }
+
+        .back-btn-custom {
+            margin-top: 30px;
+            background: #f1f5f9;
+            color: #64748b;
+            box-shadow: none;
+            transition: all 0.3s ease;
+        }
+
+            .back-btn-custom:hover {
+                background: var(--accent) !important;
+                /* Üzerine gelince senin o canlı mavisi olur */
+                color: white !important;
+                transform: translateY(-2px);
+                box-shadow: 0 5px 15px rgba(56, 189, 248, 0.3);
+            }
+
+        .announcement-item:hover {
+            transform: translateX(8px);
+            background: white;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08);
+        }
+
+        .announcement-item h5 {
+            margin: 0 0 8px 0;
+            color: var(--text-main);
+            font-size: 0.95rem;
+        }
+
+        .announcement-item p {
+            margin: 0;
+            font-size: 0.85rem;
+            color: var(--text-sub);
+            line-height: 1.5;
+        }
+
+        .announcement-item small {
+            color: var(--accent);
+            font-weight: 600;
+            font-size: 0.75rem;
+            display: block;
+            margin-top: 8px;
+        }
+
+        /* Buton */
+        .publish-btn {
+            width: 100%;
+            background: var(--sidebar);
+            color: white;
+            border: none;
+            padding: 16px;
+            border-radius: 14px;
+            font-weight: 600;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            box-shadow: 0 4px 15px rgba(15, 23, 42, 0.2);
+        }
+
+            .publish-btn:hover {
+                background: var(--accent);
+                transform: translateY(-2px);
+                box-shadow: 0 6px 20px rgba(56, 189, 248, 0.3);
+            }
+
+        /* Zil kaymasın diye kaydırma çubuğunu gizleyen sihirli satırlar */
+        ::-webkit-scrollbar {
+            display: none;
+        }
+
+        html,
+        body {
+            scrollbar-width: none;
+            /* Firefox için */
+            -ms-overflow-style: none;
+            /* IE ve Edge için */
+        }
+
+        .view-header-main {
+            border-bottom: 2px solid #f1f5f9;
+            padding-bottom: 20px;
+            margin-bottom: 25px;
+        }
+
+            .view-header-main h2 {
+                color: var(--sidebar);
+                font-size: 1.5rem;
+                margin-bottom: 15px;
+            }
+
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+            background: #f8fafc;
+            padding: 15px;
+            border-radius: 12px;
+        }
+
+        .info-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 0.85rem;
+            color: var(--text-sub);
+        }
+
+            .info-item i {
+                color: var(--accent);
+                width: 16px;
+            }
+
+            .info-item b {
+                color: var(--text-main);
+            }
+
+        .view-body {
+            font-size: 1rem;
+            color: var(--text-main);
+            line-height: 1.8;
+            white-space: pre-wrap;
+            flex: 1;
+            min-height: 0;
+        }
+
+        .attachment-box {
+            margin-top: 30px;
+            padding: 15px;
+            background: #eff6ff;
+            border: 1px solid #dbeafe;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .file-info {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            color: #475569;
+            font-weight: 600;
+        }
+
+        /* PDF İkonu Kırmızı */
+        .fa-file-pdf {
+            color: #475569 !important;
+        }
+
+        /* İndirme İkonu Koyu Gri */
+        .fa-download {
+            color: #475569 !important;
+        }
+
+        #announcement-view,
+        .announcement-form {
+            animation: fadeIn 0.4s ease;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* 1. Sayfayı ekrana mühürle: Kaydırma çubuğunu tamamen yok eder */
+        html,
+        body {
+            height: 100vh;
+            margin: 0;
+            overflow: hidden;
+            /* Dış sayfa asla kaymaz */
+        }
+
+        /* 2. İçerik alanını ekran yüksekliğine sabitle */
+        .ik-content {
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        /* 3. Duyuru düzeni: sol kart (form / detay) ile sağ panel aynı yükseklikte */
+        .announcement-layout {
+            display: flex;
+            align-items: stretch;
+            gap: 30px;
+            margin-top: 20px;
+            flex: 1;
+            min-height: 0;
+        }
+
+        /* 4. Textarea'yı biraz küçültelim ki 'Duyuruyu Yayınla' butonu aşağı kaçmasın */
+        .form-group textarea {
+            height: 100px;
+            /* 140px'den 100'e çektik */
+        }
+
+        /* 5. Form gruplarının arasını biraz daraltma*/
+        .form-group {
+            margin-bottom: 15px;
+        }
+    </style>
+</head>
+
+<body class="ik-layout">
+
+    <div class="ik-sidebar">
+        <h2>🛡️ Guardia İK</h2>
+        <ul class="ik-nav-links">
+            <li><a href="ik-index.html"
+                    style="text-decoration:none;color:inherit;display:flex;align-items:center;gap:12px;"><i
+                        class="fa-solid fa-chart-line"></i> Genel Bakış</a></li>
+            <li><a href="ik-personel-listesi.html"
+                    style="text-decoration:none;color:inherit;display:flex;align-items:center;gap:12px;"><i
+                        class="fa-solid fa-users"></i> Personel Listesi</a></li>
+            <li><a href="ik-izin-talepleri.html"
+                    style="text-decoration:none;color:inherit;display:flex;align-items:center;gap:12px;"><i
+                        class="fa-solid fa-calendar-check"></i> İzin Talepleri</a></li>
+            <li><a href="ik-bordro.html"
+                    style="text-decoration:none;color:inherit;display:flex;align-items:center;gap:12px;"><i
+                        class="fa-solid fa-file-invoice-dollar"></i> Bordro Yönetimi</a></li>
+            <li class="active"><i class="fa-solid fa-bullhorn"></i> Duyuru Yayınla</li>
+        </ul>
+        <div class="ik-user-tag">
+            <div class="ik-user-avatar" id="sidebarAvatar"><img src="img/erkek_1.jpg.png" alt="Selin Aksoy"></div>
+            <div class="ik-user-info"><span id="sidebarAdSoyad">Selin Aksoy</span><small id="sidebarDepartman">İK Yöneticisi</small></div>
+        </div>
+    </div>
+
+    <div class="ik-content">
+        <div class="dept-header">
+            <div class="page-title-group">
+                <h1>Kurumsal Duyurular</h1>
+                <p class="page-desc">Şirket içi duyuruları yayınlayın ve takip edin.</p>
+            </div>
+
+            <div class="notif-container">
+                <input type="checkbox" id="notif-toggle" aria-hidden="true" style="display:none;">
+                <label for="notif-toggle" class="notif-trigger">
+                    <i class="fa-solid fa-bell"></i>
+                    <span class="notif-badge">2</span>
+                </label>
+
+                <div class="notif-dropdown">
+                    <h4>Mesaj Merkezi</h4>
+
+                    <div id="notif-incoming-list" class="notif-list">
+                        <div class="notif-item"
+                            onclick="openReplyModal('HUKUK', 'Genel duyuru metni hukuki açıdan uygun bulunmuştur.')"
+                            style="cursor: pointer;">
+                            <span class="notif-status"></span>
+                            <strong>HUKUK</strong>
+                            <span>Duyuru metni onaylandı.</span>
+                            <small style="display:block; color: #94a3b8; font-size: 0.75rem; margin-top: 5px;">
+                                <i class="fa-regular fa-clock"></i> 11:20
+                            </small>
+                        </div>
+
+                        <div class="notif-item"
+                            onclick="openReplyModal('SİSTEM', 'Yeni duyuru tüm personelin ekranına başarıyla yansıtıldı.')"
+                            style="cursor: pointer;">
+                            <span class="notif-status"></span>
+                            <strong>SİSTEM</strong>
+                            <span>Duyuru yayına alındı.</span>
+                            <small style="display:block; color: #94a3b8; font-size: 0.75rem; margin-top: 5px;">
+                                <i class="fa-regular fa-clock"></i> 10:05
+                            </small>
+                        </div>
+                    </div>
+
+                    <div id="notif-outgoing-list" class="notif-list" style="display:none;">
+                        <div class="notif-item">
+                            <strong>SİZDEN -> TÜM PERSONEL</strong>
+                            <span>Ramazan Bayramı tatili hakkında duyuru.</span>
+                            <small style="display:block; color: #94a3b8; font-size: 0.75rem; margin-top: 5px;">
+                                <i class="fa-regular fa-clock"></i> Dün
+                            </small>
+                        </div>
+                    </div>
+
+                    <div class="notif-footer">
+                        <button type="button" class="notif-action-btn" onclick="showIncoming()">
+                            <i class="fa-solid fa-bell"></i> Gelenler
+                        </button>
+                        <button type="button" class="notif-action-btn" onclick="showOutgoing()">
+                            <i class="fa-solid fa-paper-plane"></i> Gidenler
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="announcement-layout">
+
+            <div class="announcement-form">
+                <div class="form-group">
+                    <label>Duyuru Başlığı</label>
+                    <input type="text" id="announceTitle" placeholder="Örn: Yeni Yan Haklar ve Sosyal Yardımlar Hakkında">
+                </div>
+
+                <div style="display: flex; gap: 20px;">
+                    <div class="form-group" style="flex: 1;">
+                        <label>Hedef Kitle (Departman)</label>
+                        <select id="announceDept">
+                            <option value="all">Tüm Personel (Genel Duyuru)</option>
+                            <option value="Üretim">Üretim Hattı</option>
+                            <option value="Lojistik">Lojistik & Depo</option>
+                            <option value="Bakım">Bakım Onarım</option>
+                            <option value="İK">İnsan Kaynakları</option>
+                            <option value="Finans">Finans & Muhasebe</option>
+                            <option value="Satın Alma">Satın Alma</option>
+                            <option value="İSG">İş Sağlığı ve Güvenliği</option>
+                            <option value="IT">Bilgi İşlem</option>
+                            <option value="Yöneticiler">Sadece Departman Yöneticileri</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group" style="flex: 1;">
+                        <label>Duyuru Kategorisi</label>
+                        <select id="notifType">
+                            <option value="success">Genel Duyuru</option>
+                            <option value="warning">Önemli Hatırlatma</option>
+                            <option value="danger">Acil Durum / Kritik Bilgi</option>
+                            <option value="info">Etkinlik & Kutlama</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div style="display: flex; gap: 20px;">
+                    <div class="form-group" style="flex: 1;">
+                        <label><i class="fa-solid fa-paperclip"></i> Ek Dosya (PDF/Görsel)</label>
+                        <input type="file" id="announceFile" style="padding: 7px;">
+                    </div>
+
+                    <div class="form-group" style="flex: 1;">
+                        <label><i class="fa-solid fa-calendar-alt"></i> Yayınlanma Zamanı</label>
+                        <input type="datetime-local">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Duyuru İçeriği</label>
+                    <textarea id="announceContent" placeholder="Mesajınızı detaylandırın..."></textarea>
+                </div>
+
+                <div class="checkbox-group">
+                    <label class="checkbox-item"><input type="checkbox" checked> Mobil Bildirim Gönder</label>
+                    <label class="checkbox-item"><input type="checkbox"> E-Posta Olarak Gönder</label>
+                    <label class="checkbox-item"><input type="checkbox"> Okundu Onayı İste</label>
+                </div>
+
+                <button class="publish-btn" onclick="publishAnnouncement()">
+                    <i class="fa-solid fa-paper-plane"></i> Duyuruyu Yayına Al
+                </button>
+            </div>
+
+            <div id="announcement-view" style="display: none;">
+
+                <div class="view-header-main">
+                    <h2 id="view-title">Duyuru Başlığı</h2>
+
+                    <div class="info-grid">
+                        <div class="info-item">
+                            <i class="fa-solid fa-users"></i>
+                            <span>Hedef: <b id="view-dept">-</b></span>
+                        </div>
+                        <div class="info-item">
+                            <i class="fa-solid fa-calendar-day"></i>
+                            <span>Tarih: <b id="view-date">-</b></span>
+                        </div>
+                        <div class="info-item">
+                            <i class="fa-solid fa-user-pen"></i>
+                            <span>Yayınlayan: <b>Selin Aksoy</b></span>
+                        </div>
+                        <div class="info-item">
+                            <i class="fa-solid fa-circle-check"></i>
+                            <span>Durum: <b style="color: #10b981;">Yayında</b></span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="view-body" id="view-content">
+                </div>
+
+                <div class="attachment-box" id="view-file-area"
+                    onclick="downloadSimulate(document.getElementById('view-file-name').innerText)"
+                    style="cursor:pointer;">
+                    <div class="file-info">
+                        <i class="fa-solid fa-file-pdf fa-2x"></i>
+                        <div>
+                            <span id="view-file-name" style="display:block; font-size:0.9rem;">ek-dosya.pdf</span>
+                            <small style="color: #7a8087; font-weight:400;">İndirmek için tıklayın</small>
+                        </div>
+                    </div>
+                    <i class="fa-solid fa-download" style="color: #1e40af;"></i>
+                </div>
+
+                <button onclick="closeAnnouncementView()" class="publish-btn back-btn-custom">
+                    <i class="fa-solid fa-arrow-left"></i> Form Ekranına Dön
+                </button>
+            </div>
+
+            <div class="history-panel">
+                <div class="history-title">
+                    <span>Son Duyurular</span>
+                    <i class="fa-solid fa-clock-rotate-left" style="color: var(--text-sub);"></i>
+                </div>
+
+                <div id="dynamic-announcements-area"></div>
+            </div>
+
+            <div id="note-sent">Notunuz seçilen birimlere iletildi.</div>
+            <div id="replyModal" class="reply-modal">
+                <div class="reply-content">
+                    <div class="reply-header">
+                        <i class="fa-solid fa-reply"></i>
+                        <h3 id="replyTarget">HUKUK Birimine Cevap Yaz</h3>
+                    </div>
+
+                    <div id="replyOriginalMessage" class="original-msg-preview">
+                        "5 adet yeni iş sözleşmesi onaylandı."
+                    </div>
+
+                    <textarea id="replyText" class="reply-textarea" placeholder="Cevabınızı buraya yazın..."></textarea>
+
+                    <div class="reply-actions">
+                        <button class="btn-reply-cancel" onclick="closeReplyModal()">Vazgeç</button>
+                        <button class="btn-reply-send" onclick="sendReply()">Cevapla</button>
+                    </div>
+                </div>
+            </div>
+          <script>
+              const ikKanali = new BroadcastChannel('guardia-ik');
+
+              ikKanali.onmessage = (e) => {
+                  console.log("İK Sistem Güncellemesi:", e.data.tip);
+                  if (typeof loadPersonelListesi === 'function') loadPersonelListesi();
+                  if (typeof loadIzinTalepleri === 'function') loadIzinTalepleri();
+              };
+
+              const BASE_URL = '/api/IkIstatistikKontrolcusu';
+
+           
+              function apiFetch(url, options = {}) {
+                  const token = localStorage.getItem('token');
+
+       
+                  let sayfaBirim = "HUKUK";
+                  if (window.location.href.includes("ik-") || window.location.href.includes("ik-index")) {
+                      sayfaBirim = "INSAN_KAYNAKLARI"; 
+                  }
+
+                  options.headers = {
+                      ...options.headers,
+                      'Authorization': 'Bearer ' + token,
+                      'X-Aktif-Birim': sayfaBirim, 
+                      'Content-Type': 'application/json'
+                  };
+
+                  return fetch(url, options).then(res => {
+                      if (!res.ok) {
+                          throw new Error(`HTTP Hatası! Durum: ${res.status}`);
+                      }
+                      return res;
+                  });
+              }
+
+              // 1. BACKEND'DEN LİSTEYİ ÇEKER 
+              async function loadAnnouncementsFromApi() {
+                  try {
+                     
+                      const response = await apiFetch(`${BASE_URL}/duyuru-listesi`);
+                      const duyurular = await response.json();
+
+                      console.log("Backend Verileri:", duyurular);
+
+                      const container = document.getElementById('dynamic-announcements-area');
+                      if (!container) return;
+
+                      if (duyurular.length === 0) {
+                          container.innerHTML = '<p style="color:#64748b; font-size:0.85rem; padding:10px;">Henüz yayınlanmış bir duyuru bulunmuyor.</p>';
+                          return;
+                      }
+
+                      container.innerHTML = duyurular.map(d => {
+                          const baslik = d.baslik || "Başlıksız";
+                          const icerik = d.icerik || d.duyuruIcerigi || "";
+                          const yazar = d.yayinlayan || "Selin Aksoy";
+                          const hedef = d.hedefKitle || 'Genel';
+                          const dosya = d.dosyaAdi || 'Yok';
+                          const tarihStr = d.yayinTarihi ? new Date(d.yayinTarihi).toLocaleDateString('tr-TR') : "Bugün";
+
+                          const safeBaslik = baslik.replace(/'/g, "\\'").replace(/"/g, '&quot;');
+                          const safeIcerik = icerik.replace(/'/g, "\\'")
+                              .replace(/"/g, '&quot;')
+                              .replace(/\n/g, ' ')
+                              .replace(/\r/g, ' ');
+
+                          return `
+                        <div class="announcement-item" role="button" style="cursor:pointer;" 
+                             onclick="openAnnouncement('${safeBaslik}', '${safeIcerik}', '${hedef}', '${dosya}')">
+                            <h5 style="margin:0 0 5px 0; font-size:0.95rem; color:#1e293b;">${baslik}</h5>
+                            <p style="margin:0; font-size:0.85rem; color:#64748b; line-height:1.4;">
+                                ${icerik.length > 65 ? icerik.substring(0, 65) + '...' : icerik}
+                            </p>
+                            <small style="display:block; margin-top:8px; color:#38bdf8; font-weight:600; font-size:0.75rem;">
+                                ${tarihStr} • ${yazar}
+                            </small>
+                        </div>
+                    `;
+                      }).join('');
+
+                  } catch (err) {
+                      console.error('Liste güncellenirken hata oluştu:', err);
+                  }
+              }
+
+              // 2. DUYURUYU YAYINA AL 
+              async function publishAnnouncement() {
+                  const titleEl = document.getElementById('announceTitle');
+                  const contentEl = document.getElementById('announceContent');
+                  const deptEl = document.getElementById('announceDept');
+
+                  if (!titleEl.value.trim() || !contentEl.value.trim()) {
+                      alert("Lütfen başlık ve içerik girin.");
+                      return;
+                  }
+
+                  const model = {
+                      Baslik: titleEl.value,
+                      DuyuruIcerigi: contentEl.value,
+                      Icerik: contentEl.value,
+                      HedefKitle: deptEl.options[deptEl.selectedIndex].text,
+                      Kategori: document.getElementById('duyuruKategori')?.value || "Genel Duyuru",
+                      DosyaAdi: "yok",
+                      Yayinlayan: "Selin Aksoy",
+                      YayinTarihi: new Date().toISOString(),
+                      OkunduOnay: "Hayır",
+                      MobilBildirimGonder: "Hayır",
+                      EPostaGonder: "Hayır"
+                  };
+
+                  try {
+                    
+                      const res = await apiFetch(`${BASE_URL}/duyuru-yayinla`, {
+                          method: 'POST',
+                          headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify(model)
+                      });
+
+                      if (res.ok) {
+                          alert("Duyuru başarıyla yayınlandı!");
+                          resetAnnouncementForm();
+                          await loadAnnouncementsFromApi();
+                          ikKanali.postMessage({ tip: 'duyuru-yayinlandi' });
+                      } else {
+                          const errorText = await res.text();
+                          console.error("Backend Hatası:", errorText);
+                          alert("Duyuru kaydedilemedi, backend tarafını kontrol edin.");
+                      }
+                  } catch (err) {
+                      console.error("Bağlantı Hatası:", err);
+                      alert("Sistemsel bir hata oluştu (Sunucu kapalı olabilir).");
+                  }
+              }
+
+              // DİĞER YARDIMCI FONKSİYONLAR
+              function resetAnnouncementForm() {
+                  document.getElementById('announceTitle').value = '';
+                  document.getElementById('announceContent').value = '';
+                  document.getElementById('announceDept').selectedIndex = 0;
+                  const file = document.getElementById('announceFile');
+                  if (file) file.value = '';
+              }
+
+              function openAnnouncement(title, content, dept, file) {
+                  document.querySelector('.announcement-form').style.display = 'none';
+                  const view = document.getElementById('announcement-view');
+                  view.style.display = 'flex';
+                  document.getElementById('view-title').innerText = title;
+                  document.getElementById('view-content').innerText = content;
+                  document.getElementById('view-dept').innerText = dept;
+                  document.getElementById('view-date').innerText = new Date().toLocaleDateString('tr-TR');
+                  const fileArea = document.getElementById('view-file-area');
+                  if (file && file !== 'Yok') {
+                      fileArea.style.display = 'flex';
+                      document.getElementById('view-file-name').innerText = file;
+                  } else { fileArea.style.display = 'none'; }
+              }
+
+              function closeAnnouncementView() {
+                  document.querySelector('.announcement-form').style.display = 'block';
+                  document.getElementById('announcement-view').style.display = 'none';
+              }
+
+             
+
+              async function bildirimleriYukle() {
+                  try {
+               
+                      const response = await apiFetch('/api/IkIstatistikKontrolcusu/mesajlar');
+                      const veriler = await response.json();
+                      const container = document.getElementById('notif-incoming-list');
+                      if (container) {
+                          container.innerHTML = veriler.map(m => `
+                        <div class="notif-item"
+                             onclick="openReplyModal('${m.birim}', '${m.mesaj.replace(/'/g, "\\'")}')"
+                             style="cursor:pointer; padding:10px; border-bottom:1px solid #f1f5f9;">
+                            <div style="display:flex; justify-content:space-between;">
+                                <strong style="color:#3b82f6;">${m.birim}</strong>
+                                <small style="color:#94a3b8;">${m.saat}</small>
+                            </div>
+                            <span style="display:block; font-size:0.85rem; margin-top:3px;">${m.mesaj}</span>
+                        </div>`).join('');
+                      }
+                  } catch (e) { console.error("Mesajlar yüklenemedi:", e); }
+              }
+
+              function updateOutgoingList() {
+                  const listContainer = document.getElementById('notif-outgoing-list');
+                  if (!listContainer) return;
+                  const gidenlerHafiza = JSON.parse(localStorage.getItem('guardia_giden_mesajlar') || '[]');
+                  listContainer.innerHTML = gidenlerHafiza.length === 0
+                      ? '<div class="notif-item"><span>Henüz gönderilmiş bir not bulunmuyor.</span></div>'
+                      : gidenlerHafiza.map(msg => `
+                    <div class="notif-item">
+                        <strong>SİZDEN -> ${msg.hedef}</strong>
+                        <span>${msg.icerik}</span>
+                        <small style="display:block; color:#94a3b8; font-size:0.75rem; margin-top:5px;">
+                            <i class="fa-regular fa-clock"></i> ${msg.saat}
+                        </small>
+                    </div>`).join('');
+              }
+
+            
+              let aktifIletisimBirimi = "";
+
+
+              async function showIncoming() {
+                  const incoming = document.getElementById('notif-incoming-list');
+                  const outgoing = document.getElementById('notif-outgoing-list');
+                  const btnIn = document.querySelector('.notif-action-btn[onclick="showIncoming()"]');
+                  const btnOut = document.querySelector('.notif-action-btn[onclick="showOutgoing()"]');
+
+                  if (incoming && outgoing) {
+                      incoming.style.display = 'block';
+                      outgoing.style.display = 'none';
+                      if (btnIn) btnIn.classList.add('active');
+                      if (btnOut) btnOut.classList.remove('active');
+                  }
+
+                  try {
+                      const response = await apiFetch('/api/IkIstatistikKontrolcusu/mesajlar');
+                      const veriler = await response.json();
+
+                      if (incoming) {
+                          incoming.innerHTML = "";
+                          if (veriler.length === 0) {
+                              incoming.innerHTML = '<div class="notif-item"><span>Gelen kutunuz temiz. 📬</span></div>';
+                          } else {
+                              incoming.innerHTML = veriler.map(msg => {
+                                  const temizMesaj = msg.mesaj.replace(/'/g, "\\'").replace(/"/g, '\\"');
+                                  const durumRengi = msg.okunduMu ? '#cbd5e1' : '#3b82f6';
+
+                                  return `
+                        <div class="notif-item" onclick="openReplyModal('${msg.birim}', '${temizMesaj}', this, ${msg.id})" style="cursor: pointer;">
+                            <span class="notif-status" style="background: ${durumRengi}; display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 5px;"></span>
+                            <strong>${msg.birim}</strong>
+                            <span>${msg.mesaj}</span>
+                            <small style="display:block; color: #94a3b8; font-size: 0.75rem; margin-top: 5px;">
+                                <i class="fa-regular fa-clock"></i> ${msg.saat}
+                            </small>
+                        </div>`;
+                              }).join('');
+                          }
+                      }
+
+                    
+                      guncelleCanSayaci(veriler);
+
+                  } catch (err) {
+                      console.error("Gelen mesajlar veritabanından alınamadı:", err);
+                  }
+              }
+
+
+              function guncelleCanSayaci(veriler) {
+                  const okunmamislar = veriler.filter(m => !m.okunduMu).length;
+                  const badge = document.querySelector('.notif-container .notif-badge');
+
+                  if (badge) {
+                      badge.innerText = okunmamislar;
+                      badge.style.display = okunmamislar > 0 ? 'flex' : 'none';
+                  }
+              }
+
+            
+              async function showOutgoing() {
+                  const incoming = document.getElementById('notif-incoming-list');
+                  const outgoing = document.getElementById('notif-outgoing-list');
+                  const btnIn = document.querySelector('.notif-action-btn[onclick="showIncoming()"]');
+                  const btnOut = document.querySelector('.notif-action-btn[onclick="showOutgoing()"]');
+
+                  if (incoming && outgoing) {
+                      incoming.style.display = 'none';
+                      outgoing.style.display = 'block';
+                      if (btnOut) btnOut.classList.add('active');
+                      if (btnIn) btnIn.classList.remove('active');
+                  }
+
+                  try {
+                      const response = await apiFetch('/api/IkIstatistikKontrolcusu/giden-mesajlar');
+                      const veriler = await response.json();
+
+                      if (outgoing) {
+                          if (veriler.length === 0) {
+                              outgoing.innerHTML = '<div class="notif-item"><span>Henüz bir departmana not göndermediniz.</span></div>';
+                          } else {
+                              outgoing.innerHTML = veriler.map(msg => `
+                    <div class="notif-item">
+                        <strong>SİZDEN -> ${msg.birim}</strong>
+                        <span>${msg.mesaj}</span>
+                        <small style="display:block; color: #94a3b8; font-size: 0.75rem; margin-top: 5px;">
+                            <i class="fa-regular fa-clock"></i> ${msg.saat}
+                        </small>
+                    </div>
+                `).join('');
+                          }
+                      }
+                  } catch (err) {
+                      console.error("Giden mesajlar veritabanından alınamadı:", err);
+                  }
+              }
+
+           
+              function openReplyModal(sender, originalMessage, element, mesajId) {
+                  aktifIletisimBirimi = sender.replace("SİZDEN ->", "").trim();
+
+                  document.getElementById('replyTarget').innerText = aktifIletisimBirimi + " Birimine Cevap Yaz";
+                  document.getElementById('replyOriginalMessage').innerText = '"' + originalMessage + '"';
+                  document.getElementById('replyModal').style.display = 'flex';
+
+                  if (element) {
+                      const statusDot = element.querySelector('.notif-status');
+
+                      if (statusDot && (statusDot.style.background === 'rgb(59, 130, 246)' || statusDot.style.background === '#3b82f6' || statusDot.style.background.includes('3b82f6'))) {
+
+                          statusDot.style.background = '#cbd5e1';
+
+                          const badge = document.querySelector('.notif-container .notif-badge');
+                          if (badge && parseInt(badge.innerText) > 0) {
+                              const yeniSayi = parseInt(badge.innerText) - 1;
+                              badge.innerText = yeniSayi;
+                              if (yeniSayi === 0) badge.style.display = 'none';
+                          }
+
+                          if (mesajId) {
+                              apiFetch(`/api/IkIstatistikKontrolcusu/mesaj-okundu/${mesajId}`, {
+                                  method: 'POST'
+                              }).catch(e => console.error("Mesaj okundu işareti veritabanına iletilemedi:", e));
+                          }
+                      }
+                  }
+              }
+
+              function closeReplyModal() {
+                  document.getElementById('replyModal').style.display = 'none';
+                  const input = document.getElementById('replyText');
+                  if (input) input.value = '';
+                  aktifIletisimBirimi = "";
+              }
+
+         
+              async function sendReply() {
+                  const replyInput = document.getElementById('replyText');
+                  if (!replyInput) return;
+
+                  const text = replyInput.value.trim();
+                  if (text === "") {
+                      alert("Lütfen boş bir mesaj göndermeyin.");
+                      return;
+                  }
+
+                  const suAnkiSaat = new Date().toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' });
+
+                  const gonderilecekCevapPaketi = {
+                      Birim: aktifIletisimBirimi,
+                      Mesaj: text,
+                      Saat: suAnkiSaat
+                  };
+
+                  try {
+                      const response = await apiFetch('/api/IkIstatistikKontrolcusu/mesaj-gonder', {
+                          method: 'POST',
+                          body: JSON.stringify(gonderilecekCevapPaketi)
+                      });
+
+                      if (response.ok) {
+                          alert(`${aktifIletisimBirimi} birimine cevabınız başarıyla iletildi!`);
+                          closeReplyModal();
+                          await showIncoming();
+                      } else {
+                          alert("Cevap iletilirken sunucu katmanında bir hata oluştu.");
+                      }
+                  } catch (err) {
+                      console.error("Cevap gönderme hatası:", err);
+                      alert("Bağlantı hatası! Cevap gönderilemedi.");
+                  }
+              }
+
+              function showToast(msg, type = 'success') {
+                  const oldToast = document.querySelector('.toast-notification');
+                  if (oldToast) oldToast.remove();
+                  const toast = document.createElement('div');
+                  toast.className = 'toast-notification';
+                  toast.innerText = msg;
+                  const bgColor = type === 'success' ? '#10b981' : '#ef4444';
+                  toast.style.cssText = `
+                position:fixed; bottom:30px; right:90px;
+                background:${bgColor}; color:white; padding:12px 24px;
+                font-size:14px; border-radius:10px; z-index:999999;
+                font-weight:600; box-shadow:0 10px 25px rgba(0,0,0,0.2);
+                opacity:0; transition:all 0.4s ease; transform:translateY(20px);
+            `;
+                  document.body.appendChild(toast);
+                  setTimeout(() => { toast.style.opacity = '1'; toast.style.transform = 'translateY(0)'; }, 100);
+                  setTimeout(() => {
+                      toast.style.opacity = '0'; toast.style.transform = 'translateY(20px)';
+                      setTimeout(() => toast.remove(), 400);
+                  }, 2000);
+              }
+
+              function notifAc() {
+                  const notifDropdown = document.querySelector('.notif-dropdown');
+                  if (!notifDropdown) return;
+                  notifDropdown.style.setProperty('display', 'block', 'important');
+                  notifDropdown.classList.add('active');
+                  bildirimleriYukle();
+                  updateOutgoingList();
+              }
+
+              function notifKapat() {
+                  const notifDropdown = document.querySelector('.notif-dropdown');
+                  if (!notifDropdown) return;
+                  notifDropdown.style.removeProperty('display');
+                  notifDropdown.classList.remove('active');
+              }
+
+              document.addEventListener('DOMContentLoaded', () => {
+
+                  const adminAdSoyad = localStorage.getItem('adminAdSoyad');
+                  const adminDepartman = localStorage.getItem('adminDepartman');
+
+                  if (adminAdSoyad) {
+                      document.getElementById('sidebarAdSoyad').textContent = adminAdSoyad;
+                  }
+                  if (adminDepartman) {
+                      document.getElementById('sidebarDepartman').textContent = adminDepartman;
+                  }
+
+
+          
+                  if (typeof loadAnnouncementsFromApi === 'function') {
+                      loadAnnouncementsFromApi();
+                  }
+
+                  showIncoming();
+
+             
+                  const notifTrigger = document.querySelector('.notif-trigger');
+                  const notifDropdown = document.querySelector('.notif-dropdown');
+                  const notifContainer = document.querySelector('.notif-container');
+
+                  if (notifTrigger) {
+                      notifTrigger.removeAttribute('for');
+                      notifTrigger.addEventListener('click', function (e) {
+                          e.preventDefault();
+                          e.stopPropagation();
+
+                  
+                          if (notifDropdown && notifDropdown.classList.contains('active')) {
+                              if (typeof notifKapat === 'function') notifKapat();
+                          } else {
+                              if (typeof notifAc === 'function') notifAc();
+                          }
+
+                    
+                          const badge = document.querySelector('.notif-container .notif-badge');
+                          if (badge) badge.style.display = 'none';
+                      });
+                  }
+
+         
+                  if (notifDropdown) notifDropdown.addEventListener('click', e => e.stopPropagation());
+                  if (notifContainer) notifContainer.addEventListener('click', e => e.stopPropagation());
+
+              
+                  document.addEventListener('click', function () {
+                      if (typeof notifKapat === 'function') notifKapat();
+                  });
+              });
+          </script>
+</body>
+</html>

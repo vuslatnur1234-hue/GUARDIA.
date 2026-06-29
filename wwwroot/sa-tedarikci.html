@@ -1,0 +1,866 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Guardia | Tedarikçi Yönetimi</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/ik-sidebar.css">
+    <link rel="stylesheet" href="css/dept-common.css">
+    <style>
+        :root { --sidebar: #0f172a; --text-main: #1e293b; --text-sub: #64748b; --white: #fff; }
+        .hero { margin-bottom: 24px; }
+        .hero h2 { margin: 0 0 6px 0; font-size: 1.5rem; color: var(--sidebar); }
+        .hero p { margin: 0; font-size: 0.9rem; color: var(--text-sub); }
+        .card-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px; }
+        .tedarikci-card { background: var(--white); padding: 22px; border-radius: 20px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); border: 1px solid #e2e8f0; }
+        .tedarikci-card h4 { margin: 0 0 12px 0; font-size: 1.05rem; color: var(--sidebar); }
+    
+/* Filtre barındaki kaydırma çubuğunu tamamen gizleme */
+.filter-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: white;
+    padding: 15px 25px;
+    border-radius: 20px;
+    margin-bottom: 30px;
+    box-shadow: 0 4px 6px -1px rgba(0,0,0,0.02);
+    gap: 20px;
+
+    /* Kaydırma özelliğini açık tut ama çubuğu gizle */
+    overflow-x: auto; 
+    -ms-overflow-style: none;  /* IE ve Edge */
+    scrollbar-width: none;  /* Firefox */
+}
+
+/* Chrome, Safari ve Opera için kaydırma çubuğunu gizle */
+.filter-bar::-webkit-scrollbar {
+    display: none !important;
+}
+
+/* Sayfanın sağa kaymasını (yatay bar çıkmasını) engellemek için */
+body {
+    overflow-x: hidden;
+}
+
+/* Butonları biraz daha kurumsal yapalım */
+.notif-action-btn {
+    padding: 10px 18px;
+    border-radius: 12px;
+    font-weight: 600;
+    font-size: 0.85rem;
+    white-space: nowrap;
+    transition: all 0.2s;
+}
+
+/* Arama kutusunu güzelleştirelim */
+.search-wrapper {
+    position: relative;
+    flex-grow: 1;
+    max-width: 450px;
+}
+
+.search-wrapper input {
+    width: 100%;
+    padding: 12px 15px 12px 45px;
+    border: 1px solid #f1f5f9;
+    background: #f8fafc;
+    border-radius: 14px;
+    outline: none;
+    transition: border-color 0.3s;
+}
+
+.search-wrapper input:focus {
+    border-color: #3b82f6;
+    background: #fff;
+}
+/* Kart Modernizasyonu */
+.tedarikci-card {
+    transition: all 0.3s ease;
+    border: 1px solid #f1f5f9;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+
+.tedarikci-card:hover {
+    position: relative;
+    z-index: 2;
+    transform: translateY(-5px);
+    box-shadow: 0 10px 20px rgba(0,0,0,0.05);
+    border-color: #3b82f6;
+}
+
+/* Skor Çubukları */
+.perf-container { margin-top: 15px; }
+.perf-label { display: flex; justify-content: space-between; font-size: 0.8rem; margin-bottom: 4px; }
+.perf-bar { height: 6px; background: #f1f5f9; border-radius: 10px; overflow: hidden; margin-bottom: 12px; }
+.perf-fill { height: 100%; border-radius: 10px; transition: width 0.5s ease; }
+
+/* Kart Butonları */
+.card-footer {
+    margin-top: 15px;
+    padding-top: 15px;
+    border-top: 1px solid #f1f5f9;
+    display: flex;
+    gap: 8px;
+}
+.btn-outline {
+    flex: 1;
+    padding: 8px;
+    border-radius: 8px;
+    border: 1px solid #e2e8f0;
+    background: white;
+    font-size: 0.75rem;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+.btn-outline:hover { background: #f8fafc; border-color: #3b82f6; color: #3b82f6; }
+   
+/* Geçmiş Tablosu Modalı Stili */
+.history-modal {
+    display: none; 
+    position: fixed; 
+    top: 0; left: 0; 
+    width: 100%; height: 100%;
+    background: rgba(15, 23, 42, 0.6); 
+    z-index: 1000; 
+    align-items: center; 
+    justify-content: center;
+}
+.history-content {
+    background: white; 
+    width: 90%; 
+    max-width: 700px; 
+    padding: 30px; 
+    border-radius: 24px;
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+}
+.history-table { width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 0.9rem; }
+.history-table th { text-align: left; padding: 12px; border-bottom: 2px solid #f1f5f9; color: var(--text-sub); }
+.history-table td { padding: 12px; border-bottom: 1px solid #f1f5f9; }
+
+/* Performans Barı Renkleri */
+.perf-fill-delivery { background: #3b82f6; } /* Mavi - Teslimat */
+.perf-fill-quality { background: #10b981; }  /* Yeşil - Kalite */
+
+        /* Sabit üst alan; kartlar ayrı kaydırma bölgesinde, çubuk gizli */
+        .ik-content.sa-tedarikci-page {
+            box-sizing: border-box;
+            height: 100vh;
+            max-height: 100vh;
+            overflow: hidden !important;
+            display: flex;
+            flex-direction: column;
+            min-height: 0;
+        }
+        .ik-content.sa-tedarikci-page > .dept-header,
+        .ik-content.sa-tedarikci-page > .filter-bar {
+            flex-shrink: 0;
+        }
+        .ik-content.sa-tedarikci-page > .filter-bar {
+            margin-bottom: 22px;
+        }
+        .sa-tedarikci-cards-scroll {
+            flex: 1;
+            min-height: 0;
+            overflow: auto;
+            overscroll-behavior: contain;
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+            /* Hover’da translateY + gölge üstte overflow ile kesilmesin */
+            padding-top: 8px;
+            padding-bottom: 12px;
+        }
+        .sa-tedarikci-cards-scroll::-webkit-scrollbar {
+            display: none;
+        }
+        .ik-content.sa-tedarikci-page > #note-sent {
+            flex-shrink: 0;
+        }
+
+   </style>
+</head>
+<body class="ik-layout">
+    <div class="ik-sidebar">
+        <h2>🛡️ Guardia SA</h2>
+        <ul class="ik-nav-links">
+            <li><a href="sa-index.html" style="text-decoration:none;color:inherit;display:flex;align-items:center;gap:12px;"><i class="fa-solid fa-chart-line"></i> Genel Bakış</a></li>
+            <li><a href="sa-talepler.html" style="text-decoration:none;color:inherit;display:flex;align-items:center;gap:12px;"><i class="fa-solid fa-cart-shopping"></i> Satın Alma Talepleri</a></li>
+            <li><a href="sa-onay.html" style="text-decoration:none;color:inherit;display:flex;align-items:center;gap:12px;"><i class="fa-solid fa-check-double"></i> Onay Bekleyenler</a></li>
+            <li class="active"><i class="fa-solid fa-truck-fast"></i> Tedarikçi Listesi</li>
+            <li><a href="sa-takip.html" style="text-decoration:none;color:inherit;display:flex;align-items:center;gap:12px;"><i class="fa-solid fa-box-open"></i> Sipariş Takibi</a></li>
+            <li><a href="sa-stok.html" style="text-decoration:none;color:inherit;display:flex;align-items:center;gap:12px;"><i class="fa-solid fa-warehouse"></i> Stok Yönetimi</a></li>
+        </ul>
+        <div class="ik-user-tag">
+            <div class="ik-user-avatar"><img src="img/selin_aksoy.jpg" alt=""></div>
+            <div class="ik-user-info"><span>Selin Aksoy</span><small>Satın Alma Uzmanı</small></div>
+        </div>
+    </div>
+
+ <div class="ik-content sa-tedarikci-page">
+    <div class="dept-header">
+        <div class="page-title-group">
+            <h1>Tedarikçi Yönetimi</h1>
+            <p class="page-desc">Anlaşmalı firmaların performans skorlarını izleyin ve tedarikçi ekosisteminizi optimize edin.</p>
+        </div>
+
+        
+        <div class="notif-container">
+            <input type="checkbox" id="notif-toggle" aria-hidden="true" style="display:none;">
+            <label for="notif-toggle" class="notif-trigger">
+                <i class="fa-solid fa-bell"></i>
+                <span class="notif-badge">2</span>
+            </label>
+           <div class="notif-dropdown">
+    <h4>Mesaj Merkezi</h4>
+    
+    <div id="notif-incoming-list" class="notif-list">
+        <div class="notif-item" onclick="openReplyModal('SÖZLEŞME BİRİMİ', 'Demir Çelik A.Ş. anlaşması haftaya doluyor. Yenileme teklifi alalım mı?')" style="cursor: pointer;">
+            <span class="notif-status"></span>
+            <strong>SÖZLEŞME:</strong>
+            <span>Demir Çelik A.Ş. anlaşması bitiyor.</span>
+            <small style="display:block; color: #94a3b8; font-size: 0.75rem; margin-top: 5px;">
+                <i class="fa-regular fa-clock"></i> 11:20
+            </small>
+        </div>
+        
+        <div class="notif-item" onclick="openReplyModal('PERFORMANS TAKİP', 'Yağsan firmasının son teslimat hızı puanını 95e çıkardı.')" style="cursor: pointer;">
+            <span class="notif-status"></span>
+            <strong>PERFORMANS:</strong>
+            <span>Yağsan puanı yükseldi.</span>
+            <small style="display:block; color: #94a3b8; font-size: 0.75rem; margin-top: 5px;">
+                <i class="fa-regular fa-clock"></i> 09:45
+            </small>
+        </div>
+    </div>
+
+    <div id="notif-outgoing-list" class="notif-list" style="display:none;">
+        <div class="notif-item">
+            <strong>SİZDEN -> SATIN ALMA</strong>
+            <span>Demir Çelik sözleşme taslağı gönderildi.</span>
+            <small style="display:block; color: #94a3b8; font-size: 0.75rem; margin-top: 5px;">
+                <i class="fa-regular fa-clock"></i> 08:30
+            </small>
+        </div>
+    </div>
+
+    <div class="notif-footer">
+        <button type="button" class="notif-action-btn" onclick="showIncoming()">
+            <i class="fa-solid fa-bell"></i> Gelenler
+        </button>
+        <button type="button" class="notif-action-btn" onclick="showOutgoing()">
+            <i class="fa-solid fa-paper-plane"></i> Gidenler
+        </button>
+    </div>
+    
+</div>
+</div>
+        
+    </div>
+ <div class="filter-bar" style="display: flex; justify-content: space-between; align-items: center; gap: 20px;">
+    
+    <div style="display: flex; align-items: center; gap: 8px; flex-wrap: nowrap;">
+        <button class="notif-action-btn" onclick="openAddModal()" style="background: #0f172a; color: white; border: none; margin-right: 10px;">
+    <i class="fa-solid fa-plus"></i> Yeni Tedarikçi
+</button>
+        
+        <button class="notif-action-btn active" onclick="filterTedarikci('Hepsi', this)">Tümü</button>
+        <button class="notif-action-btn" onclick="filterTedarikci('Mekanik', this)">Mekanik</button>
+        <button class="notif-action-btn" onclick="filterTedarikci('Elektrik', this)">Elektrik</button>
+        <button class="notif-action-btn" onclick="filterTedarikci('Sıvı Yağ', this)">Sıvı Yağ</button>
+        <button class="notif-action-btn" onclick="filterTedarikci('Ambalaj', this)">Ambalaj</button>
+        <button class="notif-action-btn" onclick="filterTedarikci('Hırdavat', this)">Hırdavat</button>
+    </div>
+
+    <div class="search-wrapper" style="min-width: 280px;">
+        <i class="fa-solid fa-magnifying-glass" style="position: absolute; left: 15px; top: 50%; transform: translateY(-50%); color: #94a3b8;"></i>
+        <input type="text" id="tedarikciSearch" onkeyup="searchTedarikci()" placeholder="Firma veya kategori ara..." 
+               style="width: 100%; padding: 10px 15px 10px 40px; border: 1px solid #e2e8f0; border-radius: 12px; outline: none; background: #f8fafc;">
+    </div>
+</div>
+
+    <div class="sa-tedarikci-cards-scroll" aria-label="Tedarikçi kartları">
+    <div class="card-grid" id="tedarikciGrid">
+    <div class="tedarikci-card" data-kategori="Mekanik">
+        <div style="display: flex; justify-content: space-between;">
+            <div><h4>Demir Çelik A.Ş.</h4><span class="kategori-badge">Mekanik / Yedek Parça</span></div>
+            <div style="color: #10b981; font-size: 0.75rem;"><i class="fa-solid fa-check-circle"></i> Onaylı</div>
+        </div>
+        <div class="perf-container">
+            <div class="perf-label"><span>Teslimat</span><span>9/10</span></div>
+            <div class="perf-bar"><div class="perf-fill" style="width: 90%; background: #3b82f6;"></div></div>
+            <div class="perf-label"><span>Kalite</span><span>8/10</span></div>
+            <div class="perf-bar"><div class="perf-fill" style="width: 80%; background: #10b981;"></div></div>
+        </div>
+        <div class="card-footer"><button class="btn-outline" onclick="openReplyModal('Demir Çelik')">Teklif İste</button><button class="btn-outline" onclick="openHistory('Demir Çelik A.Ş.')">Geçmiş</button></div>
+    </div>
+
+    <div class="tedarikci-card" data-kategori="Elektrik">
+        <div style="display: flex; justify-content: space-between;">
+            <div><h4>Volt Otomasyon</h4><span class="kategori-badge">Elektrik / Otomasyon</span></div>
+            <div style="color: #10b981; font-size: 0.75rem;"><i class="fa-solid fa-check-circle"></i> Onaylı</div>
+        </div>
+        <div class="perf-container">
+            <div class="perf-label"><span>Teslimat</span><span>10/10</span></div>
+            <div class="perf-bar"><div class="perf-fill" style="width: 100%; background: #3b82f6;"></div></div>
+            <div class="perf-label"><span>Kalite</span><span>9/10</span></div>
+            <div class="perf-bar"><div class="perf-fill" style="width: 95%; background: #10b981;"></div></div>
+        </div>
+        <div class="card-footer"><button class="btn-outline" onclick="openReplyModal('Volt Otomasyon', '...')">Teklif İste</button><button class="btn-outline" onclick="openHistory('Volt Otomasyon')">Geçmiş</button></div>
+    </div>
+
+    <div class="tedarikci-card" data-kategori="Sıvı Yağ">
+        <div style="display: flex; justify-content: space-between;">
+            <div><h4>Yağsan Lübrikant</h4><span class="kategori-badge">Sıvı Yağ Grubu</span></div>
+            <div style="color: #10b981; font-size: 0.75rem;"><i class="fa-solid fa-check-circle"></i> Onaylı</div>
+        </div>
+        <div class="perf-container">
+            <div class="perf-label"><span>Teslimat</span><span>8/10</span></div>
+            <div class="perf-bar"><div class="perf-fill" style="width: 85%; background: #3b82f6;"></div></div>
+            <div class="perf-label"><span>Kalite</span><span>10/10</span></div>
+            <div class="perf-bar"><div class="perf-fill" style="width: 100%; background: #10b981;"></div></div>
+        </div>
+        <div class="card-footer"><button class="btn-outline" onclick="openReplyModal('Yağsan', '...')">Teklif İste</button><button class="btn-outline" onclick="openHistory('Yağsan Lübrikant')">Geçmiş</button></div>
+    </div>
+
+    <div class="tedarikci-card" data-kategori="Ambalaj">
+        <div style="display: flex; justify-content: space-between;">
+            <div><h4>Mega Paketleme</h4><span class="kategori-badge">Ambalaj / Paketleme</span></div>
+            <div style="color: #f59e0b; font-size: 0.75rem;"><i class="fa-solid fa-clock"></i> İncelemede</div>
+        </div>
+        <div class="perf-container">
+            <div class="perf-label"><span>Teslimat</span><span>7/10</span></div>
+            <div class="perf-bar"><div class="perf-fill" style="width: 70%; background: #3b82f6;"></div></div>
+            <div class="perf-label"><span>Kalite</span><span>9/10</span></div>
+            <div class="perf-bar"><div class="perf-fill" style="width: 90%; background: #10b981;"></div></div>
+        </div>
+        <div class="card-footer"><button class="btn-outline" onclick="openReplyModal('Mega', '...')">Teklif İste</button><button class="btn-outline"onclick="openHistory('Mega Paketleme')">Geçmiş</button></div>
+    </div>
+
+    <div class="tedarikci-card" data-kategori="İş Güvenliği">
+        <div style="display: flex; justify-content: space-between;">
+            <div><h4>Güven İş KKD</h4><span class="kategori-badge">İş Güvenliği (KKD)</span></div>
+            <div style="color: #10b981; font-size: 0.75rem;"><i class="fa-solid fa-check-circle"></i> Onaylı</div>
+        </div>
+        <div class="perf-container">
+            <div class="perf-label"><span>Teslimat</span><span>9/10</span></div>
+            <div class="perf-bar"><div class="perf-fill" style="width: 95%; background: #3b82f6;"></div></div>
+            <div class="perf-label"><span>Kalite</span><span>9/10</span></div>
+            <div class="perf-bar"><div class="perf-fill" style="width: 90%; background: #10b981;"></div></div>
+        </div>
+        <div class="card-footer"><button class="btn-outline"onclick="openReplyModal('Güven İş', '...')">Teklif İste</button><button class="btn-outline"onclick="openHistory('Güven İş KKD')">Geçmiş</button></div>
+    </div>
+
+    <div class="tedarikci-card" data-kategori="Hırdavat">
+        <div style="display: flex; justify-content: space-between;">
+            <div><h4>Usta El Aletleri</h4><span class="kategori-badge">Hırdavat / El Aletleri</span></div>
+            <div style="color: #10b981; font-size: 0.75rem;"><i class="fa-solid fa-check-circle"></i> Onaylı</div>
+        </div>
+        <div class="perf-container">
+            <div class="perf-label"><span>Teslimat</span><span>8/10</span></div>
+            <div class="perf-bar"><div class="perf-fill" style="width: 80%; background: #3b82f6;"></div></div>
+            <div class="perf-label"><span>Kalite</span><span>8/10</span></div>
+            <div class="perf-bar"><div class="perf-fill" style="width: 85%; background: #10b981;"></div></div>
+        </div>
+        <div class="card-footer"><button class="btn-outline"onclick="openReplyModal('Usta El', '...')">Teklif İste</button><button class="btn-outline"onclick="openHistory('Usta El Aletleri')">Geçmiş</button></div>
+    </div>
+    
+    <div class="tedarikci-card" data-kategori="Sarf">
+        <div style="display: flex; justify-content: space-between;">
+            <div><h4>Ofis Market</h4><span class="kategori-badge">Sarf Malzeme</span></div>
+            <div style="color: #10b981; font-size: 0.75rem;"><i class="fa-solid fa-check-circle"></i> Onaylı</div>
+        </div>
+        <div class="perf-container">
+            <div class="perf-label"><span>Teslimat</span><span>10/10</span></div>
+            <div class="perf-bar"><div class="perf-fill" style="width: 100%; background: #3b82f6;"></div></div>
+            <div class="perf-label"><span>Kalite</span><span>7/10</span></div>
+            <div class="perf-bar"><div class="perf-fill" style="width: 75%; background: #10b981;"></div></div>
+        </div>
+        <div class="card-footer"><button class="btn-outline"onclick="openReplyModal('Ofis Market', '...')">Teklif İste</button><button class="btn-outline"onclick="openHistory('Ofis Market')">Geçmiş</button></div>
+    </div>
+
+   <div class="tedarikci-card" data-kategori="Sıvı Yağ">
+    <div style="display: flex; justify-content: space-between;">
+        <div><h4>Kötü Lojistik Ltd.</h4><span class="kategori-badge">Sıvı Yağ</span></div>
+        <div style="color: #ef4444; font-size: 0.75rem; font-weight: 700;  padding: 4px 8px; border-radius: 6px;">
+            <i class="fa-solid fa-circle-xmark"></i> ASKIDA
+        </div>
+    </div>
+    <div class="perf-container">
+        <div class="perf-label"><span>Teslimat</span><span>3/10</span></div>
+        <div class="perf-bar"><div class="perf-fill" style="width: 30%; background: #ef4444;"></div></div>
+        <div class="perf-label"><span>Kalite</span><span>4/10</span></div>
+        <div class="perf-bar"><div class="perf-fill" style="width: 40%; background: #ef4444;"></div></div>
+    </div>
+    <div class="card-footer">
+        <button class="btn-outline" onclick="openHistory('Kötü Lojistik Ltd.')"style="opacity: 0.5; cursor: not-allowed;" disabled>Teklif İste</button>
+        <button class="btn-outline" onclick="openHistory('Kötü Lojistik Ltd.')">Geçmiş</button>
+    </div>
+</div>
+    </div>
+
+<div id="noResults" style="display:none; text-align:center; padding: 50px; color: #64748b;">
+    <i class="fa-solid fa-magnifying-glass-blur" style="font-size: 3rem; margin-bottom: 15px; opacity: 0.5;"></i>
+    <p>Aradığınız kriterlere uygun bir tedarikçi bulunamadı.</p>
+</div>
+    </div>
+       
+        <div id="note-sent">Notunuz seçilen birimlere iletildi.</div>
+<div id="replyModal" class="reply-modal">
+    <div class="reply-content">
+        <div class="reply-header">
+            <i class="fa-solid fa-reply"></i>
+            <h3 id="replyTarget">HUKUK Birimine Cevap Yaz</h3>
+        </div>
+        
+        <div id="replyOriginalMessage" class="original-msg-preview">
+            "5 adet yeni iş sözleşmesi onaylandı."
+        </div>
+        
+        <textarea id="replyText" class="reply-textarea" placeholder="Cevabınızı buraya yazın..."></textarea>
+        
+        <div class="reply-actions">
+            <button class="btn-reply-cancel" onclick="closeReplyModal()">Vazgeç</button>
+            <button class="btn-reply-send" onclick="sendReply()">Cevapla</button>
+        </div>
+    </div>
+    </div>
+
+<div id="historyModal" class="history-modal">
+    <div class="history-content">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+            <h3 id="historyTitle" style="margin:0; color: #0f172a;">Sipariş Geçmişi</h3>
+            <button onclick="closeHistory()" style="background:none; border:none; font-size: 1.5rem; cursor:pointer;">&times;</button>
+        </div>
+        <table class="history-table">
+            <thead>
+                <tr>
+                    <th>Tarih</th>
+                    <th>Sipariş No</th>
+                    <th>Miktar / Birim</th>
+                    <th>Tutar</th>
+                    <th>Durum</th>
+                </tr>
+            </thead>
+            <tbody id="historyBody">
+                </tbody>
+        </table>
+    </div>
+</div>
+
+<div id="addTedarikciModal" class="history-modal">
+    <div class="history-content" style="max-width: 500px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+            <h3 style="margin:0; color: #0f172a;"><i class="fa-solid fa-plus-circle"></i> Yeni Tedarikçi Tanımla</h3>
+            <button onclick="closeAddModal()" style="background:none; border:none; font-size: 1.5rem; cursor:pointer;">&times;</button>
+        </div>
+        
+        <div style="display: flex; flex-direction: column; gap: 15px;">
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+    <div>
+        <label style="display:block; font-size: 0.85rem; margin-bottom: 5px; font-weight: 600;">Firma Adı</label>
+        <input type="text" id="newFirmaName" placeholder="Örn: Demir İş Ltd." style="width: 100%; padding: 10px; border: 1px solid #e2e8f0; border-radius: 10px; outline: none;">
+    </div>
+    <div>
+        <label style="display:block; font-size: 0.85rem; margin-bottom: 5px; font-weight: 600;">Kategori</label>
+        <select id="newFirmaKat" style="width: 100%; padding: 10px; border: 1px solid #e2e8f0; border-radius: 10px; outline: none;">
+            <option value="Mekanik">Mekanik / Yedek Parça</option>
+            <option value="Elektrik">Elektrik / Otomasyon</option>
+            <option value="Sıvı Yağ">Sıvı Yağ Grubu</option>
+            <option value="Ambalaj">Ambalaj / Paketleme</option>
+            <option value="Hırdavat">Hırdavat / El Aletleri</option>
+        </select>
+    </div>
+    
+    <div>
+        <label style="display:block; font-size: 0.85rem; margin-bottom: 5px; font-weight: 600;">Vergi No</label>
+        <input type="text" id="newFirmaVergi" placeholder="1234567890" style="width: 100%; padding: 10px; border: 1px solid #e2e8f0; border-radius: 10px; outline: none;">
+    </div>
+    <div>
+        <label style="display:block; font-size: 0.85rem; margin-bottom: 5px; font-weight: 600;">İlgili Kişi</label>
+        <input type="text" id="newFirmaIlgili" placeholder="Ad Soyad" style="width: 100%; padding: 10px; border: 1px solid #e2e8f0; border-radius: 10px; outline: none;">
+    </div>
+
+    <div style="grid-column: span 2;">
+        <label style="display:block; font-size: 0.85rem; margin-bottom: 5px; font-weight: 600;">E-Posta Adresi</label>
+        <input type="email" id="newFirmaEmail" placeholder="iletisim@firma.com" style="width: 100%; padding: 10px; border: 1px solid #e2e8f0; border-radius: 10px; outline: none;">
+    </div>
+</div>
+
+<button onclick="saveNewTedarikci()" style="width: 100%; background: #0f172a; color: white; border: none; padding: 14px; border-radius: 12px; font-weight: 600; cursor: pointer; margin-top: 20px; transition: 0.3s;">
+    Tedarikçiyi Sisteme Tanımla
+</button>
+        </div>
+    </div>
+</div>
+    <script>
+         /* 1. MEVCUT CANLI TAKİP MODALLARI */
+function openLiveTracking() { document.getElementById('liveTrackingModal').style.display = 'flex'; }
+function closeLiveTracking() { document.getElementById('liveTrackingModal').style.display = 'none'; }
+
+/* 2. BİLDİRİM LİSTESİ GEÇİŞLERİ (Gelen/Giden) */
+function showIncoming() {
+    const incoming = document.getElementById('notif-incoming-list');
+    const outgoing = document.getElementById('notif-outgoing-list');
+    const btnIn = document.querySelector('.notif-action-btn[onclick="showIncoming()"]');
+    const btnOut = document.querySelector('.notif-action-btn[onclick="showOutgoing()"]');
+    if (incoming && outgoing) {
+        incoming.style.display = 'block';
+        outgoing.style.display = 'none';
+        btnIn.classList.add('active');
+        btnOut.classList.remove('active');
+    }
+}
+
+function showOutgoing() {
+    updateOutgoingList();
+    const incoming = document.getElementById('notif-incoming-list');
+    const outgoing = document.getElementById('notif-outgoing-list');
+    const btnIn = document.querySelector('.notif-action-btn[onclick="showIncoming()"]');
+    const btnOut = document.querySelector('.notif-action-btn[onclick="showOutgoing()"]');
+    if (incoming && outgoing) {
+        incoming.style.display = 'none';
+        outgoing.style.display = 'block';
+        btnOut.classList.add('active');
+        btnIn.classList.remove('active');
+    }
+}
+
+/* 3. HIZLI CEVAP / TEKLİF — tek tanım (gelen bildirim vs tedarikçi kartı) */
+function isTeklifModalContext(message) {
+    if (message === undefined || message === null) return true;
+    const m = String(message).trim();
+    if (m === '' || m === '...') return true;
+    if (m.indexOf('Yeni kayıt') === 0) return true;
+    return false;
+}
+
+function openReplyModal(sender, message) {
+    const rt = document.getElementById('replyText');
+    if (rt) rt.value = '';
+    const targetEl = document.getElementById('replyTarget');
+    const originalMsg = document.getElementById('replyOriginalMessage');
+    const modal = document.getElementById('replyModal');
+    const teklif = isTeklifModalContext(message);
+    if (teklif) {
+        targetEl.innerText = sender + ' Firmasına Teklif Talebi';
+        if (originalMsg) originalMsg.style.display = 'none';
+    } else {
+        targetEl.innerText = sender + ' Birimine Cevap Yaz';
+        if (originalMsg) {
+            originalMsg.style.display = '';
+            originalMsg.innerText = '"' + message + '"';
+        }
+    }
+    modal.style.display = 'flex';
+}
+
+function closeReplyModal() {
+    document.getElementById('replyModal').style.display = 'none';
+    const rt = document.getElementById('replyText');
+    if (rt) rt.value = '';
+    const om = document.getElementById('replyOriginalMessage');
+    if (om) om.style.display = '';
+}
+
+function sendReply() {
+    const text = (document.getElementById('replyText').value || '').trim();
+    const title = document.getElementById('replyTarget').innerText;
+    const teklif = title.indexOf('Firmasına Teklif Talebi') !== -1;
+    if (!text) {
+        alert(teklif ? 'Lütfen teklif içeriğini girmeden gönderim yapmayın.' : 'Lütfen boş bir mesaj göndermeyin.');
+        return;
+    }
+    const hedef = teklif
+        ? title.replace(/\s*Firmasına Teklif Talebi\s*$/, '').trim()
+        : title.replace(/\s*Birimine Cevap Yaz\s*$/, '').trim();
+    /* Gidenler yalnızca ana sayfadaki birimler arası notlardan; modal cevap/teklif listeye yazılmaz */
+    closeReplyModal();
+    alert(teklif ? (hedef + ' firmasına talebiniz kaydedildi.') : ('Cevabınız başarıyla iletildi.'));
+}
+
+/* 4. GENEL TIKLAMA VE BAŞLANGIÇ AYARLARI */
+window.onclick = function (event) {
+    const liveModal = document.getElementById('liveTrackingModal');
+    const replyModal = document.getElementById('replyModal');
+    if (event.target === liveModal) liveModal.style.display = 'none';
+    if (event.target === replyModal) closeReplyModal();
+};
+
+document.addEventListener('DOMContentLoaded', function () {
+    const btnIn = document.querySelector('.notif-action-btn[onclick="showIncoming()"]');
+    if (btnIn) btnIn.classList.add('active');
+});
+// Boş alana tıklandığında açık olan her şeyi kapat
+document.addEventListener('click', function(event) {
+    // 1. Checkbox ile açılan menüleri kapat (Bildirimler ve Not Kutusu)
+    const notifToggle = document.getElementById('notif-toggle');
+    const noteToggle = document.getElementById('note-box-toggle');
+    
+    // Bildirimler için: Tıklanan yer bildirim alanı değilse ve menü açıksa kapat
+    const notifContainer = document.querySelector('.notif-container');
+    if (notifToggle.checked && !notifContainer.contains(event.target)) {
+        notifToggle.checked = false;
+    }
+
+    // Not Kutusu için: Tıklanan yer not kutusu veya onu açan buton değilse kapat
+    const msgBox = document.querySelector('.msg-box');
+    const quickNoteBtn = document.querySelector('.quick-note-btn');
+    if (noteToggle.checked && !msgBox.contains(event.target) && !quickNoteBtn.contains(event.target)) {
+        noteToggle.checked = false;
+    }
+
+    // 2. Modal'lar için (Zaten senin kodunda var ama daha temiz hali):
+    const replyModal = document.getElementById('replyModal');
+    if (event.target === replyModal) {
+        closeReplyModal();
+    }
+});
+
+        function applyTedarikciVisibility() {
+            const activeFilterBtn = [...document.querySelectorAll('.filter-bar .notif-action-btn')].find(function (b) {
+                return b.classList.contains('active') && (b.getAttribute('onclick') || '').indexOf('filterTedarikci') !== -1;
+            });
+            let kat = 'Hepsi';
+            if (activeFilterBtn) {
+                const m = (activeFilterBtn.getAttribute('onclick') || '').match(/filterTedarikci\(\s*'([^']*)'/);
+                if (m) kat = m[1];
+            }
+            const input = (document.getElementById('tedarikciSearch') && document.getElementById('tedarikciSearch').value.toLowerCase()) || '';
+            const cards = document.getElementsByClassName('tedarikci-card');
+            let visibleCount = 0;
+            for (let card of cards) {
+                const dk = card.getAttribute('data-kategori') || '';
+                const matchKat = kat === 'Hepsi' || dk.indexOf(kat) !== -1;
+                const name = (card.querySelector('h4') && card.querySelector('h4').innerText.toLowerCase()) || '';
+                const matchSearch = !input || name.indexOf(input) !== -1 || dk.toLowerCase().indexOf(input) !== -1;
+                const show = matchKat && matchSearch;
+                card.style.display = show ? '' : 'none';
+                if (show) visibleCount++;
+            }
+            const noResults = document.getElementById('noResults');
+            if (noResults) noResults.style.display = visibleCount === 0 ? 'block' : 'none';
+        }
+
+        function filterTedarikci(kat, btnEl) {
+            let buttons = document.querySelectorAll('.filter-bar .notif-action-btn');
+            buttons.forEach(btn => btn.classList.remove('active'));
+            if (btnEl) btnEl.classList.add('active');
+            applyTedarikciVisibility();
+        }
+
+// Örnek geçmiş verileri
+const historyData = {
+    'Demir Çelik A.Ş.': [
+        {tarih: '12.02.2026', no: 'ORD-992', miktar: '500 Adet Rulman', tutar: '42.000 TL', durum: 'Tamamlandı'},
+        {tarih: '05.01.2026', no: 'ORD-812', miktar: '200 Metre Zincir', tutar: '18.500 TL', durum: 'Tamamlandı'},
+        {tarih: '20.12.2025', no: 'ORD-750', miktar: '10 Adet Dişli Takımı', tutar: '12.000 TL', durum: 'Tamamlandı'}
+    ],
+    'Volt Otomasyon': [
+        {tarih: '20.02.2026', no: 'ORD-1005', miktar: '3 Adet PLC Modülü', tutar: '85.000 TL', durum: 'Tamamlandı'},
+        {tarih: '10.01.2026', no: 'ORD-850', miktar: '50 Metre Sinyal Kablosu', tutar: '4.500 TL', durum: 'Tamamlandı'},
+        {tarih: '15.12.2025', no: 'ORD-720', miktar: '1 Adet Operatör Paneli', tutar: '22.000 TL', durum: 'Tamamlandı'}
+    ],
+    'Yağsan Lübrikant': [
+        {tarih: '10.03.2026', no: 'ORD-1050', miktar: '20 Varil Gres Yağı', tutar: '35.000 TL', durum: 'Teslimatta'},
+        {tarih: '10.02.2026', no: 'ORD-980', miktar: '10 Varil Hidrolik Yağ', tutar: '65.000 TL', durum: 'Tamamlandı'},
+        {tarih: '05.01.2026', no: 'ORD-840', miktar: '5 Adet Kesme Sıvısı', tutar: '12.500 TL', durum: 'Tamamlandı'}
+    ],
+    'Mega Paketleme': [
+        {tarih: '15.01.2026', no: 'ORD-750', miktar: '1000 Adet Baskılı Koli', tutar: '12.000 TL', durum: 'Tamamlandı'},
+        {tarih: '05.12.2025', no: 'ORD-600', miktar: '50 Top Palet Streç', tutar: '8.000 TL', durum: 'Tamamlandı'},
+        {tarih: '20.11.2025', no: 'ORD-520', miktar: '100 Rulo Koli Bandı', tutar: '3.500 TL', durum: 'Tamamlandı'}
+    ],
+    'Güven İş KKD': [
+        {tarih: '05.02.2026', no: 'ORD-910', miktar: '100 Adet İş Bareti', tutar: '25.000 TL', durum: 'Tamamlandı'},
+        {tarih: '12.01.2026', no: 'ORD-780', miktar: '50 Çift İş Ayakkabısı', tutar: '45.000 TL', durum: 'Tamamlandı'},
+        {tarih: '20.12.2025', no: 'ORD-650', miktar: '200 Adet İş Eldiveni', tutar: '8.000 TL', durum: 'Tamamlandı'}
+    ],
+    'Usta El Aletleri': [
+        {tarih: '02.02.2026', no: 'ORD-880', miktar: '50 Takım Anahtar Seti', tutar: '15.000 TL', durum: 'Tamamlandı'},
+        {tarih: '10.01.2026', no: 'ORD-760', miktar: '10 Adet Şarjlı Matkap', tutar: '32.000 TL', durum: 'Tamamlandı'},
+        {tarih: '15.12.2025', no: 'ORD-630', miktar: '5 Adet Tork Anahtarı', tutar: '18.500 TL', durum: 'Tamamlandı'}
+    ],
+    'Ofis Market': [
+        {tarih: '18.02.2026', no: 'ORD-1020', miktar: '20 Top A4 Kağıt', tutar: '2.500 TL', durum: 'Tamamlandı'},
+        {tarih: '25.01.2026', no: 'ORD-890', miktar: '5 Adet Yazıcı Toneri', tutar: '12.500 TL', durum: 'Tamamlandı'},
+        {tarih: '10.12.2025', no: 'ORD-610', miktar: 'Genel Kırtasiye Paketi', tutar: '4.200 TL', durum: 'Tamamlandı'}
+    ],
+    'Kötü Lojistik Ltd.': [
+        {tarih: '01.03.2026', no: 'ORD-1100', miktar: '2 Adet Hidrolik Pompa', tutar: '15.000 TL', durum: 'İptal Edildi'},
+        {tarih: '15.01.2026', no: 'ORD-001', miktar: '5 Adet Yağ Filtresi', tutar: '4.000 TL', durum: 'İptal Edildi'},
+        {tarih: '10.12.2025', no: 'ORD-550', miktar: '10 Adet Conta Seti', tutar: '2.500 TL', durum: 'Reddedildi'}
+    ]
+};
+
+function openHistory(name) {
+    const body = document.getElementById('historyBody');
+    const modal = document.getElementById('historyModal');
+    document.getElementById('historyTitle').innerText = name + " - İşlem Geçmişi";
+    body.innerHTML = '';
+    
+    if(historyData[name]) {
+        historyData[name].forEach(item => {
+            // Durum rengini 
+            let durumRengi = '#10b981'; // Varsayılan Yeşil (Tamamlandı/Teslimatta)
+            
+            if (item.durum.includes('İptal') || item.durum.includes('Reddedildi')) {
+                durumRengi = '#ef4444'; // Kırmızı
+            } else if (item.durum.includes('Teslimatta') || item.durum.includes('Bekliyor')) {
+                durumRengi = '#f59e0b'; // Turuncu 
+            }
+
+            body.innerHTML += `<tr>
+                <td>${item.tarih}</td>
+                <td><strong>${item.no}</strong></td>
+                <td>${item.miktar}</td>
+                <td>${item.tutar}</td>
+                <td><span style="color: ${durumRengi}; font-weight: 600;">● ${item.durum}</span></td>
+            </tr>`;
+        });
+    } else {
+        body.innerHTML = '<tr><td colspan="5" style="text-align:center; padding:20px;">Kayıtlı geçmiş işlem bulunamadı.</td></tr>';
+    }
+    modal.style.display = 'flex';
+}
+function closeHistory() {
+    document.getElementById('historyModal').style.display = 'none';
+}
+
+// Modalı Açma ve Kapama
+function openAddModal() {
+    document.getElementById('addTedarikciModal').style.display = 'flex';
+}
+
+function closeAddModal() {
+    document.getElementById('addTedarikciModal').style.display = 'none';
+}
+
+// Yeni tedarikçi kartını ızgaraya ekle (diğer kutucuklarla aynı yapı)
+function appendTedarikciCard(name, kat, katLabel) {
+    const grid = document.getElementById('tedarikciGrid');
+    if (!grid) return;
+
+    const card = document.createElement('div');
+    card.className = 'tedarikci-card';
+    card.setAttribute('data-kategori', kat);
+
+    const headerRow = document.createElement('div');
+    headerRow.style.cssText = 'display: flex; justify-content: space-between; align-items: flex-start;';
+
+    const left = document.createElement('div');
+    const h4 = document.createElement('h4');
+    h4.textContent = name;
+    const katSpan = document.createElement('span');
+    katSpan.className = 'kategori-badge';
+    katSpan.textContent = katLabel;
+    left.appendChild(h4);
+    left.appendChild(katSpan);
+
+    const statusWrap = document.createElement('div');
+    statusWrap.style.cssText = 'color: #10b981; font-size: 0.75rem;';
+    statusWrap.innerHTML = '<i class="fa-solid fa-check-circle"></i> Onaylı';
+
+    headerRow.appendChild(left);
+    headerRow.appendChild(statusWrap);
+
+    const perf = document.createElement('div');
+    perf.className = 'perf-container';
+    perf.innerHTML = `
+        <div class="perf-label"><span>Teslimat</span><span>8/10</span></div>
+        <div class="perf-bar"><div class="perf-fill" style="width: 82%; background: #3b82f6;"></div></div>
+        <div class="perf-label"><span>Kalite</span><span>8/10</span></div>
+        <div class="perf-bar"><div class="perf-fill" style="width: 82%; background: #10b981;"></div></div>`;
+
+    const footer = document.createElement('div');
+    footer.className = 'card-footer';
+    const btnTeklif = document.createElement('button');
+    btnTeklif.className = 'btn-outline';
+    btnTeklif.type = 'button';
+    btnTeklif.textContent = 'Teklif İste';
+    btnTeklif.addEventListener('click', function () {
+        openReplyModal(name, 'Yeni kayıt — teklif talebi');
+    });
+    const btnGecmis = document.createElement('button');
+    btnGecmis.className = 'btn-outline';
+    btnGecmis.type = 'button';
+    btnGecmis.textContent = 'Geçmiş';
+    btnGecmis.addEventListener('click', function () {
+        openHistory(name);
+    });
+    footer.appendChild(btnTeklif);
+    footer.appendChild(btnGecmis);
+
+    card.appendChild(headerRow);
+    card.appendChild(perf);
+    card.appendChild(footer);
+
+    grid.insertBefore(card, grid.firstChild);
+    applyTedarikciVisibility();
+}
+
+// Yeni Tedarikçiyi Kaydetme (Sanal Kayıt)
+function saveNewTedarikci() {
+    const name = document.getElementById('newFirmaName').value.trim();
+    const kat = document.getElementById('newFirmaKat').value;
+    const katLabel = document.getElementById('newFirmaKat').options[document.getElementById('newFirmaKat').selectedIndex].text;
+
+    if(name === "") {
+        alert("Lütfen firma adını giriniz.");
+        return;
+    }
+
+    appendTedarikciCard(name, kat, katLabel);
+
+    if (!historyData[name]) {
+        historyData[name] = [];
+    }
+
+    closeAddModal();
+    document.getElementById('newFirmaName').value = "";
+    document.getElementById('newFirmaIlgili').value = "";
+    document.getElementById('newFirmaEmail').value = "";
+    if (document.getElementById('newFirmaVergi')) document.getElementById('newFirmaVergi').value = "";
+
+    searchTedarikci();
+}
+
+function searchTedarikci() {
+    applyTedarikciVisibility();
+}
+
+    // Sayfa her açıldığında giden mesajları ortak hafızadan (localStorage) çek
+    document.addEventListener('DOMContentLoaded', function() {
+        updateOutgoingList(); 
+    });
+
+    function updateOutgoingList() {
+        const listContainer = document.getElementById('notif-outgoing-list');
+        if (!listContainer) return;
+
+        // Tarayıcının ortak hafızasından mesajları alma
+        const gidenMesajlar = JSON.parse(localStorage.getItem('guardia_giden_mesajlar') || '[]');
+
+        listContainer.innerHTML = ""; 
+
+        if (gidenMesajlar.length === 0) {
+            listContainer.innerHTML = '<div class="notif-item"><span>Henüz gönderilmiş bir not bulunmuyor.</span></div>';
+        } else {
+            gidenMesajlar.forEach(msg => {
+                listContainer.innerHTML += `
+                    <div class="notif-item">
+                        <strong>SİZDEN -> ${msg.hedef}</strong>
+                        <span>${msg.icerik}</span>
+                        <small style="display:block; color: #94a3b8; font-size: 0.75rem; margin-top: 5px;">
+                            <i class="fa-regular fa-clock"></i> ${msg.saat}
+                        </small>
+                    </div>`;
+            });
+        }
+    }
+</script>
+</body>
+</html>

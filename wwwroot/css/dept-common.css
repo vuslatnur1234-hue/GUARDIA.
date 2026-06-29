@@ -1,0 +1,683 @@
+/* ORTAK DEPARTMAN HEADER & BİLDİRİM */
+.dept-header {
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: flex-start !important;
+    /* Zili en üst satıra (h1 yanına) sabitler */
+    margin-bottom: 25px !important;
+    padding-top: 10px !important;
+    position: relative !important;
+    z-index: 100 !important;
+    min-height: 70px;
+    /* Alanı sabit tutarak zıplamayı önler */
+}
+
+/* Başlık ve Alt Yazı Grubu */
+.page-title-group,
+.page-title-hero {
+    display: flex;
+    flex-direction: column;
+}
+
+.dept-header h1,
+.page-title-group h1,
+.page-title-hero h1 {
+    margin: 0 !important;
+    font-size: 1.6rem !important;
+    font-weight: 700 !important;
+    color: #0f172a !important;
+    line-height: 1.2 !important;
+}
+
+.page-desc {
+    margin: 4px 0 0 0 !important;
+    font-size: 0.95rem !important;
+    color: #64748b !important;
+    font-weight: 400 !important;
+}
+
+/* Zil Konteynırı ve Hizalama */
+.notif-container {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    flex-shrink: 0 !important;
+    margin-top: -2px !important;
+    /* h1 ile milimetrik eşitleme */
+    position: relative !important;
+    z-index: 9999 !important;
+}
+
+.notif-dropdown {
+    z-index: 10000 !important;
+    /* Dropdown her zaman en üstte */
+}
+
+/* Zil: checkbox ile aç/kapa (sadece CSS) */
+.notif-trigger {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
+    background: white;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+    cursor: pointer;
+    color: var(--accent);
+    font-size: 1.2rem;
+}
+
+.notif-badge {
+    position: absolute;
+    top: 4px;
+    right: 4px;
+    min-width: 18px;
+    height: 18px;
+    padding: 0 5px;
+    background: #ef4444;
+    color: white;
+    font-size: 0.7rem;
+    font-weight: 700;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+input#notif-toggle {
+    display: none;
+}
+
+.notif-dropdown {
+    display: none;
+    position: absolute;
+    top: 56px;
+    right: 0;
+    width: 300px;
+    background: white;
+    border-radius: 20px;
+    /* Daha yuvarlak, modern köşeler */
+    box-shadow: 0 15px 40px rgba(0, 0, 0, 0.12);
+    border: 1px solid #e2e8f0;
+    z-index: 2000;
+    padding: 0;
+    overflow: hidden;
+    /* Köşelerin taşmasını engeller */
+    animation: notifFade 0.3s ease;
+}
+
+@keyframes notifFade {
+    from {
+        opacity: 0;
+        transform: translateY(-8px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.notif-dropdown h4 {
+    margin: 0 0 12px 0;
+    font-size: 0.9rem;
+    color: var(--sidebar);
+    padding-bottom: 8px;
+    border-bottom: 1px solid #f1f5f9;
+}
+
+.notif-item {
+    padding: 10px 0;
+    border-bottom: 1px solid #f8fafc;
+    font-size: 0.85rem;
+    color: var(--text-main);
+}
+
+.notif-item:last-child {
+    border-bottom: none;
+}
+
+/* Checkbox işaretlenince dropdown açılsın */
+input#notif-toggle:checked~.notif-dropdown {
+    display: block;
+}
+
+/* BİRİMLER ARASI NOT KUTUSU (Sadece -ana.html sayfalarında) */
+/* Aç/Kapa: checkbox. Çoklu seçim: checkbox listesi. Kapatma: X (label for close checkbox) */
+
+input#note-box-toggle {
+    display: none;
+}
+
+.quick-note-btn {
+    position: fixed;
+    bottom: 30px;
+    right: 30px;
+    width: 56px;
+    height: 56px;
+    background: var(--accent);
+    color: var(--sidebar);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.4rem;
+    cursor: pointer;
+    z-index: 1001;
+    transition: transform 0.2s, box-shadow 0.2s;
+    box-shadow: 0 4px 20px rgba(56, 189, 248, 0.4);
+}
+
+.quick-note-btn:hover {
+    transform: scale(1.05);
+    box-shadow: 0 6px 24px rgba(56, 189, 248, 0.5);
+}
+
+.msg-box {
+    position: fixed;
+    bottom: -600px;
+    right: 30px;
+    width: 360px;
+    background: #0f172a;
+    /* Derin gece mavisi */
+    color: white;
+    border-radius: 24px 24px 0 0;
+    padding: 24px;
+    box-shadow: 0 -10px 50px rgba(0, 0, 0, 0.3);
+    z-index: 1000;
+    transition: bottom 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.1);
+    /* Yaylı açılış efekti */
+    box-sizing: border-box;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+
+}
+
+input#note-box-toggle:checked~.msg-box {
+    bottom: 0;
+}
+
+.msg-box-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+}
+
+.msg-box-head span {
+    font-weight: 700;
+    font-size: 1rem;
+    color: var(--accent);
+}
+
+.note-close-btn {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.1);
+    color: white;
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1rem;
+    transition: background 0.2s;
+}
+
+.note-close-btn:hover {
+    background: rgba(255, 255, 255, 0.2);
+}
+
+/* Hedef birim: çoklu seçim checkbox listesi */
+.target-list {
+    list-style: none;
+    padding: 12px;
+    margin: 0 0 14px 0;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 14px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    /* Yan yana iki sütun */
+    gap: 8px;
+}
+
+.target-list li {
+    padding: 8px 10px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.target-list li:hover {
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.target-list input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    accent-color: var(--accent);
+    cursor: pointer;
+}
+
+.target-list label {
+    cursor: pointer;
+    font-size: 0.9rem;
+    flex: 1;
+}
+
+.msg-box textarea {
+    width: 100%;
+    min-height: 100px;
+    padding: 12px;
+    margin-bottom: 14px;
+    border-radius: 12px;
+    border: 1px solid #334155;
+    background: #0f172a;
+    color: white;
+    font-family: inherit;
+    font-size: 0.9rem;
+
+    box-sizing: border-box;
+    resize: none;
+}
+
+.msg-box textarea::placeholder {
+    color: #64748b;
+}
+
+.msg-box .btn-send {
+    width: 100%;
+    padding: 14px;
+    border-radius: 12px;
+    border: none;
+    background: var(--accent);
+    color: var(--sidebar);
+    font-weight: 700;
+    font-size: 0.95rem;
+    cursor: pointer;
+    transition: background 0.2s, transform 0.2s;
+}
+
+.msg-box .btn-send:hover {
+    background: #7dd3fc;
+    transform: translateY(-1px);
+}
+
+/* Sayfa başlık düzeni (PDF: Ana sayfa sadece h1, Alt sayfa h1 + gri açıklama) */
+.page-title-hero {
+    margin-bottom: 28px;
+}
+
+.page-title-hero h1 {
+    margin: 0;
+    font-size: 1.6rem;
+    font-weight: 700;
+    color: var(--text-main, #1e293b);
+}
+
+.page-title-hero .page-desc {
+    margin: 8px 0 0 0;
+    font-size: 0.95rem;
+    color: #64748b;
+}
+
+/* Not gönderildi mesajı (form action="#note-sent" ile :target) */
+#note-sent {
+    display: none;
+    position: fixed;
+    bottom: 100px;
+    right: 30px;
+    padding: 16px 24px;
+    background: #22c55e;
+    color: white;
+    border-radius: 12px;
+    font-weight: 600;
+    box-shadow: 0 4px 20px rgba(34, 197, 94, 0.4);
+    z-index: 1002;
+    animation: notifFade 0.3s ease;
+}
+
+#note-sent:target {
+    display: block;
+}
+
+/*  GENEL BAŞLIK VE ZİL SİSTEMİ  */
+
+.dept-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    /* Zili en tepeye çiviler */
+    min-height: 100px;
+    padding-top: 20px;
+    margin-bottom: 20px;
+}
+
+/* Tüm Sayfalar İçin Ortak Heybetli Başlık Stili */
+.page-title-hero h1 {
+    margin: 0;
+    padding: 0;
+    color: #0f172a !important;
+    font-size: 2rem;
+    /* Heybetli boyut */
+    font-weight: 800;
+    /* En kalın/tok hali */
+    letter-spacing: -0.025em;
+    /* Premium karakter aralığı */
+    line-height: 1.1;
+}
+
+/* İçerik Sayfalarındaki Gri Açıklama Yazısı */
+.page-desc {
+    margin-top: 8px;
+    color: #64748b;
+    /* Gri ton */
+    font-size: 0.95rem;
+    font-weight: 400;
+}
+
+/* Zil Konteynırı - Oynamayı engelleyen asıl kısım */
+.notif-container {
+    margin-top: 5px;
+    /* Başlığın ilk satırıyla aynı hizaya getirir */
+    flex-shrink: 0;
+    position: relative;
+}
+
+/*  GUARDIA PREMIUM HİZALANMIŞ PANEL  */
+.notif-dropdown {
+    width: 380px !important;
+    background: #ffffff !important;
+    border-radius: 20px 0 20px 20px !important;
+    box-shadow: -10px 20px 50px rgba(15, 23, 42, 0.2) !important;
+    border: 1px solid #e2e8f0 !important;
+    overflow: hidden !important;
+    padding: 0 !important;
+    position: absolute !important;
+    top: 52px !important;
+    /* Zil butonunun tam altına hizalar */
+    right: 0 !important;
+    /* Sayfa bitimiyle tam 1 (sıfıra sıfır) yapar */
+    display: none;
+    z-index: 10000 !important;
+}
+
+/* Başlık Alanı - Daha Tok Lacivert */
+.notif-dropdown h4 {
+    margin: 0 !important;
+    padding: 22px 24px !important;
+    background: #0f172a !important;
+    color: #ffffff !important;
+    font-size: 1.1rem !important;
+    font-weight: 700 !important;
+    letter-spacing: 0.5px;
+}
+
+/* Bildirim Kartları */
+.notif-item {
+    display: flex !important;
+    flex-direction: column !important;
+    padding: 18px 24px !important;
+    border-bottom: 1px solid #f1f5f9 !important;
+    transition: all 0.3s ease !important;
+    background: #ffffff !important;
+    text-decoration: none !important;
+    position: relative;
+}
+
+/* Üzerine Gelince (Hover) - Lacivert Temaya Uygun */
+.notif-item:hover {
+    background: #f8fafc !important;
+    padding-left: 30px !important;
+    /* Hafif sağa kayma efekti */
+}
+
+/* Sol tarafa ince turkuaz çizgi vurgusu */
+.notif-item::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 0;
+    background: #38bdf8;
+    transition: width 0.3s ease;
+}
+
+.notif-item:hover::before {
+    width: 5px;
+    /* Hover olunca soldan ince bir çizgi çıkar */
+}
+
+.notif-item strong {
+    color: #38bdf8 !important;
+    /* Turkuaz Birim Adı */
+    font-size: 0.75rem !important;
+    text-transform: uppercase;
+    margin-bottom: 5px;
+}
+
+.notif-item span {
+    color: #334155 !important;
+    font-size: 0.92rem !important;
+    line-height: 1.5;
+}
+
+/*  GELİŞMİŞ MESAJ KONTROL FOOTER  */
+.notif-footer {
+    display: flex !important;
+    padding: 10px !important;
+    /* Butonların etrafına biraz nefes payı */
+    background: #ffffff !important;
+    border-top: 1px solid #f1f5f9 !important;
+    gap: 8px !important;
+    /* Butonlar arasına boşluk */
+}
+
+.notif-action-btn {
+    flex: 1;
+    padding: 10px 4px !important;
+    /* Dikey 10px, Yatay 4px */
+    font-size: 0.72rem !important;
+    /* Fontu bir tık daha küçülttük */
+    gap: 4px !important;
+    font-weight: 700 !important;
+    color: #475569 !important;
+    background: #f8fafc !important;
+    /* Hafif gri arka plan */
+    border: 1px solid #e2e8f0 !important;
+    border-radius: 12px !important;
+    /* Daha yumuşak köşeler */
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+}
+
+.notif-action-btn:hover {
+    background: #0f172a !important;
+    /* Guardia Koyu Lacivert */
+    color: #ffffff !important;
+    /* Yazı beyaza döner */
+    border-color: #0f172a !important;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(15, 23, 42, 0.15);
+}
+
+/* Küçük bir dokunuş: Saat ikonunu güzelleştirelim */
+.notif-item small i {
+    margin-right: 3px;
+    font-size: 0.7rem;
+}
+
+.notif-action-btn:active {
+    transform: scale(0.95);
+}
+
+/* Aktif buton stili - Seçili olan butonun rengi */
+.notif-action-btn.active {
+    background: #0f172a !important;
+    /* Guardia Koyu Lacivert */
+    color: #ffffff !important;
+    /* Yazı beyaz */
+    border-color: #0f172a !important;
+    box-shadow: 0 4px 12px rgba(15, 23, 42, 0.2);
+}
+
+/*  HIZLI CEVAP MODAL TASARIMI  */
+.reply-modal {
+    display: none;
+    /* JS ile açılacak */
+    position: fixed;
+    z-index: 2000;
+    /* Bildirimlerin de üstünde durmalı */
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(15, 23, 42, 0.6);
+    /* Guardia Lacivert transparan */
+    backdrop-filter: blur(4px);
+    align-items: center;
+    justify-content: center;
+    animation: fadeIn 0.3s ease;
+}
+
+.reply-content {
+    background: white;
+    width: 90%;
+    max-width: 450px;
+    padding: 25px;
+    border-radius: 20px;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+    transform: translateY(0);
+    animation: slideUp 0.3s ease;
+}
+
+.reply-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 15px;
+}
+
+.reply-header i {
+    color: #3b82f6;
+    font-size: 1.2rem;
+}
+
+.reply-header h3 {
+    margin: 0;
+    font-size: 1.1rem;
+    color: #0f172a;
+    font-weight: 700;
+}
+
+.original-msg-preview {
+    background: #f8fafc;
+    border-left: 4px solid #e2e8f0;
+    padding: 12px;
+    border-radius: 8px;
+    font-size: 0.85rem;
+    color: #64748b;
+    margin-bottom: 20px;
+    font-style: italic;
+}
+
+.reply-textarea {
+    width: 100%;
+    height: 120px;
+    padding: 15px;
+    border: 1.5px solid #e2e8f0;
+    border-radius: 12px;
+    resize: none;
+    font-family: 'Inter', sans-serif;
+    font-size: 0.9rem;
+    outline: none;
+    transition: border-color 0.3s;
+    margin-bottom: 20px;
+}
+
+.reply-textarea:focus {
+    border-color: #3b82f6;
+}
+
+.reply-actions {
+    display: flex;
+    gap: 12px;
+}
+
+.btn-reply-send {
+    flex: 2;
+    background: #0f172a;
+    color: white;
+    border: none;
+    padding: 12px;
+    border-radius: 10px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.3s;
+}
+
+.btn-reply-send:hover {
+    background: #1e293b;
+}
+
+.btn-reply-cancel {
+    flex: 1;
+    background: #f1f5f9;
+    color: #475569;
+    border: none;
+    padding: 12px;
+    border-radius: 10px;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+/* Animasyonlar */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
+}
+
+@keyframes slideUp {
+    from {
+        transform: translateY(20px);
+    }
+
+    to {
+        transform: translateY(0);
+    }
+}
+/*  BİLDİRİM LİSTESİ SCROLL AYARI  */
+.notif-list {
+    max-height: 380px !important;  /* Kutunun maksimum yüksekliği */
+    overflow-y: auto !important;   /* Sadece dikey kaydırma aktif */
+    overscroll-behavior: contain;  /* SİHİRLİ SATIR: Sayfanın zıplamasını engeller */
+    padding: 0 !important;         /* İç boşlukları sıfırla */
+}
+
+/* Kaydırma çubuğunu gizle ama kaydırmayı bozma */
+.notif-list::-webkit-scrollbar {
+    display: none !important;      /* Chrome, Safari, Edge */
+}
+
+.notif-list {
+    -ms-overflow-style: none !important; /* IE ve Eski Edge */
+    scrollbar-width: none !important;     /* Firefox */
+}
+
+/* Bildirim öğeleri arası mesafe */
+.notif-item {
+    padding: 15px 20px !important;
+}

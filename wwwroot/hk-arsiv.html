@@ -1,0 +1,1855 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <script>
+        if (!localStorage.getItem('token')) {
+            window.location.href = 'admin-login.html';
+        }
+    </script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Guardia | Dijital Arşiv</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/ik-sidebar.css">
+    <link rel="stylesheet" href="css/dept-common.css">
+    <style>
+        :root {
+            --sidebar: #0f172a;
+            --text-main: #1e293b;
+            --text-sub: #64748b;
+            --white: #fff;
+        }
+
+        .hero {
+            margin-bottom: 24px;
+        }
+
+            .hero h2 {
+                margin: 0 0 6px 0;
+                font-size: 1.5rem;
+                color: var(--sidebar);
+            }
+
+            .hero p {
+                margin: 0;
+                font-size: 0.9rem;
+                color: var(--text-sub);
+            }
+
+        .data-table-box {
+            background: var(--white);
+            padding: 24px;
+            border-radius: 20px;
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th {
+            text-align: left;
+            padding: 14px;
+            border-bottom: 2px solid #f1f5f9;
+            color: #64748b;
+            font-size: 0.9rem;
+        }
+
+        td {
+            padding: 14px;
+            border-bottom: 1px solid #f1f5f9;
+            font-size: 0.9rem;
+        }
+
+        /* İSTATİSTİK KARTLARI TASARIMI */
+        .stats-container {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+            margin-bottom: 25px;
+        }
+
+        /* ARŞİV KARTLARI YENİ NESİL TASARIM */
+        .stat-card {
+            background: white;
+            padding: 22px;
+            border-radius: 22px;
+            border: none;
+            display: flex;
+            align-items: center;
+            gap: 18px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.03);
+            position: relative; /* Çizgiyi konumlandırmak için */
+            transition: transform 0.2s;
+        }
+
+            /* İkon kutularını sadeleştirme*/
+            .stat-card .icon-box {
+                width: 48px;
+                height: 48px;
+                border-radius: 12px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 1.4rem;
+            }
+
+            /* KARTLARIN ALTINDAKİ RENKLİ ÇİZGİLER */
+            .stat-card.card-blue {
+                border-bottom: 3px solid #3b82f6;
+            }
+            /* Toplam Dosya */
+            .stat-card.card-green {
+                border-bottom: 3px solid #10b981;
+            }
+            /* Bu Ay Eklenen */
+            .stat-card.card-red {
+                border-bottom: 3px solid #ef4444;
+            }
+        /* İmha Yaklaşan */
+        /* TABLO DÜZENLEMELERİ */
+        .data-table-box {
+            flex: 1;
+            overflow-y: auto;
+            max-height: calc(100vh - 380px); /* Sayfaya göre dinamik yükseklik */
+        }
+
+            .data-table-box::-webkit-scrollbar {
+                display: none;
+            }
+
+        th {
+            position: sticky;
+            top: 0;
+            background: white !important;
+            z-index: 10;
+            font-weight: 700;
+            color: #94a3b8;
+            text-transform: uppercase;
+            font-size: 0.75rem;
+            letter-spacing: 0.5px;
+        }
+
+        /* DURUM BADGELERİ */
+        .badge-status {
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 700;
+        }
+
+        .badge-arşiv {
+            background: #f1f5f9;
+            color: #475569;
+        }
+
+        .badge-imha {
+            background: #fff1f2;
+            color: #e11d48;
+        }
+
+        /* ARAMA ÇUBUĞU */
+        .search-container {
+            margin-bottom: 20px;
+            display: flex;
+            gap: 15px;
+            align-items: center;
+        }
+
+        .search-input {
+            flex: 1;
+            padding: 12px 20px;
+            border-radius: 12px;
+            border: 1px solid #e2e8f0;
+            outline: none;
+            font-family: inherit;
+            background: #f8fafc;
+        }
+        /* FİLTRE BUTONU DÜZELTME */
+        .btn-filter {
+            background: #f8fafc !important;
+            color: #1e293b !important;
+            border: 1px solid #e2e8f0 !important;
+            padding: 10px 20px !important;
+            border-radius: 12px !important;
+            font-weight: 600 !important;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+            .btn-filter:hover {
+                background: #f1f5f9 !important;
+                border-color: #cbd5e1 !important;
+            }
+
+        /* YENİ DOSYA EKLE BUTONU */
+        .btn-upload {
+            background: #0f172a !important;
+            color: white !important;
+            padding: 12px 24px !important;
+            border-radius: 12px !important;
+            border: none !important;
+            font-weight: 600 !important;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            box-shadow: 0 4px 12px rgba(15, 23, 42, 0.15);
+        }
+
+        /* BADGE RENKLERİ */
+        .badge-status.bekliyor {
+            background: #fef3c7;
+            color: #b45309;
+        }
+
+        /* TABLO İŞLEM BUTONLARI TASARIMI */
+        .action-icon-btn {
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            border: none;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            background: #f8fafc; /* Varsayılan hafif gri arka plan */
+            margin-left: 5px;
+        }
+
+            /* Üzerine gelince renkler canlansın */
+            .action-icon-btn:hover {
+                transform: translateY(-2px);
+                box-shadow: 0 4px 8px rgba(0,0,0,0.05);
+            }
+
+        /* Göz (İncele) Butonu Mavisi */
+        .btn-view {
+            color: #3b82f6 !important;
+        }
+
+            .btn-view:hover {
+                background: #eff6ff !important;
+            }
+
+        /* İndir Butonu Grisi */
+        .btn-download {
+            color: #64748b !important;
+        }
+
+            .btn-download:hover {
+                background: #f1f5f9 !important;
+            }
+
+        /* Tarama/Düzenleme Butonu Sarısı */
+        .btn-edit {
+            color: #f59e0b !important;
+        }
+
+            .btn-edit:hover {
+                background: #fffbeb !important;
+            }
+
+        /* TÜM DURUM BADGELERİ */
+        .badge-status {
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            display: inline-block;
+        }
+
+        .badge-arşiv {
+            background: #f1f5f9;
+            color: #475569;
+        }
+        /* Gri/Mavi */
+        .badge-bekliyor {
+            background: #fef3c7;
+            color: #b45309;
+        }
+        /* Sarı */
+        .badge-imha-yaklasan {
+            background: #ffedd5;
+            color: #ea580c;
+            border: 1px solid #fed7aa;
+        }
+        /* Turuncu */
+        .badge-imha-edildi {
+            background: #fee2e2;
+            color: #dc2626;
+        }
+        /* Kırmızı */
+
+        /* MODAL (AÇILIR PENCERE) ANA TASARIMI */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(15, 23, 42, 0.7); /* Koyu transparan arka plan */
+            display: none; /* Başlangıçta gizli */
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+        }
+
+        .modal-content {
+            background: white;
+            padding: 30px;
+            border-radius: 24px;
+            width: 500px;
+            max-width: 90%;
+            position: relative;
+            box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1);
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+            .modal-header h3 {
+                margin: 0;
+                color: #0f172a;
+            }
+
+        .modal-close {
+            cursor: pointer;
+            font-size: 1.5rem;
+            color: #94a3b8;
+            transition: color 0.2s;
+        }
+
+            .modal-close:hover {
+                color: #ef4444;
+            }
+
+        /* DOSYA YÜKLEME ALANI (SÜRÜKLE BIRAK GÖRÜNÜMÜ) */
+        .upload-area {
+            border: 2px dashed #e2e8f0;
+            padding: 40px;
+            text-align: center;
+            border-radius: 16px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+            .upload-area:hover {
+                border-color: #3b82f6;
+                background: #eff6ff;
+            }
+
+        /* 1. TABLO HÜCRELERİNİ SABİTLE */
+        table {
+            table-layout: fixed; /* Tablonun genişliğini sütunlara paylaştırır ve dondurur */
+            width: 100%;
+        }
+
+        /* 2. SÜTUN GENİŞLİKLERİNİ BELİRLE (Pırpır yapmaması için kritik) */
+        th:nth-child(1), td:nth-child(1) {
+            width: 35%;
+        }
+        /* Dosya Adı */
+        th:nth-child(2), td:nth-child(2) {
+            width: 15%;
+        }
+        /* Kapanış Tarihi */
+        th:nth-child(3), td:nth-child(3) {
+            width: 15%;
+        }
+        /* Saklama Süresi */
+        th:nth-child(4), td:nth-child(4) {
+            text-align: center !important;
+        }
+
+        th:nth-child(5), td:nth-child(5) {
+            width: 20%;
+        }
+        /* İşlemler */
+
+        /* 3. İÇERİK DEĞİŞSE BİLE YÜKSEKLİĞİ SABİTLE */
+        td {
+            height: 60px; /* Tüm satırların yüksekliği aynı kalsın */
+            vertical-align: middle;
+            overflow: hidden; /* Taşmaları engelle */
+            white-space: nowrap; /* Metinler alt satıra geçip yüksekliği bozmasın */
+            text-overflow: ellipsis; /* Sığmayan metnin sonuna üç nokta koyar */
+        }
+
+        /* 4. BADGE VE BUTON KONTEYNERI */
+        .badge-status, .action-icon-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            vertical-align: middle;
+            text-align: center; /* İçindeki metni merkezler */
+        }
+        /* Arşivlendi - Sönük Mavi/Gri Tonu */
+        .badge-arşiv {
+            background: #f1f5f9 !important;
+            color: #475569 !important;
+            border: 1px solid #e2e8f0 !important;
+        }
+
+        /* Tarama Bekliyor - Doygun Sarı Tonu ve Çerçeveli */
+        .badge-status.badge-bekliyor {
+            background: #fef3c7 !important;
+            color: #b45309 !important;
+            border: 1px solid #fcd34d !important;
+            font-weight: 700;
+        }
+        /* TABLO KUTUSUNU SABİTLE VE KAYDIRMA EKLE */
+        .data-table-box {
+            flex: 1;
+            overflow-y: auto; /* Dikey kaydırma */
+            max-height: 500px; /* Sabit bir yükseklik verdik ki kayma başlasın */
+            background: white;
+            border-radius: 20px;
+            position: relative;
+        }
+
+            /* Kaydırma çubuğunu ince ve kibar */
+            .data-table-box::-webkit-scrollbar {
+                width: 6px;
+            }
+
+            .data-table-box::-webkit-scrollbar-thumb {
+                background: #e2e8f0;
+                border-radius: 10px;
+            }
+        /* 1. Sayfanın dışarıya taşmasını ve dış scrollu engelle */
+        html, body {
+            height: 100vh;
+            margin: 0;
+            overflow: hidden; /* Dışarıdaki o çirkin scroll bitti */
+        }
+
+        /* 2. Ana içerik alanını ekran yüksekliğine mühürle */
+        .ik-content {
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden; /* İçerik taşmasın */
+            padding-bottom: 20px !important; /* Alt kısımdan biraz nefes payı */
+        }
+
+        /* 1. TABLO KUTUSU */
+        .data-table-box {
+            flex: 1;
+            overflow-y: auto;
+            max-height: calc(100vh - 380px);
+            background: white;
+            border-radius: 22px;
+            padding: 0 20px 20px 20px; /* Üst padding'i 0 yaptık ki başlık tam sıfırlansın */
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
+            position: relative;
+            margin-bottom: 20px;
+            scrollbar-width: none; /* Firefox için çubuğu gizle */
+        }
+
+            /* Kaydırma çubuğunu Chrome/Safari için tamamen gizle */
+            .data-table-box::-webkit-scrollbar {
+                display: none;
+            }
+
+        /* 2. BAŞLIKLAR: Sızdırmazlık buradaki 'background' ve 'z-index' içinde */
+        thead th {
+            position: sticky !important;
+            top: 0;
+            /* ÖNEMLİ: Arka plan transparan kalmasın diye bembeyaz yapıyoruz */
+            background-color: #ffffff !important;
+            /* Satırların başlığın üstüne çıkmaması için 10. kata alıyoruz */
+            z-index: 10 !important;
+            padding: 18px 15px !important;
+            color: #94a3b8;
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            /* Başlık sabitlendiğinde altını net ayırmak için çizgi çekiyoruz */
+            border-bottom: 2px solid #f1f5f9 !important;
+        }
+
+        /* 3. TABLO YAPISI: border-collapse sticky'i bozmasın diye 'separate' yapma */
+        table {
+            width: 100%;
+            border-collapse: separate !important;
+            border-spacing: 0;
+        }
+
+        /* Satırların (td) kendi arka planı olsun ki kayarken başlığın arkasına geçince 'yok' olsunlar */
+        td {
+            background-color: #ffffff;
+            border-bottom: 1px solid #f1f5f9;
+            padding: 15px !important;
+        }
+    </style>
+</head>
+<body class="ik-layout">
+    <div class="ik-sidebar">
+        <h2>🛡️ Guardia HK</h2>
+        <ul class="ik-nav-links">
+            <li><a href="hk-index.html" style="text-decoration:none;color:inherit;display:flex;align-items:center;gap:12px;"><i class="fa-solid fa-chart-line"></i> Genel Bakış</a></li>
+            <li><a href="hk-sozlesme.html" style="text-decoration:none;color:inherit;display:flex;align-items:center;gap:12px;"><i class="fa-solid fa-file-signature"></i> Sözleşmeler</a></li>
+            <li><a href="hk-dava.html" style="text-decoration:none;color:inherit;display:flex;align-items:center;gap:12px;"><i class="fa-solid fa-scale-balanced"></i> Dava Dosyaları</a></li>
+            <li><a href="hk-mevzuat.html" style="text-decoration:none;color:inherit;display:flex;align-items:center;gap:12px;"><i class="fa-solid fa-book"></i> Mevzuat Takibi</a></li>
+            <li class="active"><i class="fa-solid fa-folder-open"></i> Arşiv</li>
+        </ul>
+        <div class="ik-user-tag">
+            <div class="ik-user-avatar"><img src="img/selin_aksoy.jpg" alt=""></div>
+            <div class="ik-user-info"><span id="sidebarAdSoyad">Selin Aksoy</span><small id="sidebarDepartman">Hukuk Danışmanı</small></div>
+        </div>
+    </div>
+
+    <div class="ik-content">
+        <div class="dept-header">
+            <div class="page-title-group">
+                <h1>Dijital Arşiv</h1>
+                <p class="page-desc">Kapanmış dava dosyaları ve imzalı geçmiş evrakların dijital kayıtları.</p>
+            </div>
+
+            <div class="notif-container">
+                <input type="checkbox" id="notif-toggle" aria-hidden="true" style="display:none;">
+                <label for="notif-toggle" class="notif-trigger">
+                    <i class="fa-solid fa-bell"></i>
+                    <span class="notif-badge">2</span>
+                </label>
+                <div class="notif-dropdown">
+                    <h4>Mesaj Merkezi</h4>
+
+                    <div id="notif-incoming-list" class="notif-list">
+                        <div class="notif-item" onclick="openReplyModal('ARŞİV BİRİMİ', '2023/456 nolu dosya tarandı ve dijital arşive güvenli bir şekilde aktarıldı.')" style="cursor: pointer;">
+                            <span class="notif-status"></span>
+                            <strong>ARŞİV</strong>
+                            <span>2023/456 nolu dosya dijitalleştirildi.</span>
+                            <small style="display:block; color: #94a3b8; font-size: 0.75rem; margin-top: 5px;">
+                                <i class="fa-regular fa-clock"></i> 09:15
+                            </small>
+                        </div>
+
+                        <div class="notif-item" onclick="openReplyModal('SİSTEM', 'Eski sözleşmeler (2020-2022) ana sunucudan soğuk depolama klasörüne taşındı.')" style="cursor: pointer;">
+                            <span class="notif-status"></span>
+                            <strong>BİLGİ</strong>
+                            <span>Eski sözleşmeler klasöre taşındı.</span>
+                            <small style="display:block; color: #94a3b8; font-size: 0.75rem; margin-top: 5px;">
+                                <i class="fa-regular fa-clock"></i> 14:40
+                            </small>
+                        </div>
+                    </div>
+
+                    <div id="notif-outgoing-list" class="notif-list" style="display:none;">
+                        <div class="notif-item">
+                            <strong>SİZDEN -> ARŞİV</strong>
+                            <span>Dijitalleştirme öncelik listesi gönderildi.</span>
+                            <small style="display:block; color: #94a3b8; font-size: 0.75rem; margin-top: 5px;">
+                                <i class="fa-regular fa-clock"></i> Dün
+                            </small>
+                        </div>
+                    </div>
+
+                    <div class="notif-footer">
+                        <button type="button" class="notif-action-btn" onclick="showIncoming()">
+                            <i class="fa-solid fa-bell"></i> Gelenler
+                        </button>
+                        <button type="button" class="notif-action-btn" onclick="showOutgoing()">
+                            <i class="fa-solid fa-paper-plane"></i> Gidenler
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="stats-container">
+            <div class="stat-card card-blue">
+                <div class="icon-box" style="background: #eff6ff; color: #3b82f6;">
+                    <i class="fa-solid fa-box-archive"></i>
+                </div>
+                <div>
+                    <h4 style="margin:0; font-size: 0.75rem; color: #64748b; font-weight: 700; text-transform: uppercase;">TOPLAM DOSYA</h4>
+                    <p id="stat-total-files" style="margin:2px 0 0 0; font-size: 1.4rem; font-weight: 800; color: #0f172a;">0</p>
+                </div>
+            </div>
+
+            <div class="stat-card card-green">
+                <div class="icon-box" style="background: #ecfdf5; color: #10b981;">
+                    <i class="fa-solid fa-cloud-arrow-up"></i>
+                </div>
+                <div>
+                    <h4 style="margin:0; font-size: 0.75rem; color: #64748b; font-weight: 700; text-transform: uppercase;">BU AY EKLENEN</h4>
+                    <p id="stat-month-added" style="margin:2px 0 0 0; font-size: 1.4rem; font-weight: 800; color: #0f172a;">0</p>
+                </div>
+            </div>
+
+            <div class="stat-card card-red">
+                <div class="icon-box" style="background: #fef2f2; color: #ef4444;">
+                    <i class="fa-solid fa-clock-rotate-left"></i>
+                </div>
+                <div>
+                    <h4 style="margin:0; font-size: 0.75rem; color: #64748b; font-weight: 700; text-transform: uppercase;">İMHA YAKLAŞAN</h4>
+                    <p id="stat-approaching-destruction" style="margin:2px 0 0 0; font-size: 1.4rem; font-weight: 800; color: #0f172a;">0</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="search-container" style="display: flex; justify-content: space-between; align-items: center; gap: 15px;">
+            <div style="position: relative; flex: 1;">
+                <i class="fa-solid fa-magnifying-glass" style="position: absolute; left: 15px; top: 15px; color: #94a3b8;"></i>
+                <input type="text" class="search-input" style="padding-left: 45px;" placeholder="Dosya adı, esas no veya konu ara...">
+            </div>
+
+            <button class="btn-filter" onclick="openFilterModal()">
+                <i class="fa-solid fa-filter"></i> Filtrele
+            </button>
+
+            <button class="btn-upload" onclick="openFullNewRecord()">
+                <i class="fa-solid fa-cloud-arrow-up"></i> Yeni Dosya Yükle
+            </button>
+        </div>
+
+        <div class="data-table-box">
+            <table>
+                <thead>
+                    <tr>
+                        <th style="padding-left: 20px;">DOSYA ADI / NO</th>
+                        <th>KAPANIŞ TARİHİ</th>
+                        <th>SAKLAMA SÜRESİ</th>
+                        <th>DURUM</th>
+                        <th style="text-align: right; padding-right: 20px;">İŞLEMLER</th>
+                    </tr>
+                </thead>
+                <tbody id="arsivTableBody">
+                    <tr>
+                        <td style="padding-left: 20px;"><strong>2023/456 — Tedarikçi Uyuşmazlığı</strong><br><small style="color: #94a3b8;">Kategori: Ticaret Davaları</small></td>
+                        <td>10.01.2024</td>
+                        <td>10 Yıl (2034)</td>
+                        <td><span class="badge-status badge-arşiv">Arşivlendi</span></td>
+                        <td style="text-align: right; padding-right: 20px;">
+                            <button class="action-icon-btn btn-view" onclick="dosyaGörüntüle('2023/456')"><i class="fa-solid fa-eye"></i></button>
+                            <button class="action-icon-btn btn-download" onclick="dosyaİndir('2023/456')"><i class="fa-solid fa-download"></i></button>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style="padding-left: 20px;"><strong>2024/012 — Personel Sözleşmesi</strong><br><small style="color: #94a3b8;">Kategori: İş Hukuku</small></td>
+                        <td>Bugün</td>
+                        <td>Süresiz</td>
+                        <td><span class="badge-status badge-bekliyor">Tarama Bekliyor</span></td>
+                        <td style="text-align: right; padding-right: 20px;">
+                            <button class="action-icon-btn btn-edit" onclick="dosyaYüklePaneliniAç(this)"><i class="fa-solid fa-file-signature"></i></button>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style="padding-left: 20px;"><strong>2016/789 — Eski Kira Sözleşmesi</strong><br><small style="color: #94a3b8;">Kategori: Gayrimenkul</small></td>
+                        <td>15.06.2016</td>
+                        <td>10 Yıl (2026)</td>
+                        <td><span class="badge-status badge-imha-yaklasan">İmha Yaklaşan</span></td>
+                        <td style="text-align: right; padding-right: 20px;">
+                            <button class="action-icon-btn btn-view" onclick="dosyaGörüntüle('2016/789')"><i class="fa-solid fa-eye"></i></button>
+                            <button class="action-icon-btn" style="color:#ea580c;" onclick="imhaKontrolAc(this)"><i class="fa-solid fa-triangle-exclamation"></i></button>
+                        </td>
+                    </tr>
+
+                    <tr>
+                        <td style="padding-left: 20px;"><strong>2021/102 — Patent İhlal Davası</strong><br><small style="color: #94a3b8;">Kategori: Fikri Mülkiyet</small></td>
+                        <td>05.03.2021</td>
+                        <td>15 Yıl (2036)</td>
+                        <td><span class="badge-status badge-arşiv">Arşivlendi</span></td>
+                        <td style="text-align: right; padding-right: 20px;">
+                            <button class="action-icon-btn btn-view" onclick="dosyaGörüntüle('2021/102')"><i class="fa-solid fa-eye"></i></button>
+                            <button class="action-icon-btn btn-download" onclick="dosyaİndir('2021/102')"><i class="fa-solid fa-download"></i></button>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style="padding-left: 20px;"><strong>2022/88 — KVKK Danışmanlık Belgesi</strong><br><small style="color: #94a3b8;">Kategori: Kişisel Veriler</small></td>
+                        <td>12.11.2022</td>
+                        <td>Süresiz</td>
+                        <td><span class="badge-status badge-arşiv">Arşivlendi</span></td>
+                        <td style="text-align: right; padding-right: 20px;">
+                            <button class="action-icon-btn btn-view" onclick="dosyaGörüntüle('2022/88')"><i class="fa-solid fa-eye"></i></button>
+                            <button class="action-icon-btn btn-download" onclick="dosyaİndir('2022/88')"><i class="fa-solid fa-download"></i></button>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style="padding-left: 20px;"><strong>2023/55 — Ortaklık Sözleşmesi</strong><br><small style="color: #94a3b8;">Kategori: Şirketler Hukuku</small></td>
+                        <td>01.09.2023</td>
+                        <td>20 Yıl (2043)</td>
+                        <td><span class="badge-status badge-arşiv">Arşivlendi</span></td>
+                        <td style="text-align: right; padding-right: 20px;">
+                            <button class="action-icon-btn btn-view" onclick="dosyaGörüntüle('2023/55')"><i class="fa-solid fa-eye"></i></button>
+                            <button class="action-icon-btn btn-download" onclick="dosyaİndir('2023/55')"><i class="fa-solid fa-download"></i></button>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style="padding-left: 20px;"><strong>2015/12 — İş Kazası Tazminat Dosyası</strong><br><small style="color: #94a3b8;">Kategori: Sosyal Güvenlik</small></td>
+                        <td>10.10.2015</td>
+                        <td>10 Yıl (2025)</td>
+                        <td><span class="badge-status badge-imha-yaklasan">İmha Yaklaşan</span></td>
+                        <td style="text-align: right; padding-right: 20px;">
+                            <button class="action-icon-btn btn-view" onclick="dosyaGörüntüle('2015/12')"><i class="fa-solid fa-eye"></i></button>
+                            <button class="action-icon-btn" style="color:#ea580c;" onclick="imhaKontrolAc(this)"><i class="fa-solid fa-triangle-exclamation"></i></button>
+                        </td>
+                    </tr>
+
+                    <tr style="background: #fafafa;">
+                        <td style="padding-left: 20px; opacity: 0.6;"><strong>2010/111 — Kapanmış Alacak Davası</strong><br><small style="color: #94a3b8;">Kategori: İcra İflas</small></td>
+                        <td style="opacity: 0.6;">01.02.2010</td>
+                        <td style="opacity: 0.6;">Süre Doldu</td>
+                        <td><span class="badge-status badge-imha-edildi" style="opacity: 1 !important;">İmha Edildi</span></td>
+                        <td style="text-align: right; padding-right: 20px; opacity: 0.6;"><small style="color:#94a3b8;">Fiziksel İmha: 2021</small></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div id="note-sent">Notunuz seçilen birimlere iletildi.</div>
+    <div id="replyModal" class="reply-modal">
+        <div class="reply-content">
+            <div class="reply-header">
+                <i class="fa-solid fa-reply"></i>
+                <h3 id="replyTarget">HUKUK Birimine Cevap Yaz</h3>
+            </div>
+
+            <div id="replyOriginalMessage" class="original-msg-preview">
+                "5 adet yeni iş sözleşmesi onaylandı."
+            </div>
+
+            <textarea id="replyText" class="reply-textarea" placeholder="Cevabınızı buraya yazın..."></textarea>
+
+            <div class="reply-actions">
+                <button class="btn-reply-cancel" onclick="closeReplyModal()">Vazgeç</button>
+                <button class="btn-reply-send" onclick="sendReply()">Cevapla</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="viewModal" class="modal-overlay" style="display: none; align-items: center; justify-content: center; z-index: 10000;">
+        <div class="modal-content" style="width: 500px; max-width: 90%; border-radius: 24px; padding: 30px; position: relative; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1);">
+            <div class="modal-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <h3 id="viewTitle" style="margin: 0; color: #0f172a; font-weight: 700;">Dosya Önizleme</h3>
+                <span class="modal-close" onclick="closeModal('viewModal')" style="cursor: pointer; font-size: 1.5rem; color: #94a3b8; transition: color 0.2s;">&times;</span>
+            </div>
+
+            <div id="pdfContainer" style="background: #f1f5f9; height: 300px; border-radius: 12px; display: flex; align-items: center; justify-content: center; flex-direction: column; color: #64748b; overflow: hidden; position: relative; box-sizing: border-box;">
+                <i class="fa-solid fa-file-pdf" style="font-size: 4rem; margin-bottom: 15px;"></i>
+                <p style="margin: 0;">Dosya içeriği yükleniyor...</p>
+            </div>
+        </div>
+    </div>
+
+    <div id="uploadModal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Dijital Dosya Yükle</h3>
+                <span class="modal-close" onclick="closeModal('uploadModal')">&times;</span>
+            </div>
+
+            <div class="upload-area" onclick="document.getElementById('realFileInput').click()" style="min-height: 180px; display: flex; flex-direction: column; justify-content: center; align-items: center;">
+
+                <div id="uploadPlaceholder">
+                    <i class="fa-solid fa-cloud-arrow-up" style="font-size: 3rem; color: #3b82f6; margin-bottom: 10px;"></i>
+                    <p id="uploadText" style="margin: 0;">Taranmış dosyayı buraya sürükleyin veya <b>tıklayın</b></p>
+                </div>
+
+                <div id="fileSelectedInfo" style="display:none; margin-top:15px; background:#eff6ff; padding:10px 15px; border-radius:12px; border:1px solid #dbeafe; align-items:center; gap:10px; width: 80%;">
+                    <i class="fa-solid fa-file-pdf" style="color:#1e40af;"></i>
+                    <span id="selectedFileName" style="font-size:0.85rem; font-weight:600; color:#1e40af; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;"></span>
+                </div>
+
+                <input type="file" id="realFileInput" style="display: none;" onchange="handleFileSelection(this)">
+            </div>
+            <button class="btn-upload" onclick="finishArsivUpload()" style="width: 100%; margin-top: 20px; justify-content: center;">
+                Yüklemeyi Tamamla
+            </button>
+        </div>
+    </div>
+
+    <div id="imhaModal" class="modal-overlay">
+        <div class="modal-content" style="border-top: 5px solid #ef4444;">
+            <div class="modal-header">
+                <h3>İmha Kontrolü</h3>
+                <span class="modal-close" onclick="closeModal('imhaModal')">&times;</span>
+            </div>
+            <p style="color: #64748b;">Bu dosyanın yasal saklama süresi dolmuştur. Lütfen yapılacak işlemi seçin:</p>
+            <div style="display: flex; gap: 10px; margin-top: 20px;">
+                <button class="btn-filter" onclick="imhaKarariVer('sil')" style="flex: 1; justify-content: center; border-color: #ef4444 !important; color: #ef4444 !important;">Hemen İmha Et</button>
+                <button class="btn-upload" onclick="imhaKarariVer('uzat')" style="flex: 1; justify-content: center; background: #10b981 !important;">Süreyi Uzat</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="newFullRecordModal" class="modal-overlay">
+        <div class="modal-content" style="width: 700px; max-width: 95%;">
+            <div class="modal-header">
+                <h3 style="margin:0; color:#0f172a;"><i class="fa-solid fa-folder-plus"></i> Yeni Arşiv Kaydı Oluştur</h3>
+                <span class="modal-close" onclick="closeModal('newFullRecordModal')">&times;</span>
+            </div>
+
+            <div style="display: flex; gap: 30px; margin-top: 20px;">
+                <div style="flex: 1;">
+                    <div class="upload-area" id="newRecordUploadArea" onclick="document.getElementById('newRecordFileInput').click()" style="min-height: 250px; display: flex; flex-direction: column; justify-content: center; align-items: center; border: 2px dashed #cbd5e1; background: #f8fafc;">
+                        <div id="newRecordPlaceholder">
+                            <i class="fa-solid fa-cloud-arrow-up" style="font-size: 3rem; color: #3b82f6; margin-bottom: 15px;"></i>
+                            <p style="font-size: 0.9rem; color: #64748b; font-weight: 600;">Dosya (PDF) <br><b>Sürükleyin veya Seçin</b></p>
+                        </div>
+                        <div id="newRecordFileInfo" style="display:none; background:#eff6ff; padding:15px; border-radius:12px; border:1px solid #dbeafe; width: 85%;">
+                            <i class="fa-solid fa-file-pdf" style="color:#1e40af; font-size: 1.5rem;"></i>
+                            <span id="newRecordFileName" style="font-size:0.8rem; font-weight:700; color:#1e40af; display:block; margin-top:5px; word-break: break-all;"></span>
+                        </div>
+                        <input type="file" id="newRecordFileInput" style="display: none;" onchange="handleNewRecordFile(this)">
+                    </div>
+                </div>
+
+                <div style="flex: 1.2; display: flex; flex-direction: column; gap: 15px;">
+                    <div>
+                        <label style="display:block; font-size: 0.85rem; font-weight: 700; color: #475569; margin-bottom: 8px;">Dosya Adı / Esas No</label>
+                        <input type="text" id="newRecNo" class="search-input" placeholder="Örn: 2024/789 - Alacak Davası" style="width: 100%; box-sizing: border-box; padding: 12px;">
+                    </div>
+
+                    <div>
+                        <label style="display:block; font-size: 0.85rem; font-weight: 700; color: #475569; margin-bottom: 8px;">Hukuk Kategorisi</label>
+                        <select id="newRecCat" class="search-input" style="width: 100%; box-sizing: border-box; padding: 12px; cursor: pointer;" onchange="calculateArchivePeriod()">
+                            <option value="">Seçiniz...</option>
+                            <option value="İş Hukuku">İş Hukuku</option>
+                            <option value="Ticaret Davaları">Ticaret Davaları</option>
+                            <option value="İcra İflas">İcra İflas</option>
+                            <option value="Gayrimenkul">Gayrimenkul</option>
+                            <option value="Şirketler Hukuku">Şirketler Hukuku</option>
+                        </select>
+                    </div>
+
+                    <div style="display: flex; gap: 15px;">
+                        <div style="flex: 1;">
+                            <label style="display:block; font-size: 0.85rem; font-weight: 700; color: #475569; margin-bottom: 8px;">Kapanış Tarihi</label>
+                            <input type="date" id="newRecDate" class="search-input" style="width: 100%; box-sizing: border-box; padding: 10px;">
+                        </div>
+                        <div style="flex: 1;">
+                            <label style="display:block; font-size: 0.85rem; font-weight: 700; color: #475569; margin-bottom: 8px;">Saklama Süresi</label>
+                            <input type="text" id="newRecPeriod" class="search-input" readonly placeholder="Otomatik" style="width: 100%; background: #f1f5f9; font-weight: 700; color: #3b82f6; padding: 10px;">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <button class="btn-upload" onclick="saveNewArchiveRecord()" style="width: 100%; margin-top: 30px; height: 55px; font-size: 1.1rem; justify-content: center; background: #0f172a !important;">
+                <i class="fa-solid fa-cloud-check"></i> Arşive Güvenli Kaydet ve Kapat
+            </button>
+        </div>
+    </div>
+
+    <div id="filterModal" class="modal-overlay">
+        <div class="modal-content" style="width: 400px; min-height: 380px; display: flex; flex-direction: column;">
+            <div class="modal-header">
+                <h3 style="margin:0;"><i class="fa-solid fa-filter"></i> Arşiv Filtrele</h3>
+                <span class="modal-close" onclick="closeModal('filterModal')">&times;</span>
+            </div>
+
+            <div style="flex: 1; display: flex; flex-direction: column; gap: 20px; margin-top: 15px;">
+
+                <div style="height: 75px;">
+                    <label style="display:block; font-size: 0.85rem; font-weight: 700; color: #475569; margin-bottom: 8px;">Kategori Seçin</label>
+                    <select id="filterCat" class="search-input" style="width: 100%;">
+                        <option value="all">Tümü</option>
+                        <option value="İş Hukuku">İş Hukuku (Personel vb.)</option>
+                        <option value="Ticaret Davaları">Ticaret Davaları</option>
+                        <option value="Şirketler Hukuku">Şirketler Hukuku (Ortaklık vb.)</option>
+                        <option value="Gayrimenkul">Gayrimenkul (Kira vb.)</option>
+                        <option value="İcra İflas">İcra İflas</option>
+                        <option value="Fikri Mülkiyet">Fikri Mülkiyet (Marka/Patent)</option>
+                    </select>
+                </div>
+
+                <div style="height: 75px;">
+                    <label style="display:block; font-size: 0.85rem; font-weight: 700; color: #475569; margin-bottom: 8px;">Dosya Durumu</label>
+                    <select id="filterStatus" class="search-input" style="width: 100%; height: 45px; box-sizing: border-box;">
+                        <option value="all">Tümü</option>
+                        <option value="Arşivlendi">Arşivlendi</option>
+                        <option value="Tarama Bekliyor">Tarama Bekliyor</option>
+                        <option value="İmha Yaklaşan">İmha Yaklaşan</option>
+                        <option value="İmha Edildi">İmha Edildi</option>
+                    </select>
+                </div>
+            </div>
+
+            <div style="display: flex; gap: 12px; margin-top: auto; padding-top: 20px;">
+                <button class="btn-filter" onclick="resetFilters()" style="flex: 1; height: 48px; justify-content: center;">Temizle</button>
+                <button class="btn-upload" onclick="applyFilters()" style="flex: 1; height: 48px; justify-content: center; background: #0f172a !important;">Filtrele</button>
+            </div>
+        </div>
+    </div>
+    <script>
+
+
+        const kanal = new BroadcastChannel('guardia-hk');
+
+        kanal.onmessage = (e) => {
+            console.log("Sistem Güncellemesi Alındı:", e.data.tip);
+
+            if (typeof loadTumDashboard === 'function') loadTumDashboard();
+            if (typeof sozlesmeleriYukle === 'function') sozlesmeleriYukle();
+            if (typeof davaYukle === 'function') davaYukle();
+            if (typeof arsivListesiniYukle === 'function') arsivListesiniYukle();
+        };
+
+        function apiFetch(url, options = {}) {
+            const token = localStorage.getItem('token');
+
+
+            let sayfaBirim = "HUKUK";
+            if (window.location.href.includes("ik-") || window.location.href.includes("ik-index")) {
+                sayfaBirim = "INSAN_KAYNAKLARI";
+            }
+
+            options.headers = {
+                ...options.headers,
+                'Authorization': 'Bearer ' + token,
+                'X-Aktif-Birim': sayfaBirim,
+                'Content-Type': 'application/json'
+            };
+
+            return fetch(url, options).then(res => {
+                if (!res.ok) {
+                    throw new Error(`HTTP Hatası! Durum: ${res.status}`);
+                }
+                return res;
+            });
+        }
+
+        const BASE_URL = '/api/HukukKontrolcusu';
+
+        async function arsivListesiniYukle() {
+            try {
+                const response = await apiFetch(`${BASE_URL}/arsiv-liste`);
+                if (!response.ok) throw new Error(`Sunucu hatası: ${response.status}`);
+
+                const text = await response.text();
+                if (!text) { console.warn("Boş yanıt geldi."); return; }
+
+                const veriler = JSON.parse(text);
+                const tabloGovdesi = document.getElementById('arsivTableBody');
+                if (!tabloGovdesi) return;
+                tabloGovdesi.innerHTML = "";
+
+                veriler.forEach(dosya => {
+                    const tr = document.createElement('tr');
+
+
+                    tr.setAttribute('data-id', dosya.Id ?? dosya.id);
+
+                    let badgeHTML = '';
+                    let islemHTML = '';
+
+
+                    const durum = dosya.Durum ?? dosya.durum ?? '';
+                    const esasNo = dosya.EsasNo ?? dosya.esasNo ?? '';
+                    const kategori = dosya.Kategori ?? dosya.kategori ?? '';
+                    const kapanisTarihi = dosya.KapanisTarihi ?? dosya.kapanisTarihi ?? '';
+                    const saklamaSuresi = dosya.SaklamaSuresi ?? dosya.saklamaSuresi ?? '';
+
+                    if (durum === 'Arşivlendi') {
+                        badgeHTML = '<span class="badge-status badge-arşiv">Arşivlendi</span>';
+                        islemHTML = '<button class="action-icon-btn btn-view" title="Görüntüle" onclick="dosyaGörüntüle(\'' + esasNo + '\')"><i class="fa-solid fa-eye"></i></button>'
+                            + '<button class="action-icon-btn btn-download" title="İndir" onclick="dosyaİndir(\'' + esasNo + '\')"><i class="fa-solid fa-download"></i></button>';
+
+                    } else if (durum === 'Tarama Bekliyor') {
+                        badgeHTML = '<span class="badge-status badge-bekliyor">Tarama Bekliyor</span>';
+                        islemHTML = '<button class="action-icon-btn btn-edit" title="Şimdi Yükle" onclick="dosyaYüklePaneliniAç(this)"><i class="fa-solid fa-file-signature"></i></button>';
+
+                    } else if (durum === 'İmha Yaklaşıyor') {
+                        badgeHTML = '<span class="badge-status badge-imha-yaklasan">İmha Yaklaşan</span>';
+
+                        islemHTML = '<button class="action-icon-btn btn-view" title="Görüntüle" onclick="dosyaGörüntüle(\'' + esasNo + '\')"><i class="fa-solid fa-eye"></i></button>'
+                            + '<button class="action-icon-btn" style="color: #ea580c; background: #fff7ed; border-radius: 8px;" title="İmha Kontrolü" onclick="imhaKontrolAc(this)"><i class="fa-solid fa-triangle-exclamation"></i></button>';
+
+                    } else if (durum === 'İmha Edildi') {
+                        badgeHTML = '<span class="badge-status badge-imha-edildi">İmha Edildi</span>';
+
+                        const imhaYili = dosya.ImhaTarihi ? new Date(dosya.ImhaTarihi).getFullYear() : new Date().getFullYear();
+                        islemHTML = '<small style="color:#94a3b8; font-weight: 500;">Fiziksel İmha: ' + imhaYili + '</small>';
+
+
+                        tr.style.opacity = "0.5";
+                        tr.style.background = "#fafafa";
+                    }
+
+                    const td0 = document.createElement('td');
+                    td0.style.paddingLeft = '20px';
+                    td0.innerHTML = '<strong>' + esasNo + '</strong><br><small style="color:#94a3b8;">Kategori: ' + kategori + '</small>';
+
+                    const td1 = document.createElement('td');
+                    td1.textContent = kapanisTarihi;
+
+                    const td2 = document.createElement('td');
+                    td2.textContent = saklamaSuresi;
+
+                    const td3 = document.createElement('td');
+                    td3.style.textAlign = 'center';
+                    td3.innerHTML = badgeHTML;
+
+                    const td4 = document.createElement('td');
+                    td4.style.textAlign = 'right';
+                    td4.style.paddingRight = '20px';
+                    td4.innerHTML = islemHTML;
+
+                    tr.appendChild(td0);
+                    tr.appendChild(td1);
+                    tr.appendChild(td2);
+                    tr.appendChild(td3);
+                    tr.appendChild(td4);
+
+                    tabloGovdesi.appendChild(tr);
+                });
+
+
+                updateDashboardStatsFromData(veriler);
+
+            } catch (err) {
+                console.error("Liste yükleme hatası:", err);
+            }
+        }
+        function dosyaGercekIndir(id, esasNo) {
+
+            const link = document.createElement('a');
+            link.href = `${BASE_URL}/indir/${id}`;
+            link.download = `${esasNo}.pdf`;
+            link.click();
+
+        }
+
+        async function imhaKarariVer(islem) {
+            if (!seciliSatir) return;
+            const id = seciliSatir.getAttribute('data-id');
+
+            if (islem === 'sil') {
+                if (!confirm("DİKKAT: Dosya kalıcı olarak imha edilecek. Onaylıyor musunuz?")) return;
+                try {
+
+                    const response = await apiFetch(`${BASE_URL}/imha/${id}`, { method: 'DELETE' });
+                    if (!response.ok) { alert("İmha işlemi başarısız. ❌"); return; }
+                } catch (err) {
+                    console.error("İmha hatası:", err);
+                    alert("İmha işlemi sırasında bir bağlantı hatası oluştu.");
+                    return;
+                }
+
+
+                const guncelYil = new Date().getFullYear();
+
+                seciliSatir.cells[3].innerHTML = '<span class="badge-status badge-imha-edildi" style="opacity:1!important;">İmha Edildi</span>';
+                seciliSatir.cells[4].innerHTML = '<small style="color:#94a3b8; font-weight:500;">Fiziksel İmha: ' + guncelYil + '</small>';
+
+
+                seciliSatir.style.opacity = "0.5";
+                seciliSatir.style.background = "#fafafa";
+
+                alert("Dosya başarıyla imha edildi. ✅");
+                closeModal('imhaModal');
+
+
+
+                kanal.postMessage({ tip: 'arsiv-guncellendi' });
+
+                await arsivListesiniYukle();
+
+            } else if (islem === 'uzat') {
+
+                const rowText = seciliSatir.innerHTML;
+                let uzatilacakYil = 10; // Varsayılan süre
+
+                // Kategorilere göre uzatılacak yıl mühürleniyor
+                if (rowText.includes("Şirketler Hukuku") || rowText.includes("İcra İflas")) {
+                    uzatilacakYil = 20;
+                }
+
+                const yeniYilHesap = new Date().getFullYear() + uzatilacakYil;
+                const gonderilecekSureMetni = `${uzatilacakYil} Yıl (${yeniYilHesap})`;
+
+                try {
+
+                    const response = await apiFetch(`${BASE_URL}/sure-uzat/${id}`, {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(gonderilecekSureMetni)
+                    });
+
+                    if (!response.ok) { alert("Süre uzatma işlemi başarısız oldu. ❌"); return; }
+                } catch (err) {
+                    console.error("Süre uzatma hatası:", err);
+                    alert("Bağlantı hatası sebebiyle süre uzatılamadı.");
+                    return;
+                }
+
+
+                const esasNo = seciliSatir.cells[0].querySelector('strong').innerText;
+                seciliSatir.cells[2].innerText = gonderilecekSureMetni;
+                seciliSatir.cells[3].innerHTML = '<span class="badge-status badge-arşiv">Arşivlendi</span>';
+                seciliSatir.cells[4].innerHTML =
+                    '<button class="action-icon-btn btn-view" title="Görüntüle" onclick="dosyaGörüntüle(\'' + esasNo + '\')"><i class="fa-solid fa-eye"></i></button>'
+                    + '<button class="action-icon-btn btn-download" title="İndir" onclick="dosyaİndir(\'' + esasNo + '\')"><i class="fa-solid fa-download"></i></button>';
+
+                seciliSatir.style.opacity = "1";
+                seciliSatir.style.background = "#ffffff";
+
+                alert(`Yasal saklama süresi kategori kuralına göre +${uzatilacakYil} yıl daha uzatıldı! 🛡️`);
+                closeModal('imhaModal');
+
+
+                kanal.postMessage({ tip: 'arsiv-guncellendi' });
+                await arsivListesiniYukle();
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', function () {
+            arsivListesiniYukle();
+            updateOutgoingList();
+            const btnIn = document.querySelector('.notif-action-btn[onclick="showIncoming()"]');
+            if (btnIn) btnIn.classList.add('active');
+        });
+
+        // PDF Önizleme Modali Fonksiyonu
+        function dosyaOnizle(url) {
+            if (!url) {
+                alert("Bu dosyanın dijital kopyası henüz hazır değil.");
+                return;
+            }
+
+            const modal = document.getElementById('previewModal');
+            const iframe = document.getElementById('pdfPreviewFrame');
+            iframe.src = url;
+            modal.style.display = 'flex';
+        }
+
+
+
+
+
+        /* 1. MEVCUT CANLI TAKİP MODALLARI */
+        function openLiveTracking() { document.getElementById('liveTrackingModal').style.display = 'flex'; }
+        function closeLiveTracking() { document.getElementById('liveTrackingModal').style.display = 'none'; }
+
+
+
+        /* 4. GENEL TIKLAMA VE BAŞLANGIÇ AYARLARI */
+        window.onclick = function (event) {
+            let liveModal = document.getElementById('liveTrackingModal');
+            let replyModal = document.getElementById('replyModal');
+
+            // Hangi modal açıksa ve dışına tıklandıysa onu kapat
+            if (event.target == liveModal) { liveModal.style.display = "none"; }
+            if (event.target == replyModal) { replyModal.style.display = "none"; }
+        }
+
+        document.addEventListener('DOMContentLoaded', function () {
+            const btnIn = document.querySelector('.notif-action-btn[onclick="showIncoming()"]');
+            if (btnIn) btnIn.classList.add('active');
+        });
+        function sendReply() {
+            const text = document.getElementById('replyText').value;
+
+            // trim() metni temizler, eğer sonuç boş değilse gönderir
+            if (text.trim() !== "") {
+                alert("Cevabınız başarıyla iletildi.");
+                closeReplyModal();
+            } else {
+
+                alert("Lütfen boş bir mesaj göndermeyin.");
+            }
+        }
+        document.addEventListener('click', function (event) {
+
+            const notifToggle = document.getElementById('notif-toggle');
+            const noteToggle = document.getElementById('note-box-toggle');
+            const notifContainer = document.querySelector('.notif-container');
+            const msgBox = document.querySelector('.msg-box');
+            const quickNoteBtn = document.querySelector('.quick-note-btn');
+
+            if (notifToggle && notifToggle.checked && notifContainer && !notifContainer.contains(event.target)) {
+                notifToggle.checked = false;
+            }
+
+
+            if (noteToggle && noteToggle.checked && msgBox && quickNoteBtn && !msgBox.contains(event.target) && !quickNoteBtn.contains(event.target)) {
+                noteToggle.checked = false;
+            }
+
+
+            const replyModal = document.getElementById('replyModal');
+            if (replyModal && event.target === replyModal) {
+                closeReplyModal();
+            }
+        });
+
+        // SİSTEM MESAJI FONKSİYONU
+        function sistemMesajiGoster(mesaj, tip = "success") {
+            const note = document.getElementById("note-sent");
+            note.innerText = mesaj;
+            note.style.background = tip === "success" ? "#10b981" : "#ef4444";
+            note.style.display = "block";
+
+            setTimeout(() => {
+                note.style.display = "none";
+            }, 3000);
+        }
+
+
+
+        // 1. GENEL MODAL VE BİLDİRİM SİSTEMİ
+        function closeModal(id) {
+            document.getElementById(id).style.display = 'none';
+        }
+
+
+        async function dosyaGörüntüle(dosyaNo) {
+            document.getElementById('viewTitle').innerText = dosyaNo + " - Önizleme";
+            document.getElementById('viewModal').style.display = 'flex';
+
+
+            const satirlar = document.querySelectorAll('#arsivTableBody tr');
+            let dosyaId = null;
+            satirlar.forEach(row => {
+                if (row.innerHTML.includes(dosyaNo)) dosyaId = row.getAttribute('data-id');
+            });
+
+            const previewBox = document.getElementById('pdfContainer');
+            if (!previewBox) return;
+
+            previewBox.innerHTML = `
+            <i class="fa-solid fa-spinner fa-spin" style="font-size: 3rem; margin-bottom: 15px; color:#3b82f6;"></i>
+            <p style="margin: 0; font-size:0.9rem;">Dijital kopya yükleniyor...</p>
+        `;
+
+            try {
+                const res = await fetch(`${BASE_URL}/indir/${dosyaId}`, {
+                    headers: { 'Authorization': 'Bearer ' + localStorage.getItem('token') }
+                });
+
+                if (res.ok) {
+                    const blob = await res.blob();
+                    const pdfUrl = window.URL.createObjectURL(blob);
+
+
+                    previewBox.innerHTML = `
+                    <iframe src="${pdfUrl}#toolbar=0&view=FitH" style="width: 100%; height: 100%; border: none; border-radius: 12px; display: block; overflow: hidden;"></iframe>
+                `;
+                } else {
+                    previewBox.innerHTML = `
+                    <i class="fa-solid fa-file-circle-exclamation" style="font-size: 3rem; margin-bottom: 10px; color:#ef4444;"></i>
+                    <p style="margin: 0; font-size:0.85rem;">Dijital kopya sunucuda bulunamadı.</p>
+                `;
+                }
+            } catch (err) {
+                console.error(err);
+                previewBox.innerHTML = `<p style="margin: 0; font-size:0.85rem;">Bağlantı hatası.</p>`;
+            }
+        }
+
+
+        async function dosyaİndir(dosyaNo) {
+            const satirlar = document.querySelectorAll('#arsivTableBody tr');
+            let dosyaId = null;
+            satirlar.forEach(row => {
+                if (row.innerHTML.includes(dosyaNo)) dosyaId = row.getAttribute('data-id');
+            });
+
+            try {
+                const response = await fetch(`${BASE_URL}/indir/${dosyaId}`, {
+                    headers: { 'Authorization': 'Bearer ' + localStorage.getItem('token') }
+                });
+                if (!response.ok) throw new Error("Dosya indirilemedi.");
+
+                const blob = await response.blob();
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `${dosyaNo.replace(/\//g, '_')}.pdf`;
+                document.body.appendChild(a);
+                a.click();
+                a.remove();
+            } catch (err) {
+                alert("Hata: " + err.message);
+            }
+        }
+
+
+        let seciliSatir = null;
+
+
+        function dosyaYüklePaneliniAç(buton) {
+            if (buton) {
+                seciliSatir = buton.closest('tr');
+            }
+            document.getElementById('uploadModal').style.display = 'flex';
+        }
+
+
+        function handleFileSelection(input) {
+            const fileInfo = document.getElementById('fileSelectedInfo');
+            const fileNameSpan = document.getElementById('selectedFileName');
+            const uploadText = document.getElementById('uploadText');
+            const placeholder = document.getElementById('uploadPlaceholder');
+
+            if (input.files && input.files[0]) {
+                fileNameSpan.innerText = input.files[0].name;
+                fileInfo.style.display = "flex";
+
+                if (placeholder) placeholder.style.display = "none";
+                if (uploadText) uploadText.style.display = "none";
+            }
+        }
+
+
+        async function finishArsivUpload() {
+            const fileInput = document.getElementById('realFileInput');
+            if (!fileInput.files || fileInput.files.length === 0) {
+                alert("Lütfen önce taranmış bir PDF dosyası seçiniz!");
+                return;
+            }
+
+            if (seciliSatir) {
+                const id = seciliSatir.getAttribute('data-id');
+                const file = fileInput.files[0];
+
+
+                const formData = new FormData();
+                formData.append("file", file);
+
+                try {
+
+                    const response = await fetch(`${BASE_URL}/arsiv-guncelle/${id}`, {
+                        method: 'PUT',
+                        headers: {
+                            'Authorization': 'Bearer ' + localStorage.getItem('token')
+                        },
+                        body: formData
+                    });
+
+                    if (response.ok) {
+                        alert("Dosya başarıyla yüklendi ve dijital olarak arşivlendi! ✅");
+                        closeModal('uploadModal');
+                        fileInput.value = "";
+                        document.getElementById('fileSelectedInfo').style.display = "none";
+                        const placeholder = document.getElementById('uploadPlaceholder');
+                        if (placeholder) placeholder.style.display = "flex";
+
+                        seciliSatir = null;
+                        kanal.postMessage({ tip: 'arsiv-guncellendi' });
+                        await arsivListesiniYukle();
+                    } else {
+                        const errorData = await response.json();
+                        alert("Yükleme başarısız: " + (errorData.mesaj || "Sunucu hatası"));
+                    }
+                } catch (err) {
+                    console.error("Dosya yükleme hatası:", err);
+                    alert("Dosya yüklenirken bağlantı hatası oluştu.");
+                }
+            }
+        }
+
+        // 4. İMHA KONTROL SİSTEMİ (Üçgen Buton)
+        function imhaKontrolAc(buton) {
+            if (buton) seciliSatir = buton.closest('tr'); // SATIRI HAFIZAYA AL
+            document.getElementById('imhaModal').style.display = 'flex';
+        }
+
+
+        // 6. ARAMA MOTORU
+        function arsivAra() {
+            let input = document.querySelector(".search-input");
+
+            let filter = input.value.toLocaleUpperCase('tr-TR');
+            let tr = document.getElementById("arsivTableBody").getElementsByTagName("tr");
+
+            for (let i = 0; i < tr.length; i++) {
+                let td = tr[i].getElementsByTagName("td")[0];
+                if (td) {
+                    let txt = td.textContent || td.innerText;
+                    if (txt.toLocaleUpperCase('tr-TR').indexOf(filter) > -1) {
+                        tr[i].style.display = "";
+                    } else {
+                        tr[i].style.display = "none";
+                    }
+                }
+            }
+        }
+        // Arama kutusuna her harf yazıldığında çalıştır
+        document.querySelector(".search-input").addEventListener("keyup", arsivAra);
+
+
+        // 1. MODALI AÇAN ANA FONKSİYON
+        function openFullNewRecord() {
+            // FORMDAKİ TÜM ALANLARI SIFIRLAMA
+            document.getElementById('newRecNo').value = "";
+            document.getElementById('newRecCat').value = "";
+            document.getElementById('newRecDate').value = "";
+            document.getElementById('newRecPeriod').value = "";
+            document.getElementById('newRecordFileInput').value = "";
+
+            // GÖRÜNÜMÜ SIFIRLAMA
+            document.getElementById('newRecordFileInfo').style.display = "none";
+            document.getElementById('newRecordPlaceholder').style.display = "flex";
+
+            // ŞİMDİ AÇMA
+            document.getElementById('newFullRecordModal').style.display = 'flex';
+        }
+        // 2. DOSYA SEÇİLDİĞİNDE GÖRÜNÜMÜ GÜNCELLE
+        function handleNewRecordFile(input) {
+            const info = document.getElementById('newRecordFileInfo');
+            const placeholder = document.getElementById('newRecordPlaceholder');
+            const nameSpan = document.getElementById('newRecordFileName');
+
+            if (input.files && input.files[0]) {
+                nameSpan.innerText = input.files[0].name;
+                info.style.display = "block";
+                placeholder.style.display = "none";
+            }
+        }
+
+
+        function calculateArchivePeriod() {
+            const cat = document.getElementById('newRecCat').value;
+            const period = document.getElementById('newRecPeriod');
+
+
+            if (cat === "Şirketler Hukuku") {
+                period.value = "Süresiz";
+            } else if (cat === "İcra İflas") {
+                period.value = "20 Yıl";
+            } else if (cat === "Gayrimenkul" || cat === "İş Hukuku" || cat === "Ticaret Davaları") {
+                period.value = "10 Yıl";
+            } else {
+                period.value = "";
+            }
+        }
+
+
+        async function saveNewArchiveRecord() {
+            const fileNo = document.getElementById('newRecNo').value.trim();
+            const cat = document.getElementById('newRecCat').value;
+            const date = document.getElementById('newRecDate').value;
+            const period = document.getElementById('newRecPeriod').value;
+            const fileInput = document.getElementById('newRecordFileInput');
+
+
+            if (!fileNo || !cat || !date) {
+                alert("Lütfen Dosya No, Kategori ve Tarih alanlarını doldurunuz.");
+                return;
+            }
+
+
+            const parts = date.split('-');
+            const formattedDateForBackend = parts.length === 3 ? `${parts[2]}.${parts[1]}.${parts[0]}` : date;
+
+            try {
+                const res = await apiFetch(`${BASE_URL}/arsiv-ekle`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        Id: 0,
+                        id: 0,
+                        EsasNo: fileNo,
+                        esasNo: fileNo,
+                        DosyaAdi: fileNo,
+                        dosyaAdi: fileNo,
+                        Kategori: cat,
+                        kategori: cat,
+                        KapanisTarihi: formattedDateForBackend,
+                        kapanisTarihi: formattedDateForBackend,
+
+
+                        DosyaUrl: "",
+                        dosyaUrl: "",
+
+                        Durum: "Tarama Bekliyor",
+                        durum: "Tarama Bekliyor",
+                        SaklamaSuresi: period ? period : "10 Yıl",
+                        saklamaSuresi: period ? period : "10 Yıl"
+                    })
+                });
+
+                if (res.ok) {
+                    closeModal('newFullRecordModal');
+                    document.getElementById('newRecNo').value = "";
+                    document.getElementById('newRecCat').value = "";
+                    document.getElementById('newRecDate').value = "";
+                    document.getElementById('newRecPeriod').value = "";
+                    document.getElementById('newRecordFileInput').value = "";
+
+                    alert("Yeni arşiv kaydı oluşturuldu. Dosya tarama işlemi bekleniyor! 📂");
+                    kanal.postMessage({ tip: 'arsiv-guncellendi' });
+                    await arsivListesiniYukle();
+                } else {
+                    alert(`Sunucu hata döndürdü! Durum Kodu: ${res.status}`);
+                }
+
+            } catch (err) {
+                console.error("Arşiv kayıt hatasının detaylı dökümü:", err);
+
+                alert("Sunucudan bir hata döndü!\n\nDetay: " + err.message + "\n\nLütfen F12 basıp Network sekmesinden dönen hatayı kontrol edin.");
+            }
+        }
+
+        function openFilterModal() {
+            document.getElementById('filterModal').style.display = 'flex';
+        }
+
+
+        function applyFilters() {
+            const selectedCat = document.getElementById('filterCat').value.toLowerCase();
+            const selectedStatus = document.getElementById('filterStatus').value.toLowerCase();
+            const rows = document.getElementById("arsivTableBody").getElementsByTagName("tr");
+
+            for (let i = 0; i < rows.length; i++) {
+                const rowText = rows[i].textContent.toLowerCase();
+
+
+                const matchCat = (selectedCat === "all" || rowText.includes(selectedCat));
+                const matchStatus = (selectedStatus === "all" || rowText.includes(selectedStatus));
+
+                if (matchCat && matchStatus) {
+                    rows[i].style.display = "";
+                } else {
+                    rows[i].style.display = "none";
+                }
+            }
+            closeModal('filterModal');
+        }
+
+        // Filtreleri Temizle
+        function resetFilters() {
+            // 1. Seçenekleri "Tümü" yap
+            document.getElementById('filterCat').value = "all";
+            document.getElementById('filterStatus').value = "all";
+
+            // 2. Tabloyu hemen eski haline getir (Tüm satırları göster)
+            const rows = document.getElementById("arsivTableBody").getElementsByTagName("tr");
+            for (let i = 0; i < rows.length; i++) {
+                rows[i].style.display = "";
+            }
+
+
+        }
+        function parseArsivKapanisDate(row) {
+            const cell = row.querySelector('td:nth-child(2)');
+            if (!cell) return null;
+            const t = (cell.textContent || '').trim();
+            if (/bugün/i.test(t)) {
+                const d = new Date();
+                d.setHours(0, 0, 0, 0);
+                return d;
+            }
+            const m = t.match(/(\d{2})\.(\d{2})\.(\d{4})/);
+            if (!m) return null;
+            const day = parseInt(m[1], 10);
+            const month = parseInt(m[2], 10) - 1;
+            const year = parseInt(m[3], 10);
+            const dt = new Date(year, month, day);
+            return isNaN(dt.getTime()) ? null : dt;
+        }
+
+        function arsivTarihBuAydaMi(d, now) {
+            if (!d || !now) return false;
+            return d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth();
+        }
+
+
+        function updateDashboardStatsFromData(veriler) {
+            if (!veriler || !Array.isArray(veriler)) return;
+
+            const simdi = new Date();
+            const buAy = simdi.getMonth(); // 0-11 arası (Mayıs için 4)
+            const buYil = simdi.getFullYear(); // 2026
+
+            let toplamDosya = veriler.length;
+            let buAyEklenen = 0;
+            let imhaYaklasan = 0;
+
+            veriler.forEach(dosya => {
+                const durum = dosya.Durum ?? dosya.durum ?? '';
+
+                // 1. İmha yaklaşanları sayıyoruz
+                if (durum === 'İmha Yaklaşıyor') {
+                    imhaYaklasan++;
+                }
+
+                // 2. Bu ay eklenenleri güvenli tarih parse yöntemiyle sayıyoruz
+                let tarihStr = dosya.KapanisTarihi ?? dosya.kapanisTarihi ?? '';
+                tarihStr = tarihStr.trim();
+
+                if (tarihStr && tarihStr !== "Bugün" && tarihStr !== "bugün") {
+
+                    const parcalar = tarihStr.split('.');
+                    if (parcalar.length === 3) {
+                        const ay = parseInt(parcalar[1], 10) - 1;
+                        const yil = parseInt(parcalar[2], 10);
+
+
+                        if (yil === buYil && ay === buAy) {
+                            buAyEklenen++;
+                        }
+                    }
+                } else if (tarihStr.toLowerCase() === "bugün" || tarihStr === "") {
+
+                    buAyEklenen++;
+                }
+            });
+
+
+            const elTotal = document.getElementById('stat-total-files');
+            const elMonth = document.getElementById('stat-month-added');
+            const elDestruction = document.getElementById('stat-approaching-destruction');
+
+            if (elTotal) elTotal.textContent = String(toplamDosya);
+            if (elMonth) elMonth.textContent = String(buAyEklenen);
+            if (elDestruction) elDestruction.textContent = String(imhaYaklasan);
+        }
+
+
+        let aktifIletisimBirimi = "";
+
+
+        async function showIncoming() {
+            const incoming = document.getElementById('notif-incoming-list');
+            const outgoing = document.getElementById('notif-outgoing-list');
+            const btnIn = document.querySelector('.notif-action-btn[onclick="showIncoming()"]');
+            const btnOut = document.querySelector('.notif-action-btn[onclick="showOutgoing()"]');
+
+            if (incoming && outgoing) {
+                incoming.style.display = 'block';
+                outgoing.style.display = 'none';
+                if (btnIn) btnIn.classList.add('active');
+                if (btnOut) btnOut.classList.remove('active');
+            }
+
+            try {
+                const response = await apiFetch('/api/IkIstatistikKontrolcusu/mesajlar');
+                const veriler = await response.json();
+
+                if (incoming) {
+                    incoming.innerHTML = "";
+                    if (veriler.length === 0) {
+                        incoming.innerHTML = '<div class="notif-item"><span>Gelen kutunuz temiz. 📬</span></div>';
+                    } else {
+                        incoming.innerHTML = veriler.map(msg => {
+                            const temizMesaj = msg.mesaj.replace(/'/g, "\\'").replace(/"/g, '\\"');
+                            const durumRengi = msg.okunduMu ? '#cbd5e1' : '#3b82f6';
+
+                            return `
+                            <div class="notif-item" onclick="openReplyModal('${msg.birim}', '${temizMesaj}', this, ${msg.id})" style="cursor: pointer;">
+                                <span class="notif-status" style="background: ${durumRengi}; display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 5px;"></span>
+                                <strong>${msg.birim}</strong>
+                                <span>${msg.mesaj}</span>
+                                <small style="display:block; color: #94a3b8; font-size: 0.75rem; margin-top: 5px;">
+                                    <i class="fa-regular fa-clock"></i> ${msg.saat}
+                                </small>
+                            </div>`;
+                        }).join('');
+                    }
+                }
+
+                guncelleCanSayaci(veriler);
+
+            } catch (err) {
+                console.error("Gelen mesajlar veritabanından alınamadı:", err);
+            }
+        }
+
+        /*ÇAN SİMGESİ SAYACINI YÖNETEN FONKSİYON */
+        function guncelleCanSayaci(veriler) {
+            const okunmamislar = veriler.filter(m => !m.okunduMu).length;
+            const badge = document.querySelector('.notif-container .notif-badge');
+
+            if (badge) {
+                badge.innerText = okunmamislar;
+                badge.style.display = okunmamislar > 0 ? 'flex' : 'none';
+            }
+        }
+
+        /*  GİDEN MESAJLARI (BİZZAT GÖNDERDİKLERİNİ) LİSTELER */
+        async function showOutgoing() {
+            const incoming = document.getElementById('notif-incoming-list');
+            const outgoing = document.getElementById('notif-outgoing-list');
+            const btnIn = document.querySelector('.notif-action-btn[onclick="showIncoming()"]');
+            const btnOut = document.querySelector('.notif-action-btn[onclick="showOutgoing()"]');
+
+            if (incoming && outgoing) {
+                incoming.style.display = 'none';
+                outgoing.style.display = 'block';
+                if (btnOut) btnOut.classList.add('active');
+                if (btnIn) btnIn.classList.remove('active');
+            }
+
+            try {
+                const response = await apiFetch('/api/IkIstatistikKontrolcusu/giden-mesajlar');
+                const veriler = await response.json();
+
+                if (outgoing) {
+                    if (veriler.length === 0) {
+                        outgoing.innerHTML = '<div class="notif-item"><span>Henüz bir departmana not göndermediniz.</span></div>';
+                    } else {
+                        outgoing.innerHTML = veriler.map(msg => `
+                        <div class="notif-item">
+                            <strong>SİZDEN -> ${msg.birim}</strong>
+                            <span>${msg.mesaj}</span>
+                            <small style="display:block; color: #94a3b8; font-size: 0.75rem; margin-top: 5px;">
+                                <i class="fa-regular fa-clock"></i> ${msg.saat}
+                            </small>
+                        </div>
+                    `).join('');
+                    }
+                }
+            } catch (err) {
+                console.error("Giden mesajlar veritabanından alınamadı:", err);
+            }
+        }
+
+        /*  TIKLANAN MESAJI "OKUNDU" YAPAR VE CEVAP MODALINI AÇAR */
+        function openReplyModal(sender, originalMessage, element, mesajId) {
+            aktifIletisimBirimi = sender.replace("SİZDEN ->", "").trim();
+
+            document.getElementById('replyTarget').innerText = aktifIletisimBirimi + " Birimine Cevap Yaz";
+            document.getElementById('replyOriginalMessage').innerText = '"' + originalMessage + '"';
+            document.getElementById('replyModal').style.display = 'flex';
+
+            if (element) {
+                const statusDot = element.querySelector('.notif-status');
+
+                if (statusDot && (statusDot.style.background === 'rgb(59, 130, 246)' || statusDot.style.background === '#3b82f6' || statusDot.style.background.includes('3b82f6'))) {
+
+                    statusDot.style.background = '#cbd5e1';
+
+                    const badge = document.querySelector('.notif-container .notif-badge');
+                    if (badge && parseInt(badge.innerText) > 0) {
+                        const yeniSayi = parseInt(badge.innerText) - 1;
+                        badge.innerText = yeniSayi;
+                        if (yeniSayi === 0) badge.style.display = 'none';
+                    }
+
+                    if (mesajId) {
+                        apiFetch(`/api/IkIstatistikKontrolcusu/mesaj-okundu/${mesajId}`, {
+                            method: 'POST'
+                        }).catch(e => console.error("Mesaj okundu işareti veritabanına iletilemedi:", e));
+                    }
+                }
+            }
+        }
+
+        function closeReplyModal() {
+            document.getElementById('replyModal').style.display = 'none';
+            const input = document.getElementById('replyText');
+            if (input) input.value = '';
+            aktifIletisimBirimi = "";
+        }
+
+        /*  C# APİ'SİNE CEVAP GÖNDERİR */
+        async function sendReply() {
+            const replyInput = document.getElementById('replyText');
+            if (!replyInput) return;
+
+            const text = replyInput.value.trim();
+            if (text === "") {
+                if (typeof showToast === "function") showToast("Lütfen boş bir mesaj göndermeyin.", "error");
+                else alert("Lütfen boş bir mesaj göndermeyin.");
+                return;
+            }
+
+            const suAnkiSaat = new Date().toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' });
+
+            const gonderilecekCevapPaketi = {
+                Birim: aktifIletisimBirimi,
+                Mesaj: text,
+                Saat: suAnkiSaat
+            };
+
+            try {
+                const response = await apiFetch('/api/IkIstatistikKontrolcusu/mesaj-gonder', {
+                    method: 'POST',
+                    body: JSON.stringify(gonderilecekCevapPaketi)
+                });
+
+                if (response.ok) {
+                    if (typeof showToast === "function") showToast(`${aktifIletisimBirimi} birimine cevabınız başarıyla iletildi!`, "success");
+                    else alert(`${aktifIletisimBirimi} birimine cevabınız başarıyla iletildi!`);
+                    closeReplyModal();
+                    await showIncoming();
+                } else {
+                    if (typeof showToast === "function") showToast("Cevap iletilirken sunucu katmanında bir hata oluştu.", "error");
+                    else alert("Cevap iletilirken sunucu katmanında bir hata oluştu.");
+                }
+            } catch (err) {
+                console.error("Cevap gönderme hatası:", err);
+                if (typeof showToast === "function") showToast("Bağlantı hatası! Cevap gönderilemedi.", "error");
+                else alert("Bağlantı hatası! Cevap gönderilemedi.");
+            }
+        }
+
+        /* SİSTEM BAŞLATICISI (DOM READY) */
+        document.addEventListener('DOMContentLoaded', function () {
+
+            const adminAdSoyad = localStorage.getItem('adminAdSoyad');
+            const adminDepartman = localStorage.getItem('adminDepartman');
+
+            if (adminAdSoyad) {
+                document.getElementById('sidebarAdSoyad').textContent = adminAdSoyad;
+            }
+            if (adminDepartman) {
+                document.getElementById('sidebarDepartman').textContent = adminDepartman;
+            }
+
+            showIncoming();
+
+
+            const notifTrigger = document.querySelector('.notif-trigger');
+            const notifDropdown = document.querySelector('.notif-dropdown');
+
+            if (notifTrigger) {
+                notifTrigger.removeAttribute('for');
+                notifTrigger.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+
+                    if (notifDropdown) {
+                        if (notifDropdown.classList.contains('active')) {
+                            notifDropdown.style.removeProperty('display');
+                            notifDropdown.classList.remove('active');
+                        } else {
+                            notifDropdown.style.setProperty('display', 'block', 'important');
+                            notifDropdown.classList.add('active');
+                        }
+                    }
+
+                    const badge = document.querySelector('.notif-container .notif-badge');
+                    if (badge) badge.style.display = 'none';
+                });
+            }
+
+
+            const notifContainer = document.querySelector('.notif-container');
+            if (notifDropdown) notifDropdown.addEventListener('click', e => e.stopPropagation());
+            if (notifContainer) notifContainer.addEventListener('click', e => e.stopPropagation());
+
+
+            document.addEventListener('click', function (event) {
+                // Bildirim Menüsünü Kapat
+                if (notifDropdown) {
+                    notifDropdown.style.removeProperty('display');
+                    notifDropdown.classList.remove('active');
+                }
+
+
+                const replyModal = document.getElementById('replyModal');
+                if (event.target === replyModal) closeReplyModal();
+            });
+        });
+
+    </script>
+</body>
+</html>
+

@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="tr">
+
+<head>
+
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Guardia | Yönetici Şifre Kurtarma</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-grad: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+            --admin-accent: #38bdf8;
+            --text-dim: #94a3b8;
+            --glass-bg: rgba(255, 255, 255, 0.03);
+            --border-color: rgba(255, 255, 255, 0.1);
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Poppins', sans-serif;
+            background: var(--bg-grad) !important;
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            overflow: hidden;
+        }
+
+        .recovery-container {
+            width: 90%;
+            max-width: 420px;
+            padding: 45px;
+            background: var(--glass-bg) !important;
+            backdrop-filter: blur(15px);
+            border-radius: 30px;
+            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.3);
+            border: 1px solid var(--border-color);
+            text-align: center;
+            position: relative;
+        }
+
+        .icon-header {
+            width: 70px;
+            height: 70px;
+            background: rgba(56, 189, 248, 0.1);
+            border-radius: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 25px;
+            color: var(--admin-accent);
+            font-size: 2rem;
+            box-shadow: 0 0 15px rgba(56, 189, 248, 0.2);
+        }
+
+        h2 {
+            margin: 0 0 10px 0;
+            font-size: 1.5rem;
+            letter-spacing: -0.5px;
+        }
+
+        p {
+            color: var(--text-dim);
+            font-size: 0.9rem;
+            line-height: 1.6;
+            margin-bottom: 35px;
+        }
+
+        .input-wrapper {
+            position: relative;
+            margin-bottom: 20px;
+            text-align: left;
+        }
+
+            .input-wrapper label {
+                display: block;
+                font-size: 0.75rem;
+                color: #64748b;
+                font-weight: 600;
+                margin-bottom: 8px;
+                margin-left: 5px;
+                text-transform: uppercase;
+            }
+
+        input {
+            width: 100%;
+            padding: 16px;
+            background: rgba(15, 23, 42, 0.6);
+            border: 1px solid #334155;
+            border-radius: 12px;
+            color: white;
+            box-sizing: border-box;
+            font-size: 1rem;
+            outline: none;
+            transition: 0.3s;
+        }
+
+            input:focus {
+                border-color: var(--admin-accent);
+                box-shadow: 0 0 10px rgba(56, 189, 248, 0.1);
+            }
+
+        .admin-btn {
+            width: 100%;
+            padding: 18px;
+            background: var(--admin-accent);
+            border: none;
+            border-radius: 12px;
+            color: #0f172a;
+            font-weight: 700;
+            cursor: pointer;
+            transition: 0.3s;
+            margin-top: 15px;
+            font-size: 1rem;
+            font-family: 'Poppins', sans-serif;
+        }
+
+            .admin-btn:hover {
+                transform: translateY(-2px);
+                filter: brightness(1.1);
+            }
+
+        .back-link {
+            display: inline-block;
+            margin-top: 30px;
+            color: #64748b;
+            text-decoration: none;
+            font-size: 0.85rem;
+            transition: 0.3s;
+        }
+
+            .back-link:hover {
+                color: white;
+            }
+
+        .step {
+            display: none;
+            animation: slideUp 0.4s ease;
+        }
+
+            .step.active {
+                display: block;
+            }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(15px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Test Banner Stilleri */
+        .test-banner {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            background: var(--admin-accent);
+            color: #0f172a;
+            text-align: center;
+            padding: 15px;
+            font-weight: 600;
+            font-size: 1.1rem;
+            z-index: 1000;
+            transform: translateY(-100%);
+            transition: transform 0.4s ease;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+        }
+
+            .test-banner.show {
+                transform: translateY(0);
+            }
+    </style>
+</head>
+
+<body>
+    <div id="test-banner" class="test-banner">
+        <i class="fa-solid fa-flask"></i> TEST MODU - ERİŞİM KODUNUZ: <span id="test-code-display"></span>
+    </div>
+
+    <div class="recovery-container">
+
+        <div id="step1" class="step active">
+            <div class="icon-header"><i class="fa-solid fa-user-gear"></i></div>
+            <h2>Sistem Yetkilisi</h2>
+            <p>Şifre sıfırlama talebi için kurumsal e-posta ve sicil numaranızı giriniz.</p>
+
+            <div class="input-wrapper">
+                <label>Kurumsal Sicil No</label>
+                <input type="text" id="a-sicil" placeholder="Örn: 111">
+            </div>
+            <div class="input-wrapper">
+                <label>E-Posta Adresi</label>
+                <input type="email" id="a-email" placeholder="isim.soyisim@guardia.com">
+            </div>
+            <button class="admin-btn" onclick="nextStep(2)">KOD GÖNDER</button>
+        </div>
+
+        <div id="step2" class="step">
+            <div class="icon-header"><i class="fa-solid fa-envelope-shield"></i></div>
+            <h2>Güvenlik Doğrulama</h2>
+            <p>E-postanıza gönderilen 6 haneli erişim kodunu giriniz.</p>
+
+            <div class="input-wrapper">
+                <input type="text" id="a-code" placeholder="------"
+                       style="text-align: center; letter-spacing: 8px; font-size: 1.5rem;">
+            </div>
+            <button class="admin-btn" onclick="nextStep(3)">KODU ONAYLA</button>
+        </div>
+
+        <div id="step3" class="step">
+            <div class="icon-header"><i class="fa-solid fa-shield-lock"></i></div>
+            <h2>Yeni Erişim Şifresi</h2>
+            <p>Yönetim paneli için karmaşık ve güvenli bir şifre belirleyin.</p>
+
+            <div class="input-wrapper">
+                <label>Yeni Şifre</label>
+                <input type="password" id="pass1" placeholder="••••••••">
+            </div>
+            <div class="input-wrapper">
+                <label>Şifre Tekrar</label>
+                <input type="password" id="pass2" placeholder="••••••••">
+            </div>
+            <button class="admin-btn" onclick="finish()">ŞİFREYİ GÜNCELLE</button>
+        </div>
+
+        <a href="admin-login.html" class="back-link"><i class="fa-solid fa-chevron-left"></i> Giriş Portalı'na Dön</a>
+    </div>
+
+    <script>
+        
+        let kullaniciEmail = "";
+        let kullaniciSicil = "";
+
+        async function nextStep(n) {
+        
+            if (n === 2) {
+                const s = document.getElementById('a-sicil').value.trim();
+                const e = document.getElementById('a-email').value.trim();
+
+                if (!s || !e) {
+                    alert("Sistem Hatası: Kimlik bilgileri boş bırakılamaz.");
+                    return;
+                }
+
+                if (!e.endsWith("@guardia.com")) {
+                    alert("Yetki Hatası: Sadece kurumsal (@guardia.com) e-posta adresleri kullanılabilir.");
+                    return;
+                }
+
+                kullaniciEmail = e;
+                kullaniciSicil = s; 
+
+                try {
+                    const response = await fetch('https://localhost:7183/api/IkYetkiKontrolcusu/kod-gonder', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            SicilNo: kullaniciSicil,
+                            Email: kullaniciEmail
+                        })
+                    });
+
+                    const data = await response.json();
+                    const isBasarili = data.basarili === true || data.Basarili === true;
+
+                    if (response.ok && isBasarili) {
+                       
+                        const payload = data.veri || data.Veri || data;
+
+                       
+                        const gelenKod = payload.uretilenDogrulamaKodu || payload.UretilenDogrulamaKodu || payload.UretilenDogrulamakodu || "";
+
+                        if (gelenKod) {
+                       
+                            document.getElementById('test-code-display').innerText = gelenKod;
+                            document.getElementById('test-banner').classList.add('show');
+                          
+                            document.getElementById('a-code').value = gelenKod;
+                        } else {
+                      
+                            document.getElementById('a-code').value = "";
+                            console.warn("Sistem JSON formatında kodu bulamadı. Network sekmesinden JSON yanıtını inceleyin:", data);
+                        }
+
+                   
+                        gecisiUygula(n);
+                    } else {
+                        const hataMesaji = data.hataMesaji || data.HataMesaji || "Bilgiler doğrulanamadı.";
+                        alert("Yetki Hatası: " + hataMesaji);
+                    }
+                } catch (error) {
+                    console.error(error);
+                    alert("Bağlantı Hatası: Sunucuya ulaşılamıyor.");
+                }
+            } 
+
+           
+            else if (n === 3) {
+                const code = document.getElementById('a-code').value.trim();
+
+                if (!code) {
+                    alert("Lütfen güvenlik kodunu giriniz.");
+                    return;
+                }
+
+                try {
+                    const response = await fetch('https://localhost:7183/api/IkYetkiKontrolcusu/kodu-onayla', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            SicilNo: kullaniciSicil, 
+                            Email: kullaniciEmail,
+                            GirilenKod: code
+                        })
+                    });
+
+                    const data = await response.json();
+                    const isBasarili = data.basarili === true || data.Basarili === true;
+
+                    if (response.ok && isBasarili) {
+                       
+                        document.getElementById('test-banner').classList.remove('show');
+
+                      
+                        gecisiUygula(n);
+                    } else {
+                        const hataMesaji = data.hataMesaji || data.HataMesaji || "Girdiğiniz güvenlik kodu hatalı.";
+                        alert("Sistem Uyarısı: " + hataMesaji);
+                    }
+                } catch (error) {
+                    console.error(error);
+                    alert("Bağlantı Hatası: Doğrulama yapılamadı.");
+                }
+            }
+        }
+
+        async function finish() {
+            const p1 = document.getElementById('pass1').value;
+            const p2 = document.getElementById('pass2').value;
+
+            if (!p1 || !p2) {
+                alert("Lütfen tüm şifre alanlarını doldurun.");
+                return;
+            }
+
+            try {
+                const response = await fetch('https://localhost:7183/api/IkYetkiKontrolcusu/sifre-guncelle', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        SicilNo: kullaniciSicil, 
+                        Email: kullaniciEmail,
+                        YeniSifre: p1,
+                        YeniSifreTekrar: p2
+                    })
+                });
+
+                const data = await response.json();
+                const isBasarili = data.basarili === true || data.Basarili === true;
+
+                if (response.ok && isBasarili) {
+                    const payload = data.veri || data.Veri || data;
+                    const mesaj = payload.mesaj || "Şifreniz başarıyla güncellendi.";
+                    alert(mesaj);
+                    location.href = "admin-login.html";
+                } else {
+                    const hataMesaji = data.hataMesaji || data.HataMesaji || "Şifre güncellenemedi.";
+                    alert("Hata: " + hataMesaji);
+                }
+            } catch (error) {
+                console.error(error);
+                alert("Bağlantı Hatası: Güncelleme sırasında bir hata oluştu.");
+            }
+        }
+
+        function gecisiUygula(n) {
+            // Animasyonlu Geçiş
+            document.querySelectorAll('.step').forEach(s => s.classList.remove('active'));
+            document.getElementById('step' + n).classList.add('active');
+        }
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,978 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Guardia | Satın Alma</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/ik-sidebar.css">
+    <link rel="stylesheet" href="css/dept-common.css">
+    <style>
+        :root { --sidebar: #0f172a; --text-main: #1e293b; --text-sub: #64748b; --white: #fff; }
+        .hero { margin-bottom: 28px; }
+        .hero h2 { margin: 0 0 6px 0; font-size: 1.6rem; color: var(--sidebar); }
+        .hero p { margin: 0; font-size: 0.95rem; color: var(--text-sub); }
+        .stats-container { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; margin-bottom: 28px; }
+        .card { background: var(--white); padding: 24px; border-radius: 20px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); transition: all 0.3s ease; border: 1px solid transparent; }
+        .card:hover { transform: translateY(-4px); box-shadow: 0 20px 25px -5px rgba(0,0,0,0.08); border-color: var(--accent); }
+        .card h4 { margin: 0; color: #64748b; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.5px; }
+        .card p { margin: 10px 0 0 0; font-size: 1.75rem; font-weight: 700; color: var(--text-main); }
+        .mid-section { display: grid; grid-template-columns: 1.2fr 1fr; gap: 24px; margin-bottom: 28px; }
+        .chart-box { background: var(--white); padding: 24px; border-radius: 20px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); }
+        .chart-box h4 { margin: 0 0 20px 0; font-size: 1rem; color: var(--sidebar); }
+        .chart-bars { display: flex; flex-direction: column; gap: 14px; }
+        .chart-row { display: flex; align-items: center; gap: 12px; }
+        .chart-row span:first-child { min-width: 120px; font-size: 0.9rem; color: var(--text-main); }
+        .chart-bar-wrap { flex: 1; height: 24px; background: #f1f5f9; border-radius: 12px; overflow: hidden; }
+        .chart-bar { height: 100%; border-radius: 12px; background: var(--accent); }
+        .chart-row .pct { min-width: 42px; font-size: 0.85rem; font-weight: 600; color: var(--text-sub); }
+        .stok-list { background: var(--white); padding: 24px; border-radius: 20px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); }
+        .stok-list h4 { margin: 0 0 16px 0; font-size: 1rem; color: var(--sidebar); }
+        .stok-item { padding: 12px 14px; background: #fef2f2; border-left: 4px solid #ef4444; border-radius: 8px; margin-bottom: 10px; font-size: 0.9rem; color: var(--text-main); }
+        .stok-item:last-child { margin-bottom: 0; }
+        .data-table-box { background: var(--white); padding: 25px; border-radius: 20px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); margin-bottom: 100px; }
+        .table-header { margin-bottom: 20px; }
+        .data-table-box h3 { margin: 0; font-size: 1.1rem; color: var(--sidebar); }
+        table { width: 100%; border-collapse: collapse; }
+        th { text-align: left; padding: 14px; border-bottom: 2px solid #f1f5f9; color: #64748b; font-size: 0.9rem; }
+        td { padding: 14px; border-bottom: 1px solid #f1f5f9; font-size: 0.9rem; }
+        .badge { padding: 5px 12px; border-radius: 20px; font-size: 0.75rem; font-weight: 600; }
+        .badge.hazir { background: #fef3c7; color: #b45309; }
+        .badge.yolda { background: #dbeafe; color: #1d4ed8; }
+        .badge.teslim { background: #dcfce7; color: #166534; }
+        @media (max-width: 1100px) { .stats-container { grid-template-columns: repeat(2, 1fr); } .mid-section { grid-template-columns: 1fr; } }
+       /* Zil kaymasın diye kaydırma çubuğunu gizleyen sihirli satırlar */
+::-webkit-scrollbar {
+    display: none;
+}
+
+html, body {
+    scrollbar-width: none; /* Firefox için */
+    -ms-overflow-style: none; /* IE ve Edge için */
+}
+/* Sayfayı sabitlemek için ek CSS */
+.ik-content {
+    height: 100vh;
+    overflow-y: hidden; /* Sayfa kaymasın, her şey ekrana sığsın */
+    display: flex;
+    flex-direction: column;
+}
+
+/* Tabloyu 5 satırla sınırlayan ve estetik duran ayar */
+.data-table-box table tbody tr:nth-child(n+6) {
+    display: none; /* 5. satırdan sonrasını gizle */
+}
+
+/* Yıllık/Aylık Butonlarının Yeni Hali (Tümü butonu gibi) */
+.toggle-btn-group {
+    display: flex;
+    gap: 0;
+    background: #f1f5f9;
+    padding: 4px;
+    border-radius: 10px;
+}
+
+.toggle-btn {
+    padding: 6px 15px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    border: none;
+    cursor: pointer;
+    border-radius: 8px;
+    transition: 0.3s;
+    background: transparent;
+    color: #64748b;
+}
+
+.toggle-btn.active {
+    background: #0f172a; /* Senin asil lacivertin */
+    color: white;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+}
+
+/* Aylık harcama sütunları: hover kartı + geçmiş / güncel / gelecek */
+#barContainer.spend-bar-root {
+    align-items: stretch;
+    gap: 6px;
+    position: relative;
+}
+.spend-bar-column {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    align-items: center;
+    position: relative;
+    cursor: default;
+}
+.spend-bar-column:hover {
+    z-index: 4;
+}
+.spend-bar-hover-card {
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%) translateY(-6px);
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 12px 40px rgba(15, 23, 42, 0.14);
+    border-radius: 14px;
+    padding: 10px 14px;
+    min-width: 108px;
+    text-align: center;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.2s ease, transform 0.2s ease;
+}
+.spend-bar-column:hover .spend-bar-hover-card {
+    opacity: 1;
+    transform: translateX(-50%) translateY(-10px);
+}
+.spend-bar-hover-card .spend-bar-month {
+    display: block;
+    font-size: 0.7rem;
+    font-weight: 700;
+    color: #64748b;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    margin-bottom: 4px;
+}
+.spend-bar-hover-card .spend-bar-pct {
+    font-size: 1.15rem;
+    font-weight: 800;
+    color: #0f172a;
+    letter-spacing: -0.02em;
+}
+.spend-bar-hover-card .spend-bar-tag {
+    display: none;
+    margin-top: 6px;
+    font-size: 0.65rem;
+    padding: 3px 10px;
+    border-radius: 999px;
+    font-weight: 700;
+}
+.spend-bar-hover-card .spend-bar-tag.is-future {
+    display: inline-block;
+    background: #eff6ff;
+    color: #1d4ed8;
+    border: 1px solid #bfdbfe;
+}
+.spend-bar-hover-card .spend-bar-tag.is-current {
+    display: inline-block;
+    background: #ecfdf5;
+    color: #047857;
+    border: 1px solid #a7f3d0;
+}
+.spend-bar-track {
+    width: 100%;
+    height: 150px;
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+}
+.spend-bar-fill {
+    width: 100%;
+    max-width: 26px;
+    border-radius: 8px 8px 3px 3px;
+    transition: transform 0.2s ease, box-shadow 0.2s ease, opacity 0.2s ease;
+}
+.spend-bar-column:hover .spend-bar-fill {
+    transform: scaleX(1.06);
+    box-shadow: 0 8px 20px rgba(15, 23, 42, 0.18);
+}
+.spend-bar-column--past .spend-bar-fill {
+    background: linear-gradient(180deg, #60a5fa 0%, #1d4ed8 100%);
+}
+.spend-bar-column--current .spend-bar-fill {
+    background: linear-gradient(180deg, #4ade80 0%, #15803d 100%);
+    box-shadow: 0 0 0 2px #fff, 0 0 0 3px #86efac;
+}
+.spend-bar-column--future .spend-bar-fill {
+    background: linear-gradient(180deg, #e2e8f0 0%, #94a3b8 100%);
+    opacity: 0.95;
+}
+
+.spend-year-col {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    align-items: center;
+    position: relative;
+}
+.spend-year-col:hover {
+    z-index: 4;
+}
+.spend-year-col:hover .spend-bar-hover-card {
+    opacity: 1;
+    transform: translateX(-50%) translateY(-10px);
+}
+.spend-year-col .spend-bar-hover-card {
+    min-width: 100px;
+}
+.spend-year-fill {
+    width: 72%;
+    max-width: 48px;
+    border-radius: 8px 8px 3px 3px;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.spend-year-col--past .spend-year-fill {
+    background: linear-gradient(180deg, #60a5fa 0%, #1d4ed8 100%);
+}
+.spend-year-col--current .spend-year-fill {
+    background: linear-gradient(180deg, #4ade80 0%, #15803d 100%);
+    box-shadow: 0 0 0 2px #fff, 0 0 0 3px #86efac;
+}
+.spend-year-col--future .spend-year-fill {
+    background: linear-gradient(180deg, #e2e8f0 0%, #94a3b8 100%);
+    opacity: 0.95;
+}
+.spend-year-col:hover .spend-year-fill {
+    transform: scaleX(1.05);
+    box-shadow: 0 8px 24px rgba(15, 23, 42, 0.2);
+}
+.spend-year-col--current:hover .spend-year-fill {
+    box-shadow: 0 0 0 2px #fff, 0 0 0 3px #86efac, 0 8px 24px rgba(22, 101, 52, 0.25);
+}
+
+.mid-section { 
+    display: grid; 
+    grid-template-columns: 1.2fr 1fr; 
+    gap: 24px; 
+    margin-top: 20px; /* EĞER BU SATIR YOKSA EKLE, VARSA DEĞERİ ARTIR */
+    margin-bottom: 28px; 
+}
+    </style>
+</head>
+<body class="ik-layout">
+    <div class="ik-sidebar">
+        <h2>🛡️ Guardia SA</h2>
+        <ul class="ik-nav-links">
+            <li class="active"><i class="fa-solid fa-chart-line"></i> Genel Bakış</li>
+            <li><a href="sa-talepler.html" style="text-decoration:none;color:inherit;display:flex;align-items:center;gap:12px;"><i class="fa-solid fa-cart-shopping"></i> Satın Alma Talepleri</a></li>
+            <li><a href="sa-onay.html" style="text-decoration:none;color:inherit;display:flex;align-items:center;gap:12px;"><i class="fa-solid fa-check-double"></i> Onay Bekleyenler</a></li>
+            <li><a href="sa-tedarikci.html" style="text-decoration:none;color:inherit;display:flex;align-items:center;gap:12px;"><i class="fa-solid fa-truck-fast"></i> Tedarikçi Listesi</a></li>
+            <li><a href="sa-takip.html" style="text-decoration:none;color:inherit;display:flex;align-items:center;gap:12px;"><i class="fa-solid fa-box-open"></i> Sipariş Takibi</a></li>
+            <li><a href="sa-stok.html" style="text-decoration:none;color:inherit;display:flex;align-items:center;gap:12px;"><i class="fa-solid fa-warehouse"></i> Stok Yönetimi</a></li>
+        </ul>
+       <div class="ik-user-tag" style="position: relative; display: flex; align-items: center;">
+    <div class="ik-user-avatar"><img src="img/selin_aksoy.jpg" alt=""></div>
+    <div class="ik-user-info"><span>Selin Aksoy</span><small> Satın Alma Uzmanı</small></div>
+
+    <a href="javascript:void(0)" 
+       onclick="if(confirm('Oturumu kapatmak istediğinize emin misiniz?')) { window.location.href='admin-login.html'; }" 
+       style="position: absolute; right: 15px; color: white; opacity: 0.8; text-decoration: none; cursor: pointer;">
+        <i class="fa-solid fa-right-from-bracket" style="font-size: 1.1rem;"></i>
+    </a>
+</div>
+    </div>
+    <div class="ik-content">
+
+        <div class="dept-header">
+            <div class="page-title-group">
+                <h1>Satın Alma Operasyon Merkezi</h1>
+
+            </div>
+
+            <div class="notif-container">
+                <input type="checkbox" id="notif-toggle" aria-hidden="true" style="display:none;">
+                <label for="notif-toggle" class="notif-trigger">
+                    <i class="fa-solid fa-bell"></i>
+                    <span class="notif-badge">3</span>
+                </label>
+
+                <div class="notif-dropdown">
+                    <h4>Mesaj Merkezi</h4>
+
+                    <div id="notif-incoming-list" class="notif-list">
+                        <div class="notif-item" onclick="openReplyModal('ÜRETİM', 'Hammadde stoğu %10 altına düştü. Acil tedarik formu oluşturulsun mu?')" style="cursor: pointer;">
+                            <span class="notif-status" style="background: #ef4444;"></span>
+                            <strong>ÜRETİM:</strong>
+                            <span>Hammadde stoğu kritik seviyede!</span>
+                            <small style="display:block; color: #94a3b8; font-size: 0.75rem; margin-top: 5px;">
+                                <i class="fa-regular fa-clock"></i> 5 dk önce
+                            </small>
+                        </div>
+
+                        <div class="notif-item" onclick="openReplyModal('İDARİ İŞLER', 'Araç lastik ihalesi için 3 farklı firmadan teklif toplandı, onayınıza sunuldu.')" style="cursor: pointer;">
+                            <span class="notif-status" style="background: #3b82f6;"></span>
+                            <strong>İDARİ İŞLER:</strong>
+                            <span>Araç lastik ihalesi açıldı.</span>
+                            <small style="display:block; color: #94a3b8; font-size: 0.75rem; margin-top: 5px;">
+                                <i class="fa-regular fa-clock"></i> 1 saat önce
+                            </small>
+                        </div>
+
+                        <div class="notif-item" onclick="openReplyModal('LOJİSTİK', 'Yeni nakliye firması sözleşme taslağı incelenmek üzere hazır.')" style="cursor: pointer;">
+                            <span class="notif-status" style="background: #f59e0b;"></span>
+                            <strong>LOJİSTİK:</strong>
+                            <span>Yeni nakliye teklifi geldi.</span>
+                            <small style="display:block; color: #94a3b8; font-size: 0.75rem; margin-top: 5px;">
+                                <i class="fa-regular fa-clock"></i> 3 saat önce
+                            </small>
+                        </div>
+                    </div>
+
+                    <div id="notif-outgoing-list" class="notif-list" style="display:none;">
+                        <div class="notif-item">
+                            <strong>SİZDEN -> MUHASEBE</strong>
+                            <span>Hammadde ödeme onayı gönderildi.</span>
+                            <small style="display:block; color: #94a3b8; font-size: 0.75rem; margin-top: 5px;">
+                                <i class="fa-regular fa-clock"></i> 10 dk önce
+                            </small>
+                        </div>
+                    </div>
+
+                    <div class="notif-footer">
+                        <button type="button" class="notif-action-btn active" onclick="showIncoming()">
+                            <i class="fa-solid fa-bell"></i> Gelenler
+                        </button>
+                        <button type="button" class="notif-action-btn" onclick="showOutgoing()">
+                            <i class="fa-solid fa-paper-plane"></i> Gidenler
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="stats-container">
+            <div class="card" onclick="indirRapor()" style="cursor:pointer;">
+                <h4>Aylık Toplam Harcama</h4>
+                <p>₺2,4M</p>
+                <small style="color:#10b981;"><i class="fa-solid fa-file-export"></i> Raporu İndir</small>
+            </div>
+
+            <div class="card">
+                <h4>Ort. Tedarik Süresi</h4>
+                <p>4.2 <span style="font-size:1rem; color:#64748b;">Gün</span></p>
+                <small style="color:#ef4444; font-weight:600;"><i class="fa-solid fa-triangle-exclamation"></i> Sektör Ort: 5.1</small>
+            </div>
+
+            <div class="card" onclick="openBirimModal()" style="cursor:pointer;">
+                <h4>En Çok Harcanan Birim</h4>
+                <p style="font-size:1.4rem; padding-top:5px;">Üretim Hattı</p>
+                <span style="font-size:0.75rem; color:#3b82f6; font-weight:600;">Detayları İncele <i class="fa-solid fa-magnifying-glass-plus"></i></span>
+            </div>
+
+            <div class="card" style="background: #ffffff; border: 1px solid #f1f5f9; position: relative; overflow: hidden;">
+                <h4 style="color: #64748b; font-size: 0.8rem;">Kalan Yıllık Bütçe</h4>
+                <p style="color: #1e293b; font-size: 1.75rem; font-weight: 700; margin-top: 10px;">
+                    <span style="color: #1e293b">₺</span>1.8M
+                </p>
+
+                <div style="width:100%; height:6px; background:#f1f5f9; border-radius:10px; margin-top:15px; position: relative;">
+                    <div style="width:70%; height:100%; background: linear-gradient(90deg, #f59e0b, #fbbf24); border-radius:10px; box-shadow: 0 2px 4px rgba(245, 158, 11, 0.2);"></div>
+                </div>
+
+                <small style="display:block; margin-top:8px; color: #94a3b8; font-size: 0.7rem; font-weight: 600;">
+                    <i class="fa-solid fa-circle-info"></i> Toplam bütçenin %70'i duruyor.
+                </small>
+            </div>
+        </div>
+
+        <div class="mid-section">
+            <div class="chart-box">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+                    <h4 id="chartTitle"><i class="fa-solid fa-chart-column" style="color:#3b82f6;"></i> Harcama Trendi</h4>
+
+                    <div style="display:flex; gap:10px; align-items:center;">
+                        <select id="yearSelect" onchange="changeYear()" style="padding:5px; border-radius:8px; border:1px solid #e2e8f0; font-size:0.75rem; outline:none;">
+                            <option value="2026">2026</option>
+                            <option value="2025">2025</option>
+                            <option value="2024">2024</option>
+                        </select>
+
+                        <div class="toggle-btn-group">
+                            <button class="toggle-btn active" id="btnMonthly" onclick="updateChart('monthly')">Aylık</button>
+                            <button class="toggle-btn" id="btnYearly" onclick="updateChart('yearly')">Yıllık</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="barContainer" class="spend-bar-root" style="display:flex; height:180px; padding-bottom:10px; border-bottom:1px solid #f1f5f9;">
+                </div>
+                <div id="labelContainer" style="display:flex; justify-content:space-between; font-size:0.65rem; color:#94a3b8; margin-top:10px;">
+                </div>
+            </div>
+
+            <div class="chart-box">
+                <h4><i class="fa-solid fa-tags" style="color:#10b981;"></i> Harcama Kategorileri</h4>
+                <div class="chart-bars">
+                    <div class="chart-row"><span>Hammadde</span><div class="chart-bar-wrap"><div class="chart-bar" style="width:45%; background:#0f172a;"></div></div><span class="pct">45%</span></div>
+                    <div class="chart-row"><span>Lojistik</span><div class="chart-bar-wrap"><div class="chart-bar" style="width:25%; background:#3b82f6;"></div></div><span class="pct">25%</span></div>
+                    <div class="chart-row"><span>Bakım</span><div class="chart-bar-wrap"><div class="chart-bar" style="width:20%; background:#10b981;"></div></div><span class="pct">20%</span></div>
+                    <div class="chart-row"><span>Diğer</span><div class="chart-bar-wrap"><div class="chart-bar" style="width:10%; background:#94a3b8;"></div></div><span class="pct">10%</span></div>
+                </div>
+            </div>
+        </div>
+
+        <div id="birimModal" class="reply-modal" style="display:none; align-items:center; justify-content:center;">
+            <div class="reply-content" style="max-width:450px;">
+                <div class="reply-header"><i class="fa-solid fa-industry"></i> <h3>Üretim Hattı Detayı</h3></div>
+                <div style="padding:20px;">
+                    <div style="display:flex; justify-content:space-between; margin-bottom:12px; font-size:0.9rem; border-bottom:1px solid #f1f5f9; padding-bottom:8px;">
+                        <span>1. Hammadde Alımı</span><strong style="color:#0f172a;">₺1.200.000</strong>
+                    </div>
+                    <div style="display:flex; justify-content:space-between; margin-bottom:12px; font-size:0.9rem; border-bottom:1px solid #f1f5f9; padding-bottom:8px;">
+                        <span>2. Makine Yedek Parça</span><strong style="color:#0f172a;">₺850.000</strong>
+                    </div>
+                    <div style="display:flex; justify-content:space-between; font-size:0.9rem;">
+                        <span>3. Birim İşçilik</span><strong style="color:#0f172a;">₺350.000</strong>
+                    </div>
+                </div>
+                <div class="reply-actions"><button class="btn-reply-cancel" onclick="closeBirimModal()">Kapat</button></div>
+            </div>
+        </div>
+        <div class="mid-section" style="grid-template-columns: 1fr 1.5fr; margin-top: 5px;">
+
+
+            <input type="checkbox" id="note-box-toggle" aria-hidden="true">
+            <label for="note-box-toggle" class="quick-note-btn" aria-label="Birimler arası not"><i class="fa-solid fa-paper-plane"></i></label>
+            <div class="msg-box">
+                <div class="msg-box-head">
+                    <span>Birimler Arası Not</span>
+                    <label for="note-box-toggle" class="note-close-btn" aria-label="Kapat"><i class="fa-solid fa-xmark"></i></label>
+                </div>
+                <form action="#note-sent" method="get">
+                    <p style="font-size:0.8rem; color:#94a3b8; margin-bottom:8px;">Hedef Birim (çoklu seçebilirsiniz)</p>
+                    <ul class="target-list">
+                        <li><input type="checkbox" name="target" id="t1" value="İnsan Kaynakları"><label for="t1">İnsan Kaynakları</label></li>
+                        <li><input type="checkbox" name="target" id="t2" value="Hukuk"><label for="t2">Hukuk</label></li>
+                        <li><input type="checkbox" name="target" id="t3" value="Bilgi İşlem"><label for="t3">Bilgi İşlem</label></li>
+                        <li><input type="checkbox" name="target" id="t4" value="İdari İşler"><label for="t4">İdari İşler</label></li>
+                    </ul>
+                    <textarea name="note" rows="4" maxlength="1000" placeholder="Notunuzu yazın..."></textarea>
+                    <button type="submit" class="btn-send">Notu Gönder</button>
+                </form>
+            </div>
+            <div id="note-sent">Notunuz seçilen birimlere iletildi.</div>
+        </div>
+
+        <div id="pazarlik-footer" style="margin-top: -30px; display: flex; justify-content: space-between; align-items: center; padding: 15px 30px; background: #ffffff; border-radius: 18px; border: 1px solid #e2e8f0; box-shadow: 0 4px 6px rgba(0,0,0,0.02); width: 100%; box-sizing: border-box; clear: both;">
+
+            <div style="display: flex; align-items: center; gap: 15px;">
+                <div style="width: 40px; height: 40px; background: #ecfdf5; border-radius: 10px; display: flex; align-items: center; justify-content: center; color: #10b981; font-size: 1.1rem; border: 1px solid #d1fae5;">
+                    <i class="fa-solid fa-wand-magic-sparkles"></i>
+                </div>
+                <div>
+                    <span style="font-size: 0.9rem; color: #1e293b; font-weight: 700; display: block;">Mart 2026 Tasarruf Analizi</span>
+                    <small style="color: #94a3b8; font-size: 0.75rem;">Süreç verimliliğiniz %84 başarı ile hesaplandı.</small>
+                </div>
+            </div>
+
+            <button onclick="openRadarModal()" style="background: #10b981; color: white; border: none; padding: 10px 25px; border-radius: 12px; font-size: 0.85rem; font-weight: 600; cursor: pointer; transition: 0.3s; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.2);">
+                Verimliliği İncele
+            </button>
+        </div>
+
+        <div id="replyModal" class="reply-modal">
+            <div class="reply-content">
+                <div class="reply-header">
+                    <i class="fa-solid fa-reply"></i>
+                    <h3 id="replyTarget">HUKUK Birimine Cevap Yaz</h3>
+                </div>
+
+                <div id="replyOriginalMessage" class="original-msg-preview">
+                    "5 adet yeni iş sözleşmesi onaylandı."
+                </div>
+
+                <textarea id="replyText" class="reply-textarea" placeholder="Cevabınızı buraya yazın..."></textarea>
+
+                <div class="reply-actions">
+                    <button class="btn-reply-cancel" onclick="closeReplyModal()">Vazgeç</button>
+                    <button class="btn-reply-send" onclick="sendReply()">Cevapla</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="radarModal" style="display:none; position:fixed; inset:0; background:rgba(15, 23, 42, 0.7); backdrop-filter:blur(6px); z-index:1000000; align-items:center; justify-content:center;">
+            <div style="background:white; padding:35px; border-radius:25px; width:90%; max-width:480px; text-align:center; box-shadow: 0 20px 40px rgba(0,0,0,0.2);">
+
+                <h3 style="margin:0 0 20px 0; color:#0f172a; font-size:1.1rem; display:flex; align-items:center; justify-content:center; gap:10px;">
+                    Mart ayı Performans Özeti
+                </h3>
+
+                <div style="position: relative; width: 180px; height: 180px; margin: 0 auto 25px auto;">
+                    <svg viewBox="0 0 36 36" style="width:180px; height:180px; transform: rotate(-90deg);">
+                        <path d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="#f1f5f9" stroke-width="2.5" />
+                        <path d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="#10b981" stroke-width="2.5" stroke-dasharray="84, 100" stroke-linecap="round" />
+                    </svg>
+                    <div style="position: absolute; top:50%; left:50%; transform:translate(-50%, -50%);">
+                        <span style="font-size: 2.2rem; font-weight:800; color:#0f172a; display:block;">%84</span>
+                        <small style="color:#64748b; font-size:0.65rem; font-weight:600; letter-spacing:1px;">BAŞARI</small>
+                    </div>
+                </div>
+
+                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; margin-bottom:25px;">
+                    <div style="background:#f8fafc; padding:12px; border-radius:15px; border:1px solid #f1f5f9;">
+                        <small style="color:#64748b; display:block; margin-bottom:5px;">Toplam Tasarruf</small>
+                        <strong style="color:#10b981; font-size:1rem;">₺142.500</strong>
+                    </div>
+                    <div style="background:#f8fafc; padding:12px; border-radius:15px; border:1px solid #f1f5f9;">
+                        <small style="color:#64748b; display:block; margin-bottom:5px;">İşlem Sayısı</small>
+                        <strong style="color:#0f172a; font-size:1rem;">42/45 İndirim</strong>
+                    </div>
+                </div>
+
+                <button onclick="closeRadarModal()" style="width:100%; background:#0f172a; color:white; border:none; padding:14px; border-radius:15px; font-weight:600; cursor:pointer; transition: 0.3s;">
+                    İncelemeyi Tamamla
+                </button>
+            </div>
+        </div>
+
+        <script>
+            let gidenMesajlar = [];
+
+            /* --- 1. MODAL VE BİLDİRİM FONKSİYONLARI --- */
+            function showIncoming() {
+                document.getElementById('notif-incoming-list').style.display = 'block';
+                document.getElementById('notif-outgoing-list').style.display = 'none';
+                const btns = document.querySelectorAll('.notif-action-btn');
+                btns.forEach(btn => btn.classList.remove('active'));
+                if (btns[0]) btns[0].classList.add('active');
+            }
+
+            function updateOutgoingList() {
+                const listContainer = document.getElementById('notif-outgoing-list');
+                if (!listContainer) return;
+                const gidenlerHafiza = JSON.parse(localStorage.getItem('guardia_giden_mesajlar') || '[]');
+                listContainer.innerHTML = "";
+                if (gidenlerHafiza.length === 0) {
+                    listContainer.innerHTML = '<div class="notif-item"><span>Henüz gönderilmiş bir not bulunmuyor.</span></div>';
+                } else {
+                    gidenlerHafiza.forEach(msg => {
+                        listContainer.innerHTML += `
+                            <div class="notif-item">
+                                <strong>SİZDEN -> ${msg.hedef}</strong>
+                                <span>${msg.icerik}</span>
+                                <small style="display:block; color: #94a3b8; font-size: 0.75rem; margin-top: 5px;">
+                                    <i class="fa-regular fa-clock"></i> ${msg.saat}
+                                </small>
+                            </div>
+                        `;
+                    });
+                }
+            }
+
+            function showOutgoing() {
+                updateOutgoingList();
+                document.getElementById('notif-incoming-list').style.display = 'none';
+                document.getElementById('notif-outgoing-list').style.display = 'block';
+                const btns = document.querySelectorAll('.notif-action-btn');
+                btns.forEach(btn => btn.classList.remove('active'));
+                if (btns[1]) btns[1].classList.add('active');
+            }
+
+            function openReplyModal(sender, message) {
+                const ta = document.getElementById('replyText');
+                if (ta) ta.value = '';
+                document.getElementById('replyTarget').innerText = sender + " Birimine Cevap Yaz";
+                document.getElementById('replyOriginalMessage').innerText = '"' + message + '"';
+                document.getElementById('replyModal').style.display = 'flex';
+
+                // Sayıyı dinamik olarak düşürme kısmı
+                const zilSayisi = document.querySelector('.notif-badge');
+                if (zilSayisi) {
+                    let mevcutSayi = parseInt(zilSayisi.innerText);
+                    if (mevcutSayi > 0) {
+                        mevcutSayi--;
+                        zilSayisi.innerText = mevcutSayi;
+                        // Sayı 0 olunca kırmızı balonu gizle
+                        if (mevcutSayi === 0) zilSayisi.style.display = 'none';
+                    }
+                }
+            }
+
+            function closeReplyModal() {
+                document.getElementById('replyModal').style.display = 'none';
+                if (document.getElementById('replyText')) document.getElementById('replyText').value = '';
+            }
+
+            async function sendReply() {
+                const textEl = document.getElementById('replyText');
+                const text = textEl ? textEl.value.trim() : '';
+                const targetFull = document.getElementById('replyTarget').innerText;
+
+                // "ÜRETİM Birimine Cevap Yaz" metninden sadece "ÜRETİM" kısmını alıyoruz
+                const target = targetFull.replace(/\s*Birimine Cevap Yaz\s*$/, '').trim();
+
+                if (!text) {
+                    showToast('Lütfen boş bir mesaj göndermeyin.', 'error');
+                    return;
+                }
+
+                try {
+                    // Birimler arası not ile aynı C# metodunu (endpoint) kullanabiliriz
+                    const response = await fetch('/api/saindex/mesaj-gonder', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            hedefBirimler: [target], // C# List<string> beklediği için dizi içinde yolluyoruz
+                            mesaj: "CEVAP: " + text
+                        })
+                    });
+
+                    if (response.ok) {
+                        console.log(`✅ ${target} birimine cevap gönderildi: ${text}`);
+
+                        // Cevabı gidenler listesine de ekleyelim
+                        const yeniNot = {
+                            hedef: target,
+                            icerik: "CEVAP: " + text,
+                            saat: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+                        };
+                        let tumGidenler = JSON.parse(localStorage.getItem('guardia_giden_mesajlar') || '[]');
+                        tumGidenler.unshift(yeniNot);
+                        localStorage.setItem('guardia_giden_mesajlar', JSON.stringify(tumGidenler));
+
+                        closeReplyModal();
+                        showToast(target + ' birimine cevabınız başarıyla iletildi!', 'success');
+                        updateOutgoingList();
+                    } else {
+                        showToast("Cevap iletilirken bir hata oluştu.", "error");
+                    }
+                } catch (hata) {
+                    console.error("Cevap gönderme hatası:", hata);
+                    showToast("Sunucuya bağlanılamadı!", "error");
+                }
+            }
+
+            function showToast(msg, type = 'success') {
+                const oldToast = document.querySelector('.toast-notification');
+                if (oldToast) oldToast.remove();
+                const toast = document.createElement('div');
+                toast.className = 'toast-notification';
+                toast.innerText = msg;
+                const bgColor = type === 'success' ? '#10b981' : '#ef4444';
+                toast.style.cssText = `
+                    position: fixed; bottom: 30px; right: 90px;
+                    background: ${bgColor}; color: white; padding: 12px 24px;
+                    font-size: 14px; border-radius: 10px; z-index: 999999;
+                    font-weight: 600; box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+                    opacity: 0; transition: all 0.4s ease; transform: translateY(20px);
+                `;
+                document.body.appendChild(toast);
+                setTimeout(() => { toast.style.opacity = '1'; toast.style.transform = 'translateY(0)'; }, 100);
+                setTimeout(() => {
+                    toast.style.opacity = '0'; toast.style.transform = 'translateY(20px)';
+                    setTimeout(() => toast.remove(), 400);
+                }, 2000);
+            }
+
+            function indirRapor() {
+                window.location.href = "/api/saindex/rapor-indir";
+            }
+
+            /* --- 2. GRAFİK VERİLERİ VE FONKSİYONLARI --- */
+            let SA_MONTH_DATA = {
+                '2024': [1.82, 1.95, 2.08, 2.01, 2.18, 2.24, 2.11, 2.05, 2.19, 2.38, 2.31, 2.55],
+                '2025': [2.48, 2.38, 2.65, 2.58, 2.72, 2.68, 2.61, 2.85, 2.79, 2.95, 2.88, 3.05],
+                '2026': [2.92, 2.78, 2.62, 2.45, 2.28, 2.12, 1.98, 1.85, 1.72, 1.58, 1.45, 1.32]
+            };
+
+            const SA_MONTHS_SHORT = ['Oca', 'Şub', 'Mar', 'Nis', 'May', 'Haz', 'Tem', 'Ağu', 'Eyl', 'Eki', 'Kas', 'Ara'];
+            const SA_MONTHS_LONG = ['Ocak', 'Şubat', 'Mart', 'Nisan', 'Mayıs', 'Haziran', 'Temmuz', 'Ağustos', 'Eylül', 'Ekim', 'Kasım', 'Aralık'];
+
+            function saGetMonthPhase(viewYear, monthIndex) {
+                const now = new Date();
+                const y = now.getFullYear();
+                const m = now.getMonth();
+                if (viewYear < y) return 'past';
+                if (viewYear > y) return 'future';
+                if (monthIndex < m) return 'past';
+                if (monthIndex === m) return 'current';
+                return 'future';
+            }
+
+            function saGetYearPhase(viewYear) {
+                const y = new Date().getFullYear();
+                if (viewYear < y) return 'past';
+                if (viewYear > y) return 'future';
+                return 'current';
+            }
+
+            function saFormatPct(p) {
+                return '%' + p.toLocaleString('tr-TR', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+            }
+
+            function updateChart(mode) {
+                const barContainer = document.getElementById('barContainer');
+                const labelContainer = document.getElementById('labelContainer');
+                const title = document.getElementById('chartTitle');
+                const yearSelect = document.getElementById('yearSelect');
+
+                if (!barContainer || !labelContainer) return;
+
+                document.getElementById('btnYearly').classList.toggle('active', mode === 'yearly');
+                document.getElementById('btnMonthly').classList.toggle('active', mode === 'monthly');
+
+                if (mode === 'yearly') {
+                    title.innerHTML = '<i class="fa-solid fa-chart-column" style="color:#3b82f6;"></i> Harcama Trendi (Yıllık)';
+                    const years = ['2024', '2025', '2026'];
+                    const totals = years.map(function (yr) {
+                        const arr = SA_MONTH_DATA[yr] || SA_MONTH_DATA['2026'];
+                        return arr.reduce(function (a, b) { return a + b; }, 0);
+                    });
+                    const grand = totals.reduce(function (a, b) { return a + b; }, 0);
+                    const maxT = Math.max.apply(null, totals);
+                    let html = '';
+                    years.forEach(function (yr, i) {
+                        const pct = grand > 0 ? (totals[i] / grand) * 100 : 0;
+                        const h = maxT > 0 ? Math.round((totals[i] / maxT) * 78) + 18 : 30;
+                        const yPhase = saGetYearPhase(parseInt(yr, 10));
+                        const colCls = yPhase === 'past' ? 'spend-year-col--past' : (yPhase === 'current' ? 'spend-year-col--current' : 'spend-year-col--future');
+                        const pctHtml = yPhase === 'future' ? '' : '<span class="spend-bar-pct">' + saFormatPct(pct) + '</span>';
+                        const yFutureTag = yPhase === 'future' ? '<span class="spend-bar-tag is-future">Gelecek</span>' : '';
+                        html += '<div class="spend-year-col ' + colCls + '"><div class="spend-bar-hover-card"><span class="spend-bar-month">' + yr + '</span>' + pctHtml + yFutureTag + '</div><div class="spend-bar-track"><div class="spend-year-fill" style="height:' + h + '%;"></div></div></div>';
+                    });
+                    barContainer.innerHTML = html;
+                    barContainer.classList.add('spend-bar-root');
+                    labelContainer.innerHTML = '<span style="flex:1;text-align:center;">2024</span><span style="flex:1;text-align:center;">2025</span><span style="flex:1;text-align:center;">2026</span>';
+                    labelContainer.style.display = 'flex';
+                    return;
+                }
+
+                const currentYear = yearSelect ? String(yearSelect.value) : '2026';
+                title.innerHTML = '<i class="fa-solid fa-calendar-days" style="color:#3b82f6;"></i> ' + currentYear + ' Aylık Harcama Dağılımı';
+                const values = SA_MONTH_DATA[currentYear] || SA_MONTH_DATA['2026'];
+                const viewY = parseInt(currentYear, 10);
+                const total = values.reduce(function (a, b) { return a + b; }, 0);
+                const maxV = Math.max.apply(null, values);
+                let bars = '';
+                let labels = '';
+
+                SA_MONTHS_SHORT.forEach(function (mShort, idx) {
+                    const phase = saGetMonthPhase(viewY, idx);
+                    const cls = phase === 'past' ? 'spend-bar-column--past' : (phase === 'current' ? 'spend-bar-column--current' : 'spend-bar-column--future');
+                    const pctNum = total > 0 ? (values[idx] / total) * 100 : 0;
+                    const h = maxV > 0 ? Math.round((values[idx] / maxV) * 72) + 22 : 25;
+                    const monthLong = SA_MONTHS_LONG[idx];
+                    const futureTag = phase === 'future' ? '<span class="spend-bar-tag is-future">Gelecek</span>' : '';
+                    const currentTag = phase === 'current' ? '<span class="spend-bar-tag is-current">Güncel ay</span>' : '';
+                    const pctHtml = phase === 'future' ? '' : '<span class="spend-bar-pct">' + saFormatPct(pctNum) + '</span>';
+                    bars += '<div class="spend-bar-column ' + cls + '"><div class="spend-bar-hover-card"><span class="spend-bar-month">' + monthLong + ' ' + currentYear + '</span>' + pctHtml + futureTag + currentTag + '</div><div class="spend-bar-track"><div class="spend-bar-fill" style="height:' + h + '%;"></div></div></div>';
+                    labels += '<span style="flex:1;text-align:center;font-size:0.65rem;color:#94a3b8;">' + mShort + '</span>';
+                });
+                barContainer.innerHTML = bars;
+                barContainer.classList.add('spend-bar-root');
+                labelContainer.innerHTML = labels;
+                labelContainer.style.display = 'flex';
+            }
+
+            function changeYear() {
+                if (document.getElementById('btnMonthly').classList.contains('active')) {
+                    updateChart('monthly');
+                }
+            }
+
+            function openRadarModal() {
+                const modal = document.getElementById('radarModal');
+                if (modal) modal.style.display = 'flex';
+            }
+
+            function closeRadarModal() {
+                const modal = document.getElementById('radarModal');
+                if (modal) modal.style.display = 'none';
+            }
+
+            function openBirimModal() {
+                const modal = document.getElementById('birimModal');
+                if (modal) modal.style.display = 'flex';
+            }
+
+            function closeBirimModal() {
+                document.getElementById('birimModal').style.display = 'none';
+            }
+
+            /* --- 3. BACKEND BAĞLANTISI --- */
+            async function backendVerileriniGetir() {
+                try {
+                    const response = await fetch('/api/saindex/veriler');
+                    if (!response.ok) return;
+
+                    const data = await response.json();
+
+                    // ANA KARTLAR
+                    const kartlar = document.querySelectorAll('.card');
+                    if (kartlar.length >= 4) {
+                        kartlar[0].querySelector('p').innerText = "₺" + data.aylikToplamHarcama;
+                        kartlar[1].querySelector('p').innerHTML = data.tedarikSuresi + ' <span style="font-size:1rem; color:#64748b;">Gün</span>';
+                        kartlar[1].querySelector('small').innerHTML = `<i class="fa-solid fa-triangle-exclamation"></i> Sektör Ort: ${data.sektorOrtalamasi}`;
+                        kartlar[2].querySelector('p').innerText = data.enCokHarcananBirim;
+                        kartlar[3].querySelector('p').innerHTML = '<span style="color: #1e293b">₺</span>' + data.kalanButce;
+                        kartlar[3].querySelector('div > div').style.width = data.kalanButceYuzdesi + "%";
+                        kartlar[3].querySelector('small').innerHTML = `<i class="fa-solid fa-circle-info"></i> Toplam bütçenin %${data.kalanButceYuzdesi}'i duruyor.`;
+                    }
+
+                    // KATEGORİ YÜZDELERİ
+                    const barlar = document.querySelectorAll('.chart-bar');
+                    const yuzdeYazilari = document.querySelectorAll('.pct');
+                    if (barlar.length >= 4 && yuzdeYazilari.length >= 4) {
+                        barlar[0].style.width = data.hammaddeYuzdesi + "%";
+                        yuzdeYazilari[0].innerText = data.hammaddeYuzdesi + "%";
+                        barlar[1].style.width = data.lojistikYuzdesi + "%";
+                        yuzdeYazilari[1].innerText = data.lojistikYuzdesi + "%";
+                        barlar[2].style.width = data.bakimYuzdesi + "%";
+                        yuzdeYazilari[2].innerText = data.bakimYuzdesi + "%";
+                        barlar[3].style.width = data.digerYuzdesi + "%";
+                        yuzdeYazilari[3].innerText = data.digerYuzdesi + "%";
+                    }
+
+                    // TASARRUF & RADAR
+                    const footerSmall = document.querySelector('#pazarlik-footer small');
+                    if (footerSmall) footerSmall.innerText = `Süreç verimliliğiniz %${data.verimlilikBasariYuzdesi} başarı ile hesaplandı.`;
+                    const radarSpan = document.querySelector('#radarModal span');
+                    if (radarSpan) radarSpan.innerText = "%" + data.verimlilikBasariYuzdesi;
+                    const radarStrong = document.querySelectorAll('#radarModal strong');
+                    if (radarStrong.length >= 2) {
+                        radarStrong[0].innerText = "₺" + data.toplamTasarruf;
+                        radarStrong[1].innerText = data.islemSayisi;
+                    }
+
+                    // BİRİM DETAY MODALI
+                    if (data.enCokHarcananBirimDetaylari) {
+                        const modalIcerikAlani = document.querySelector('#birimModal .reply-content > div:nth-child(2)');
+                        if (modalIcerikAlani) {
+                            modalIcerikAlani.innerHTML = '';
+                            let sayac = 1;
+                            for (const [kalemAdi, tutar] of Object.entries(data.enCokHarcananBirimDetaylari)) {
+                                modalIcerikAlani.innerHTML += `
+                                    <div style="display:flex; justify-content:space-between; margin-bottom:12px; font-size:0.9rem; border-bottom:1px solid #f1f5f9; padding-bottom:8px;">
+                                        <span>${sayac}. ${kalemAdi}</span><strong style="color:#0f172a;">${tutar}</strong>
+                                    </div>`;
+                                sayac++;
+                            }
+                        }
+                    }
+
+                    // GRAFİK GÜNCELLEME
+                    if (data.grafikVerileri) {
+                        SA_MONTH_DATA = data.grafikVerileri;
+                        if (typeof updateChart === 'function') updateChart('monthly');
+                    }
+
+                    // GELEN BİLDİRİMLERİ (ZİL) GÜNCELLEME - BU KISIM ARTIK FONKSİYONUN İÇİNDE!
+                    if (data.gelenBildirimler) {
+                        const bildirimListesi = document.getElementById('notif-incoming-list');
+                        const zilSayisi = document.querySelector('.notif-badge');
+                        if (bildirimListesi) {
+                            bildirimListesi.innerHTML = '';
+                            data.gelenBildirimler.forEach(bildirim => {
+                                bildirimListesi.innerHTML += `
+                                    <div class="notif-item" onclick="openReplyModal('${bildirim.gonderenBirim}', '${bildirim.mesajDetayi}')" style="cursor: pointer;">
+                                        <span class="notif-status" style="background: ${bildirim.renkKodu};"></span>
+                                        <strong>${bildirim.gonderenBirim}:</strong>
+                                        <span>${bildirim.ozet}</span>
+                                        <small style="display:block; color: #94a3b8; font-size: 0.75rem; margin-top: 5px;">
+                                            <i class="fa-regular fa-clock"></i> ${bildirim.zamanTabiri}
+                                        </small>
+                                    </div>`;
+                            });
+                        }
+                        if (zilSayisi && data.bildirimSayisi !== undefined) {
+                            zilSayisi.innerText = data.bildirimSayisi;
+                            zilSayisi.style.display = data.bildirimSayisi > 0 ? 'flex' : 'none';
+                        }
+                    }
+
+                } catch (error) {
+                    console.error("Backend hatası:", error);
+                }
+            }
+
+            /* --- 4. SAYFA YÜKLENDİĞİNDE ÇALIŞACAKLAR --- */
+            document.addEventListener('DOMContentLoaded', function () {
+                updateChart('monthly');
+                backendVerileriniGetir();
+
+                const noteToggle = document.getElementById('note-box-toggle');
+                const notifToggle = document.getElementById('notif-toggle');
+                const msgBox = document.querySelector('.msg-box');
+                const quickNoteBtn = document.querySelector('.quick-note-btn');
+                const notifContainer = document.querySelector('.notif-container');
+                const notifTrigger = document.querySelector('.notif-trigger');
+                const noteForm = document.querySelector('.msg-box form');
+
+                if (quickNoteBtn) {
+                    quickNoteBtn.addEventListener('click', function (e) {
+                        e.preventDefault(); e.stopPropagation();
+                        noteToggle.checked = !noteToggle.checked;
+                    });
+                }
+
+                if (notifTrigger) {
+                    notifTrigger.addEventListener('click', function (e) { e.stopPropagation(); });
+                }
+
+                [msgBox, notifContainer].forEach(box => {
+                    if (box) { box.addEventListener('click', function (e) { e.stopPropagation(); }); }
+                });
+
+                document.addEventListener('click', function () {
+                    if (noteToggle) noteToggle.checked = false;
+                    if (notifToggle) notifToggle.checked = false;
+                });
+
+                if (noteForm) {
+                    noteForm.addEventListener('submit', async function (e) {
+                        e.preventDefault();
+                        const targets = noteForm.querySelectorAll('input[name="target"]:checked');
+                        const noteTextarea = noteForm.querySelector('textarea[name="note"]');
+
+                        if (targets.length === 0) {
+                            showToast("Lütfen en az bir birim seçin!", "error");
+                            return;
+                        }
+                        if (noteTextarea.value.trim() === "") {
+                            showToast("Lütfen mesajınızı yazın.", "error");
+                            return;
+                        }
+
+                        const hedefBirimlerDizisi = Array.from(targets).map(t => t.value);
+                        const icerik = noteTextarea.value;
+
+                        try {
+                            const response = await fetch('/api/saindex/mesaj-gonder', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({
+                                    hedefBirimler: hedefBirimlerDizisi,
+                                    mesaj: icerik
+                                })
+                            });
+
+                            if (response.ok) {
+                                const backendCevabi = await response.json();
+                                console.log("GİDEN MESAJ: ", icerik);
+                                console.log("HEDEFLER: ", hedefBirimlerDizisi);
+
+                                const yeniNot = {
+                                    hedef: hedefBirimlerDizisi.join(", "),
+                                    icerik: icerik,
+                                    saat: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+                                };
+
+                                let tumGidenler = JSON.parse(localStorage.getItem('guardia_giden_mesajlar') || '[]');
+                                tumGidenler.unshift(yeniNot);
+                                localStorage.setItem('guardia_giden_mesajlar', JSON.stringify(tumGidenler));
+
+                                if (noteToggle) noteToggle.checked = false;
+                                showToast("Notunuz seçilen birimlere başarıyla iletildi.", "success");
+                                noteForm.reset();
+                                updateOutgoingList();
+                            } else {
+                                showToast("Notunuz iletilirken bir hata oluştu.", "error");
+                            }
+                        } catch (hata) {
+                            console.error("Hata detayı: ", hata);
+                            showToast("Sunucuya bağlanılamadı!", "error");
+                        }
+                    });
+                }
+            });
+        </script>
+</body>
+</html>

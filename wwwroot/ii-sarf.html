@@ -1,0 +1,1011 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <script>
+        if (!localStorage.getItem('token')) {
+            window.location.href = 'admin-login.html';
+        }
+    </script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Guardia | Stok & Sarf Malzeme</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/ik-sidebar.css">
+    <link rel="stylesheet" href="css/dept-common.css">
+    <style>
+        /*  TEMEL SAYFA AYARLARI (ÇUBUK SİLME)  */
+        :root {
+            --sidebar: #0f172a;
+            --text-main: #1e293b;
+            --text-sub: #64748b;
+            --white: #fff;
+        }
+
+        html, body {
+            margin: 0 !important;
+            padding: 0 !important;
+            height: 100vh !important;
+            overflow: hidden !important; /* Dış çubuğu sildik */
+        }
+
+        .ik-content {
+            height: 100vh !important;
+            overflow: hidden !important;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* TABLO KUTUSU VE AKILLI KAYDIRMA */
+        .data-table-box {
+            background: var(--white);
+            padding: 0px;
+            border-radius: 22px;
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
+            flex: 1; /* Kalan boşluğu doldurur */
+            overflow-y: auto !important; /* İçeride kaydırmayı açar */
+            position: relative;
+        }
+
+            /* Tablo içindeki çubuğu tamamen gizle */
+            .data-table-box::-webkit-scrollbar {
+                display: none;
+            }
+
+        .data-table-box {
+            scrollbar-width: none;
+            -ms-overflow-style: none;
+        }
+
+        /* TABLO TASARIMI VE HİZALAMA  */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            table-layout: fixed !important;
+        }
+
+        /* SABİT BAŞLIKLAR (STICKY) */
+        th {
+            position: sticky !important;
+            top: 0;
+            z-index: 10;
+            background: #fff !important;
+            text-align: left;
+            padding: 15px;
+            color: #94a3b8;
+            font-size: 0.85rem;
+            font-weight: 600;
+            border-bottom: 2px solid #f1f5f9;
+        }
+
+        td {
+            padding: 18px 15px;
+            border-bottom: 1px solid #f1f5f9;
+            vertical-align: middle;
+        }
+
+            /* SÜTUN GENİŞLİKLERİ */
+            th:nth-child(1), td:nth-child(1) {
+                width: 35%;
+                padding-left: 25px;
+            }
+            /* Malzeme */
+            th:nth-child(2), td:nth-child(2) {
+                width: 15%;
+            }
+            /* Stok */
+            th:nth-child(3), td:nth-child(3) {
+                width: 20%;
+            }
+            /* Depo */
+            th:nth-child(4), td:nth-child(4) {
+                width: 15%;
+                text-align: center;
+            }
+            /* Durum */
+            /* 5. SÜTUN: İŞLEM (TAM ORTALI) */
+            th:nth-child(5), td:nth-child(5) {
+                width: 15% !important;
+                text-align: center !important;
+                padding-right: 0 !important;
+            }
+
+        /*  YAZI BOYUTU DENGELEME (TASARIMCI DOKUNUŞU) */
+        .data-table-box h5 {
+            font-size: 0.95rem !important; /* Malzeme adını büyüttük */
+            font-weight: 700 !important;
+            color: #1e293b !important;
+            margin: 0 0 2px 0 !important;
+        }
+
+        .data-table-box small {
+            font-size: 0.75rem !important;
+            color: #94a3b8 !important;
+        }
+
+        td strong {
+            font-weight: 600;
+            color: #0f172a;
+            font-size: 0.95rem;
+        }
+
+        /*  BUTONLAR VE DİĞERLERİ  */
+        .tab-btn {
+            padding: 10px 20px !important;
+            border-radius: 12px;
+            border: 1.5px solid #f1f5f9;
+            background: #fff;
+            color: var(--text-sub);
+            font-weight: 600;
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+            .tab-btn.active {
+                background: #0f172a;
+                color: #fff;
+                border-color: #0f172a;
+            }
+
+        .status-pill {
+            display: inline-block;
+            padding: 6px 14px;
+            border-radius: 50px;
+            font-size: 0.75rem;
+            font-weight: 800;
+            min-width: 90px;
+        }
+
+            .status-pill.critical {
+                background: #fee2e2;
+                color: #ef4444;
+            }
+
+            .status-pill.success {
+                background: #dcfce7;
+                color: #15803d;
+            }
+
+        .row-icon-box {
+            width: 42px;
+            height: 42px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        /* TALEP ET HOVER (Mavi parlasın) */
+        button[style*="background:#eff6ff"]:hover {
+            background: #3b82f6 !important;
+            color: #ffffff !important;
+            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+            transform: translateY(-1px);
+        }
+
+        /* DETAY HOVER (Gri biraz koyulaşsın) */
+        button[style*="background:#f8fafc"]:hover {
+            background: #e2e8f0 !important;
+            color: #1e293b !important;
+            transform: translateY(-1px);
+        }
+
+        /* Tüm butonlar için ortak geçiş yumuşaklığı */
+        .tab-btn {
+            transition: all 0.2s ease-in-out !important;
+        }
+        /* BAŞLIKLARI (TH) SATIRLARLA (TD) TAM EŞİTLEME */
+        th {
+            position: sticky !important;
+            top: 0;
+            z-index: 100;
+            background: #ffffff !important;
+            text-align: left;
+            padding: 15px !important;
+            color: #94a3b8;
+            font-size: 0.85rem;
+            font-weight: 700;
+            border-bottom: 2px solid #f1f5f9;
+        }
+
+            /* İlk sütundaki Malzeme başlığını ikonlarla hizalamak için özel ayar */
+            th:nth-child(1) {
+                padding-left: 25px !important; /* Resimdeki ikonun başladığı hizaya çektik */
+            }
+
+            /* Stok Miktarı başlığını tam sayıların üzerine getirir */
+            th:nth-child(2) {
+                text-align: left;
+                padding-left: 15px !important;
+            }
+
+            /* Depo Konumu başlığını metinlerle hizalar */
+            th:nth-child(3) {
+                text-align: left;
+                padding-left: 15px !important;
+            }
+        /* 1. ZİL MENÜSÜNÜ EN ÖNE ÇIKAR (GÖKDELEN KATINA ALIYORUZ) */
+        .notif-container, .notif-dropdown {
+            z-index: 99999 !important; /* Milyon katına çıkardık */
+            position: relative; /* Menü için absolute da olabilir ama ana kap relative olmalı */
+        }
+
+        /* 2. TABLO BAŞLIKLARINI VE TABLOYU ALT KATA İNDİR */
+        thead, tr, th {
+            z-index: 1 !important; /* Katını en dibe, 1. kata indirdik */
+        }
+
+        /* 3. BAŞLIKLARIN STICKY (SABİT) KALMASINI AMA ZİLE ENGEL OLMAMASINI SAĞLA */
+        th {
+            position: sticky !important;
+            top: 0;
+        }
+
+        /* 4. EĞER BAŞLIĞIN ARKASINDA GÖLGE KATMANI VARSA ONUN DA SESİNİ KIS */
+        thead::after {
+            z-index: -1 !important;
+        }
+        /* 1. ZİL MENÜSÜ (EN ÜST KAT - 1000. KAT) */
+        .notif-container, .notif-dropdown {
+            z-index: 1000 !important;
+        }
+
+        /*ÖNEMLİ O YER*/
+        /* 2. Ana içerik alanını ekran yüksekliğine mühürle */
+        .ik-content {
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden; /* İçerik taşmasın */
+            padding-bottom: 20px !important; /* Alt kısımdan biraz nefes payı */
+        }
+
+        /* 1. TABLO KUTUSU */
+        .data-table-box {
+            flex: 1 !important;
+            overflow-y: auto !important;
+            background: #ffffff !important;
+            border-radius: 22px !important;
+            /* DİKKAT: Üst boşluk 0, yanlar 20px, alt 20px */
+            padding: 0 20px 20px 20px !important;
+            position: relative !important;
+            scrollbar-width: none !important;
+        }
+
+        .data-table-box {
+            padding-bottom: 20px !important;
+            max-height: calc(100vh - 400px);
+        }
+
+            /* EKSTRA DOKUNUŞ: Son satırın çizgisini kaldır ki kutuya tatlı bitsin */
+            .data-table-box tr:last-child td {
+                border-bottom: none !important;
+            }
+
+            /* Kaydırma çubuğunu Chrome/Safari için tamamen gizle */
+            .data-table-box::-webkit-scrollbar {
+                display: none;
+            }
+
+        /* 2. BAŞLIKLAR: Sızdırmazlık buradaki 'background' ve 'z-index' içinde */
+        thead th {
+            position: sticky !important;
+            top: 0;
+            background-color: #ffffff !important;
+            z-index: 10 !important;
+            padding: 18px 15px !important;
+            color: #94a3b8;
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            border-bottom: 2px solid #f1f5f9 !important;
+        }
+
+        /* 3. TABLO YAPISI */
+        table {
+            width: 100%;
+            border-collapse: separate !important;
+            border-spacing: 0;
+        }
+
+        td {
+            background-color: #ffffff;
+            border-bottom: 1px solid #f1f5f9;
+            padding: 15px !important;
+        }
+    </style>
+</head>
+<body class="ik-layout">
+    <div class="ik-sidebar">
+        <h2>🛡️ Guardia İİ</h2>
+        <ul class="ik-nav-links">
+            <li><a href="ii-index.html" style="text-decoration:none;color:inherit;display:flex;align-items:center;gap:12px;"><i class="fa-solid fa-chart-line"></i> Genel Bakış</a></li>
+            <li><a href="ii-filo.html" style="text-decoration:none;color:inherit;display:flex;align-items:center;gap:12px;"><i class="fa-solid fa-car"></i> Araç Filo Yönetimi</a></li>
+            <li><a href="ii-bakim.html" style="text-decoration:none;color:inherit;display:flex;align-items:center;gap:12px;"><i class="fa-solid fa-wrench"></i> Bakım & Onarım</a></li>
+            <li><a href="ii-ziyaretci.html" style="text-decoration:none;color:inherit;display:flex;align-items:center;gap:12px;"><i class="fa-solid fa-user-check"></i> Ziyaretçi Kayıt</a></li>
+            <li class="active"><i class="fa-solid fa-boxes-stacked"></i> Stok & Sarf Malzeme</li>
+        </ul>
+        <div class="ik-user-tag">
+            <div class="ik-user-avatar"><img src="img/selin_aksoy.jpg" alt=""></div>
+            <div class="ik-user-info"><span>Selin Aksoy</span><small>İdari Koordinatör</small></div>
+        </div>
+    </div>
+
+  <div class="ik-content">
+    <div class="dept-header">
+        <div class="page-title-group">
+            <h1>Stok & Sarf Malzeme</h1>
+            <p class="page-desc">Ofis gereçleri, temizlik ürünleri ve sarf malzemelerin depo takibini yapın.</p>
+        </div>
+
+        <div class="notif-container">
+            <input type="checkbox" id="notif-toggle" aria-hidden="true" style="display:none;">
+            <label for="notif-toggle" class="notif-trigger">
+                <i class="fa-solid fa-bell"></i>
+                <span class="notif-badge">2</span>
+            </label>
+            <div class="notif-dropdown">
+    <h4>Mesaj Merkezi</h4>
+    
+    <div id="notif-incoming-list" class="notif-list">
+        <div class="notif-item" onclick="openReplyModal('DEPO', 'A4 kağıt stoğu 5 kolinin altına düştü, yeni sipariş geçilmeli mi?')" style="cursor: pointer;">
+            <span class="notif-status"></span>
+            <strong>DEPO:</strong>
+            <span>A4 kağıt stoğu kritik seviyede.</span>
+            <small style="display:block; color: #94a3b8; font-size: 0.75rem; margin-top: 5px;">
+                <i class="fa-regular fa-clock"></i> 15 dk önce
+            </small>
+        </div>
+
+        <div class="notif-item" onclick="openReplyModal('SARF BİRİMİ', 'Yazıcı kartuşları siparişi onaylandı, yarın sabah teslim edilecek.')" style="cursor: pointer;">
+            <span class="notif-status"></span>
+            <strong>SARF:</strong>
+            <span>Kartuş siparişi onaylandı.</span>
+            <small style="display:block; color: #94a3b8; font-size: 0.75rem; margin-top: 5px;">
+                <i class="fa-regular fa-clock"></i> 45 dk önce
+            </small>
+        </div>
+    </div>
+
+    <div id="notif-outgoing-list" class="notif-list" style="display:none;">
+        <div class="notif-item">
+            <strong>SİZDEN -> SATIN ALMA</strong>
+            <span>Kritik kırtasiye listesi onaya sunuldu.</span>
+            <small style="display:block; color: #94a3b8; font-size: 0.75rem; margin-top: 5px;">
+                <i class="fa-regular fa-clock"></i> 1 saat önce
+            </small>
+        </div>
+    </div>
+
+    <div class="notif-footer">
+        <button type="button" class="notif-action-btn active" onclick="showIncoming()">
+            <i class="fa-solid fa-bell"></i> Gelenler
+        </button>
+        <button type="button" class="notif-action-btn" onclick="showOutgoing()">
+            <i class="fa-solid fa-paper-plane"></i> Gidenler
+        </button>
+    </div>
+</div>
+        </div>
+    </div>
+<div class="stats-container" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-bottom: 25px;">
+    
+    <div class="stat-card" onclick="openSarfModal('bekleyen_liste')" style="background: #ffffff; padding: 20px; border-radius: 20px; border: 1px solid #e2e8f0; cursor: pointer; transition: all 0.3s ease; display: flex; align-items: center; gap: 20px; height: 100px;">
+        <div style="width: 55px; height: 55px; background: #eff6ff; color: #3b82f6; border-radius: 14px; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; flex-shrink: 0;"><i class="fa-solid fa-truck-ramp-box"></i></div>
+        <div>
+            <h4 style="margin:0 0 4px 0; font-size: 0.85rem; color: #64748b; font-weight: 600;">Bekleyen Talep</h4>
+            <div style="display: flex; align-items: baseline; gap: 6px;">
+                <span style="font-size: 1.8rem; font-weight: 800; color: #0f172a;">2</span>
+                <small style="color: #64748b; font-weight: 600; font-size: 0.8rem;">İşlem Sürecinde</small>
+            </div>
+        </div>
+    </div>
+
+    <div class="stat-card" onclick="openSarfModal('depo_detay')" style="background: #ffffff; padding: 20px; border-radius: 20px; border: 1px solid #e2e8f0; cursor: pointer; transition: all 0.3s ease; display: flex; align-items: center; gap: 20px; height: 100px;">
+        <div style="width: 55px; height: 55px; background: #ecfdf5; color: #10b981; border-radius: 14px; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; flex-shrink: 0;"><i class="fa-solid fa-warehouse"></i></div>
+        <div style="flex: 1;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                <h4 style="margin:0; font-size: 0.85rem; color: #64748b; font-weight: 600;">Depo Doluluk</h4>
+                <span style="font-size: 1.1rem; font-weight: 800; color: #10b981;">%68</span>
+            </div>
+            <div style="width: 100%; height: 6px; background: #f1f5f9; border-radius: 10px; position: relative;">
+                <div style="width: 68%; height: 100%; background: #10b981; border-radius: 10px;"></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="stat-card" onclick="openSarfModal('sayim_raporu')" style="background: #ffffff; padding: 20px; border-radius: 20px; border: 1px solid #e2e8f0; cursor: pointer; transition: all 0.3s ease; display: flex; align-items: center; gap: 20px; height: 100px;">
+        <div style="width: 55px; height: 55px; background: #fff7ed; color: #f59e0b; border-radius: 14px; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; flex-shrink: 0;"><i class="fa-solid fa-clipboard-check"></i></div>
+        <div>
+            <h4 style="margin:0 0 4px 0; font-size: 0.85rem; color: #64748b; font-weight: 600;">Son Envanter Sayımı</h4>
+            <div style="color: #0f172a; font-size: 1.1rem; font-weight: 700;">18 Mart 2026</div>
+            <div style="margin-top: 2px; font-size: 0.75rem; color: #94a3b8;">Sorumlu: <strong style="color: #475569;">Ahmet G.</strong></div>
+        </div>
+    </div>
+
+</div>
+
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+     <div style="display: flex; gap: 12px;">
+    <button class="tab-btn active" onclick="filterSarf('tumu', this)">Tümü</button>
+    <button class="tab-btn" onclick="filterSarf('ofis', this)">Ofis Gereçleri</button>
+    <button class="tab-btn" onclick="filterSarf('hijyen', this)">Hijyen & Temizlik</button>
+    <button class="tab-btn" onclick="filterSarf('mutfak', this)">Mutfak & Gıda</button>
+</div>
+  <button onclick="openSarfModal('yeni')" class="btn-primary-guardia" style="padding: 12px 24px; border-radius: 12px; border: none; background: #3b82f6; color: white; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 8px;">
+    <i class="fa-solid fa-plus"></i> Yeni Stok/Talep Ekle
+</button>
+    </div>
+
+    <div class="data-table-box" style="background: white; border-radius: 22px; padding: 10px;">
+        <table style="width: 100%; border-collapse: collapse;" border-spacing: 0 10px;">
+            <thead>
+                <tr style="color: #94a3b8; font-size: 0.85rem;">
+                    <th style="padding: 15px 25px;">MALZEME / KATEGORİ</th>
+                    <th>STOK MİKTARI</th>
+                    <th>DEPO KONUMU</th>
+                    <th>DURUM</th>
+                    <th style="text-align: right; padding-right: 25px;">İŞLEM</th>
+                </tr>
+            </thead>
+      <tbody>
+    <tbody>
+    <tr class="custom-list-row" data-category="ofis">
+        <td>
+            <div style="display: flex; align-items: center; gap: 15px;">
+                <div class="row-icon-box" style="background: #fef2f2; color: #ef4444;"><i class="fa-solid fa-file-lines"></i></div>
+                <div><h5 style="margin:0;">A4 Fotokopi Kağıdı</h5><small>Ofis Gereçleri</small></div>
+            </div>
+        </td>
+        <td><strong>4 Paket</strong> / 20</td>
+        <td>A-Blok Kat 1</td>
+        <td><span class="status-pill critical">KRİTİK</span></td>
+        <td style="text-align: center;">
+            <button class="tab-btn" onclick="openSarfModal('talep', 'A4 Fotokopi Kağıdı')" style="padding: 8px 12px; font-size: 0.75rem; border:none; background:#eff6ff; color:#3b82f6; font-weight:700; width:110px; white-space:nowrap;">Talep Et</button>
+        </td>
+    </tr>
+
+    <tr class="custom-list-row" data-category="ofis">
+        <td>
+            <div style="display: flex; align-items: center; gap: 15px;">
+                <div class="row-icon-box" style="background: #fef2f2; color: #ef4444;"><i class="fa-solid fa-pen-nib"></i></div>
+                <div><h5 style="margin:0;">Mavi Tükenmez Kalem</h5><small>Ofis Gereçleri</small></div>
+            </div>
+        </td>
+        <td><strong>50 Adet</strong></td>
+        <td>Kırtasiye Dolabı</td>
+        <td><span class="status-pill success">YETERLİ</span></td>
+        <td style="text-align: center;">
+            <button class="tab-btn" onclick="openSarfModal('detay', 'Mavi Tükenmez Kalem')" style="padding: 8px 12px; font-size: 0.75rem; border:none; background:#f8fafc; color:#64748b; width:110px;">Detay</button>
+        </td>
+    </tr>
+
+    <tr class="custom-list-row" data-category="hijyen">
+        <td>
+            <div style="display: flex; align-items: center; gap: 15px;">
+                <div class="row-icon-box" style="background: #f0fdf4; color: #22c55e;"><i class="fa-solid fa-pump-medical"></i></div>
+                <div><h5 style="margin:0;">El Dezenfektanı (5L)</h5><small>Hijyen & Temizlik</small></div>
+            </div>
+        </td>
+        <td><strong>2 Bidon</strong> / 15</td>
+        <td>Güvenlik Giriş</td>
+        <td><span class="status-pill critical">KRİTİK</span></td>
+        <td style="text-align: center;">
+            <button class="tab-btn" onclick="openSarfModal('talep', 'El Dezenfektanı (5L)')" style="padding: 8px 12px; font-size: 0.75rem; border:none; background:#eff6ff; color:#3b82f6; font-weight:700; width:110px; white-space:nowrap;">Talep Et</button>
+        </td>
+    </tr>
+
+    <tr class="custom-list-row" data-category="hijyen">
+        <td>
+            <div style="display: flex; align-items: center; gap: 15px;">
+                <div class="row-icon-box" style="background: #f0fdf4; color: #22c55e;"><i class="fa-solid fa-soap"></i></div>
+                <div><h5 style="margin:0;">Sıvı Sabun (20L)</h5><small>Hijyen & Temizlik</small></div>
+            </div>
+        </td>
+        <td><strong>12 Bidon</strong></td>
+        <td>Hijyen Deposu</td>
+        <td><span class="status-pill success">YETERLİ</span></td>
+        <td style="text-align: center;">
+            <button class="tab-btn" onclick="openSarfModal('detay', 'Sıvı Sabun (20L)')" style="padding: 8px 12px; font-size: 0.75rem; border:none; background:#f8fafc; color:#64748b; width:110px;">Detay</button>
+        </td>
+    </tr>
+
+    <tr class="custom-list-row" data-category="mutfak">
+        <td>
+            <div style="display: flex; align-items: center; gap: 15px;">
+                <div class="row-icon-box" style="background: #fffbeb; color: #f59e0b;"><i class="fa-solid fa-mug-hot"></i></div>
+                <div><h5 style="margin:0;">Dökme Çay (5KG)</h5><small>Mutfak & Gıda</small></div>
+            </div>
+        </td>
+        <td><strong>2 Paket</strong> / 10</td>
+        <td>Yemekhane</td>
+        <td><span class="status-pill critical">KRİTİK</span></td>
+        <td style="text-align: center;">
+            <button class="tab-btn" onclick="openSarfModal('talep', 'Dökme Çay (5KG)')" style="padding: 8px 12px; font-size: 0.75rem; border:none; background:#eff6ff; color:#3b82f6; font-weight:700; width:110px; white-space:nowrap;">Talep Et</button>
+        </td>
+    </tr>
+</tbody>
+        </table>
+    </div>
+</div>
+    
+        <div id="note-sent">Notunuz seçilen birimlere iletildi.</div>
+<div id="replyModal" class="reply-modal">
+    <div class="reply-content">
+        <div class="reply-header">
+            <i class="fa-solid fa-reply"></i>
+            <h3 id="replyTarget">HUKUK Birimine Cevap Yaz</h3>
+        </div>
+        
+        <div id="replyOriginalMessage" class="original-msg-preview">
+            "5 adet yeni iş sözleşmesi onaylandı."
+        </div>
+        
+        <textarea id="replyText" class="reply-textarea" placeholder="Cevabınızı buraya yazın..."></textarea>
+        
+        <div class="reply-actions">
+            <button class="btn-reply-cancel" onclick="closeReplyModal()">Vazgeç</button>
+            <button class="btn-reply-send" onclick="sendReply()">Cevapla</button>
+        </div>
+    </div>
+    </div>
+
+    <div id="actionModal" class="reply-modal" style="display:none; align-items:center; justify-content:center;">
+    <div class="reply-content" style="width: 500px; max-width: 90%;">
+        <div class="reply-header">
+            <i id="modalIcon" class="fa-solid fa-plus"></i>
+            <h3 id="modalTitle">Yeni Stok Ekle</h3>
+        </div>
+        
+        <div id="modalBody" style="padding: 20px 0;">
+            </div>
+        
+        <div class="reply-actions">
+            <button class="btn-reply-cancel" onclick="closeActionModal()">Vazgeç</button>
+            <button id="modalSubmitBtn" class="btn-reply-send" onclick="handleModalSubmit()">Kaydet</button>
+        </div>
+    </div>
+</div>
+
+<div id="sarfModal" class="reply-modal" style="display:none;">
+    <div class="reply-content" style="width: 450px; border-radius: 24px; padding: 30px;">
+        <div class="reply-header" id="sarf-modal-header" style="margin-bottom: 20px;">
+            <i id="m-icon" class="fa-solid fa-circle-info" style="font-size: 1.5rem; color: #3b82f6;"></i>
+            <h3 id="m-title" style="margin: 0; color: #0f172a;">Başlık</h3>
+        </div>
+        
+        <div id="m-body" style="margin-bottom: 25px; color: #64748b; line-height: 1.6;">
+            </div>
+        
+        <div class="reply-actions" style="border-top: 1px solid #f1f5f9; padding-top: 20px;">
+            <button class="btn-reply-cancel" onclick="closeSarfModal()">Vazgeç</button>
+            <button class="btn-reply-send" id="m-btn" onclick="modalIslemTamam()">Onayla</button>
+        </div>
+    </div>
+</div>
+    <script>
+         /* 1. MEVCUT CANLI TAKİP MODALLARI */
+function openLiveTracking() { document.getElementById('liveTrackingModal').style.display = 'flex'; }
+function closeLiveTracking() { document.getElementById('liveTrackingModal').style.display = 'none'; }
+
+/* 2. BİLDİRİM LİSTESİ GEÇİŞLERİ (Gelen/Giden) */
+function showIncoming() {
+    const incoming = document.getElementById('notif-incoming-list');
+    const outgoing = document.getElementById('notif-outgoing-list');
+    const btnIn = document.querySelector('.notif-action-btn[onclick="showIncoming()"]');
+    const btnOut = document.querySelector('.notif-action-btn[onclick="showOutgoing()"]');
+    if (incoming && outgoing) {
+        incoming.style.display = 'block';
+        outgoing.style.display = 'none';
+        btnIn.classList.add('active');
+        btnOut.classList.remove('active');
+    }
+}
+
+function showOutgoing() {
+    const incoming = document.getElementById('notif-incoming-list');
+    const outgoing = document.getElementById('notif-outgoing-list');
+    const btnIn = document.querySelector('.notif-action-btn[onclick="showIncoming()"]');
+    const btnOut = document.querySelector('.notif-action-btn[onclick="showOutgoing()"]');
+    if (incoming && outgoing) {
+        incoming.style.display = 'none';
+        outgoing.style.display = 'block';
+        btnOut.classList.add('active');
+        btnIn.classList.remove('active');
+    }
+}
+
+/* 3. YENİ HIZLI CEVAPLAMA SİSTEMİ */
+function openReplyModal(sender, message) {
+    document.getElementById('replyTarget').innerText = sender + " Birimine Cevap Yaz";
+    document.getElementById('replyOriginalMessage').innerText = '"' + message + '"';
+    document.getElementById('replyModal').style.display = 'flex';
+}
+
+function closeReplyModal() {
+    document.getElementById('replyModal').style.display = 'none';
+    document.getElementById('replyText').value = '';
+}
+
+function sendReply() {
+    const text = document.getElementById('replyText').value;
+    const target = document.getElementById('replyTarget').innerText.replace(" Cevap Yaz", "");
+    if(text.trim() !== "") {
+        alert("Cevabınız " + target + " birimine iletildi.");
+        closeReplyModal();
+    } else {
+        alert("Lütfen boş bir mesaj göndermeyin.");
+    }
+}
+
+/* 4. GENEL TIKLAMA VE BAŞLANGIÇ AYARLARI */
+window.onclick = function(event) {
+    let liveModal = document.getElementById('liveTrackingModal');
+    let replyModal = document.getElementById('replyModal');
+    
+    // Hangi modal açıksa ve dışına tıklandıysa onu kapat
+    if (event.target == liveModal) { liveModal.style.display = "none"; }
+    if (event.target == replyModal) { replyModal.style.display = "none"; }
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    const btnIn = document.querySelector('.notif-action-btn[onclick="showIncoming()"]');
+    if(btnIn) btnIn.classList.add('active');
+});
+function sendReply() {
+    const text = document.getElementById('replyText').value;
+    
+    // trim() metni temizler, eğer sonuç boş değilse gönderir
+    if(text.trim() !== "") {
+        alert("Cevabınız başarıyla iletildi.");
+        closeReplyModal();
+    } else {
+        // Kutu boşsa burası çalışır ve engeller
+        alert("Lütfen boş bir mesaj göndermeyin.");
+    }
+}// Boş alana tıklandığında açık olan her şeyi kapat
+document.addEventListener('click', function(event) {
+    // 1. Checkbox ile açılan menüleri kapat (Bildirimler ve Not Kutusu)
+    const notifToggle = document.getElementById('notif-toggle');
+    const noteToggle = document.getElementById('note-box-toggle');
+    
+    // Bildirimler için: Tıklanan yer bildirim alanı değilse ve menü açıksa kapat
+    const notifContainer = document.querySelector('.notif-container');
+    if (notifToggle.checked && !notifContainer.contains(event.target)) {
+        notifToggle.checked = false;
+    }
+
+    // Not Kutusu için: Tıklanan yer not kutusu veya onu açan buton değilse kapat
+    const msgBox = document.querySelector('.msg-box');
+    const quickNoteBtn = document.querySelector('.quick-note-btn');
+    if (noteToggle.checked && !msgBox.contains(event.target) && !quickNoteBtn.contains(event.target)) {
+        noteToggle.checked = false;
+    }
+
+    // 2. Modal'lar için (Zaten senin kodunda var ama daha temiz hali):
+    const replyModal = document.getElementById('replyModal');
+    if (event.target === replyModal) {
+        closeReplyModal();
+    }
+});
+
+function filterSarf(kategori, btn) {
+    // 1. Butonların aktiflik durumunu değiştir
+    const btns = document.querySelectorAll(".tab-btn");
+    btns.forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+
+    // 2. Satırları filtrele
+    const rows = document.querySelectorAll(".custom-list-row");
+    rows.forEach(row => {
+        const rowCat = row.getAttribute('data-category');
+        if (kategori === 'tumu' || rowCat === kategori) {
+            row.style.display = "table-row";
+        } else {
+            row.style.display = "none";
+        }
+    });
+}
+function openActionModal(tip, malzemeAdı = "") {
+    const modal = document.getElementById('actionModal');
+    const title = document.getElementById('modalTitle');
+    const icon = document.getElementById('modalIcon');
+    const body = document.getElementById('modalBody');
+    const submitBtn = document.getElementById('modalSubmitBtn');
+
+    modal.style.display = 'flex';
+
+    if (tip === 'yeni') {
+        title.innerText = "Yeni Stok / Talep Ekle";
+        icon.className = "fa-solid fa-plus";
+        submitBtn.innerText = "Sisteme Kaydet";
+        body.innerHTML = `
+            <div style="display:flex; flex-direction:column; gap:15px;">
+                <input type="text" placeholder="Malzeme Adı" class="reply-textarea" style="height:45px;">
+                <select class="reply-textarea" style="height:45px;">
+                    <option>Ofis Gereçleri</option>
+                    <option>Hijyen & Temizlik</option>
+                    <option>Mutfak & Gıda</option>
+                </select>
+                <input type="number" placeholder="Miktar" class="reply-textarea" style="height:45px;">
+            </div>
+        `;
+    } 
+    else if (tip === 'talep') {
+        title.innerText = "Hızlı Satın Alma Talebi";
+        icon.className = "fa-solid fa-cart-shopping";
+        submitBtn.innerText = "Talebi Gönder";
+        body.innerHTML = `
+            <p style="color:var(--text-main);"><strong>${malzemeAdı}</strong> için satın alma talebi oluşturulacak. Onaylıyor musunuz?</p>
+            <textarea class="reply-textarea" placeholder="Eklemek istediğiniz not varsa yazın..."></textarea>
+        `;
+    }
+    else if (tip === 'detay') {
+        title.innerText = "Malzeme Detayları";
+        icon.className = "fa-solid fa-circle-info";
+        submitBtn.innerText = "Tamam";
+        body.innerHTML = `
+            <div style="color:var(--text-sub); font-size:0.9rem;">
+                <p><strong>Ürün:</strong> ${malzemeAdı}</p>
+                <p><strong>Son Hareket:</strong> 12.03.2026 - Depo Girişi</p>
+                <p><strong>Sorumlu:</strong> Ahmet G.</p>
+                <p><strong>Raf No:</strong> B-12 / Bölüm 4</p>
+            </div>
+        `;
+    }
+}
+
+function closeActionModal() {
+    document.getElementById('actionModal').style.display = 'none';
+}
+
+function handleModalSubmit() {
+    alert("İşleminiz başarıyla gerçekleştirildi!");
+    closeActionModal();
+}
+/* 1. ANA MODAL FONKSİYONU */
+function openSarfModal(tip, isim) {
+    const modal = document.getElementById('sarfModal');
+    const title = document.getElementById('m-title');
+    const body = document.getElementById('m-body');
+    const icon = document.getElementById('m-icon');
+    const btn = document.getElementById('m-btn');
+    const header = document.getElementById('sarf-modal-header');
+
+    if (!modal || !title || !body) return;
+    modal.style.display = 'flex';
+
+    // 1. BEKLEYEN TALEPLER KARTI (Gelişmiş Butonlu)
+    if (tip === 'bekleyen_liste') {
+        title.innerText = "Bekleyen Talepler";
+        icon.className = "fa-solid fa-truck-loading";
+        icon.style.color = "#3b82f6";
+        btn.innerText = "Satın Almaya Mesaj Gönder";
+        btn.onclick = function() {
+            window.location.href = "ii-index.html?action=openMessage&target=SatinAlma";
+        };
+        body.innerHTML = `
+            <p style="margin-bottom:15px;">Şu an onay sürecinde olan <strong>2 adet</strong> aktif talebiniz bulunmaktadır:</p>
+            <div style="background:#f8fafc; padding:12px; border-radius:12px; margin-bottom:8px; border-left:4px solid #f59e0b;">
+                <div style="display:flex; justify-content:space-between;">
+                    <strong>A4 Kağıdı (20 Paket)</strong>
+                    <small style="color:#f59e0b; font-weight:700;">ONAY BEKLİYOR</small>
+                </div>
+            </div>
+            <div style="background:#f8fafc; padding:12px; border-radius:12px; border-left:4px solid #3b82f6;">
+                <div style="display:flex; justify-content:space-between;">
+                    <strong>Nescafe (10 Adet)</strong>
+                    <small style="color:#3b82f6; font-weight:700;">YOLDA / KURYE</small>
+                </div>
+            </div>
+        `;
+    } 
+    // 2. DEPO DOLULUK KARTI 
+    else if (tip === 'depo_detay') {
+        title.innerText = "Depo Kapasite Analizi";
+        icon.className = "fa-solid fa-chart-pie";
+        icon.style.color = "#10b981";
+        btn.innerText = "Anladım";
+        btn.onclick = closeSarfModal;
+       body.innerHTML = `
+<p style="margin-bottom:15px; font-size:0.9rem;">Depo kullanım detayları aşağıdadır:</p>
+            <hr style="border:0; border-top:1px solid #f1f5f9; margin:15px 0;">
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; font-size:0.85rem;">
+                <span> Ofis Bölümü: <strong>%25</strong></span>
+                <span> Hijyen Bölümü: <strong>%28</strong></span>
+                <span> Mutfak Bölümü: <strong>%15</strong></span>
+                <span>Boş Alan: <strong>%32</strong></span>
+            </div>
+        `;
+    }
+    // 3. SON SAYIM KARTI 
+    else if (tip === 'sayim_raporu') {
+        title.innerText = "Son Envanter Sayımı";
+        icon.className = "fa-solid fa-file-signature";
+        icon.style.color = "#f59e0b";
+        btn.innerText = "Raporu İndir (PDF)";
+        
+        // BURASI DEĞİŞTİ:
+        btn.onclick = function() {
+            alert("18 Mart 2026 tarihli envanter raporu indiriliyor...");
+            closeSarfModal();
+        };
+
+        body.innerHTML = `
+            <div style="text-align:center; padding:10px;">
+                <p style="font-size:1.1rem; color:#0f172a;"><strong>18 Mart 2026</strong></p>
+                <p>Sayım Personeli: <strong>Ahmet G.</strong></p>
+                <div style="background:#f0fdf4; color:#15803d; padding:10px; border-radius:10px; margin-top:10px; font-size:0.85rem; font-weight:600;">
+                    <i class="fa-solid fa-check-double"></i> Tüm fiziksel stoklar dijital kayıtlarla eşleşti. Kayıp ürün bulunamadı.
+                </div>
+            </div>
+        `;
+    }
+    // 4. YENİ STOK EKLE (Validation + Kategori Eklendi)
+    else if (tip === 'yeni') {
+        title.innerText = "Yeni Stok / Talep Ekle";
+        icon.className = "fa-solid fa-plus-circle";
+        icon.style.color = "#3b82f6";
+        btn.innerText = "Sisteme Kaydet";
+        btn.onclick = modalIslemTamam;
+        body.innerHTML = `
+            <div style="display:flex; flex-direction:column; gap:15px; padding: 5px;">
+                <div>
+                    <label style="display:block; font-size:0.8rem; font-weight:600; color:#64748b; margin-bottom:5px;">Malzeme Adı</label>
+                    <input type="text" id="val_ad" placeholder="Örn: A4 Fotokopi Kağıdı" style="width:100%; padding:12px; border:1px solid #e2e8f0; border-radius:10px;">
+                </div>
+                <div>
+                    <label style="display:block; font-size:0.8rem; font-weight:600; color:#64748b; margin-bottom:5px;">Kategori</label>
+                    <select id="val_kat" style="width:100%; padding:12px; border:1px solid #e2e8f0; border-radius:10px; background:white;">
+                        <option value="">Seçiniz...</option>
+                        <option>Ofis Gereçleri</option>
+                        <option>Hijyen & Temizlik</option>
+                        <option>Mutfak & Gıda</option>
+                    </select>
+                </div>
+                <div>
+                    <label style="display:block; font-size:0.8rem; font-weight:600; color:#64748b; margin-bottom:5px;">Miktar</label>
+                    <input type="number" id="val_mik" placeholder="0" style="width:100%; padding:12px; border:1px solid #e2e8f0; border-radius:10px;">
+                </div>
+            </div>`;
+    }
+    else if (tip === 'talep') {
+        title.innerText = "Satın Alma Talebi";
+        icon.className = "fa-solid fa-cart-arrow-down";
+        btn.innerText = "Talebi Onayla";
+        btn.onclick = modalIslemTamam;
+        body.innerHTML = `<p><strong>${isim}</strong> için stok tamamlama talebi oluşturulacak. Onaylıyor musunuz?</p>`;
+    }
+    else if (tip === 'detay') {
+        title.innerText = "Malzeme Bilgisi";
+        icon.className = "fa-solid fa-magnifying-glass-chart";
+        btn.innerText = "Kapat";
+        btn.onclick = closeSarfModal;
+        body.innerHTML = `<p><strong>${isim}</strong> şu anda <strong>Merkez Depo</strong>'da bulunmaktadır.</p>`;
+    }
+
+    if (header) {
+        if (tip === 'detay') {
+            header.style.flexDirection = 'column';
+            header.style.alignItems = 'flex-start';
+            header.style.gap = '8px';
+        } else {
+            header.style.flexDirection = 'row';
+            header.style.alignItems = 'center';
+            header.style.gap = '12px';
+        }
+    }
+}
+
+function modalIslemTamam() {
+    // Kutucuklardaki değerleri alalım
+    const ad = document.getElementById('val_ad');
+    const kat = document.getElementById('val_kat');
+    const mik = document.getElementById('val_mik');
+
+    // Eğer bu kutucuklar sayfada varsa (yani Yeni Stok formu açıksa) kontrol et
+    if (ad && kat && mik) {
+        if (ad.value.trim() === "" || kat.value === "" || mik.value === "" || mik.value <= 0) {
+            alert("Lütfen Malzeme Adı, Kategori ve Miktar alanlarını doldurunuz!");
+            return; // HATA VARSA BURADA DURUR, KAYDETMEZ
+        }
+    }
+
+    // Her şey tamamsa burası çalışır
+    alert("İşleminiz başarıyla sisteme kaydedildi!");
+    closeSarfModal();
+}
+
+/* YARDIMCI FONKSİYONLAR (GÜNCELLENDİ) */
+function closeSarfModal() {
+    document.getElementById('sarfModal').style.display = 'none';
+}
+
+function modalIslemTamam() {
+    // 1. Kutucuklardaki değerleri yakalayalım
+    const adInput = document.getElementById('val_ad');
+    const katInput = document.getElementById('val_kat');
+    const mikInput = document.getElementById('val_mik');
+
+    // 2. Eğer "Yeni Stok" formu açıksa kontrol et
+    if (adInput && katInput && mikInput) {
+        const ad = adInput.value.trim();
+        const kat = katInput.value;
+        const mik = mikInput.value;
+
+        // BOŞ ALAN KONTROLÜ (Kızması için!)
+        if (ad === "" || kat === "" || mik === "" || mik <= 0) {
+            alert("Lütfen Malzeme Adı, Kategori ve Miktar alanlarını doldurunuz!");
+            return; 
+        }
+
+        // 3. TABLOYA EKLEME SİHİRİ
+        const tabloBody = document.querySelector(".data-table-box tbody");
+        const yeniSatir = document.createElement('tr');
+        yeniSatir.className = "custom-list-row";
+        yeniSatir.setAttribute('data-category', kat.toLowerCase().includes('ofis') ? 'ofis' : (kat.toLowerCase().includes('hijyen') ? 'hijyen' : 'mutfak'));
+
+        // Dinamik ikon seçimi
+        let icon = "fa-boxes-stacked";
+        let color = "#64748b";
+        let bg = "#f8fafc";
+        
+        if(kat.includes("Ofis")) { icon="fa-file-lines"; color="#ef4444"; bg="#fef2f2"; }
+        else if(kat.includes("Hijyen")) { icon="fa-pump-medical"; color="#22c55e"; bg="#f0fdf4"; }
+        else if(kat.includes("Mutfak")) { icon="fa-mug-hot"; color="#f59e0b"; bg="#fffbeb"; }
+
+        yeniSatir.innerHTML = `
+            <td>
+                <div style="display: flex; align-items: center; gap: 15px;">
+                    <div class="row-icon-box" style="background: ${bg}; color: ${color};"><i class="fa-solid ${icon}"></i></div>
+                    <div><h5 style="margin:0;">${ad}</h5><small>${kat}</small></div>
+                </div>
+            </td>
+            <td><strong>${mik} Adet</strong></td>
+            <td>Merkez Depo</td>
+            <td><span class="status-pill success">YETERLİ</span></td>
+            <td style="text-align: center;">
+                <button class="tab-btn" style="padding: 8px 12px; font-size: 0.75rem; border:none; background:#f8fafc; color:#64748b; width:110px;">Detay</button>
+            </td>
+        `;
+
+        // Satırı en başa ekle
+        tabloBody.prepend(yeniSatir);
+    }
+
+    alert("İşleminiz başarıyla sisteme kaydedildi!");
+    closeSarfModal();
+}
+
+    // Sayfa her açıldığında giden mesajları ortak hafızadan (localStorage) çek
+    document.addEventListener('DOMContentLoaded', function() {
+        updateOutgoingList(); 
+    });
+
+    function updateOutgoingList() {
+        const listContainer = document.getElementById('notif-outgoing-list');
+        if (!listContainer) return;
+
+        // Tarayıcının ortak hafızasından mesajları alma
+        const gidenMesajlar = JSON.parse(localStorage.getItem('guardia_giden_mesajlar') || '[]');
+
+        listContainer.innerHTML = ""; 
+
+        if (gidenMesajlar.length === 0) {
+            listContainer.innerHTML = '<div class="notif-item"><span>Henüz gönderilmiş bir not bulunmuyor.</span></div>';
+        } else {
+            gidenMesajlar.forEach(msg => {
+                listContainer.innerHTML += `
+                    <div class="notif-item">
+                        <strong>SİZDEN -> ${msg.hedef}</strong>
+                        <span>${msg.icerik}</span>
+                        <small style="display:block; color: #94a3b8; font-size: 0.75rem; margin-top: 5px;">
+                            <i class="fa-regular fa-clock"></i> ${msg.saat}
+                        </small>
+                    </div>`;
+            });
+        }
+    }
+</script>
+</body>
+</html>

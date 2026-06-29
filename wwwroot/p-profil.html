@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="tr">
+
+<head>
+    <script>
+        if (!localStorage.getItem('token')) {
+            window.location.href = 'p-login.html';
+        }
+    </script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Guardia | Dijital Kimlik</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/personel-style.css">
+    <style>
+        /* Profil Kartı: Fotoğraf ve temel kimlik bilgilerinin alanı */
+        .profile-card {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 30px;
+            padding: 30px 20px;
+            text-align: center;
+            margin-bottom: 25px;
+        }
+
+        .profile-img {
+            width: 110px;
+            height: 110px;
+            border-radius: 35px;
+            border: 3px solid var(--accent);
+            object-fit: cover;
+        }
+
+        /* Bilgi Satırları: Başlık ve veri ikilisi */
+        .info-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .info-row {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 15px 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .info-title {
+            font-size: 0.75rem;
+            color: var(--sub);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        /* DÜZENLEME MODU STİLLERİ */
+        /* Başlangıçta gizli olan input alanları */
+        .edit-input {
+            display: none;
+            width: 100%;
+            padding: 12px;
+            border-radius: 12px;
+            border: 1px solid var(--accent);
+            background: var(--bg);
+            color: var(--text);
+            font-family: inherit;
+            margin-top: 5px;
+            font-size: 0.9rem;
+        }
+
+        /* Başlangıçta görünür olan statik veriler */
+        .display-data {
+            display: block;
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--text);
+        }
+
+        .display-sub {
+            font-size: 0.85rem;
+            color: var(--accent);
+            font-weight: 500;
+        }
+
+        /* İK Onay Bildirimi: Başvuru sonrası görünen alert */
+        .status-alert {
+            display: none;
+            background: rgba(56, 189, 248, 0.1);
+            border: 1px solid var(--accent);
+            color: var(--accent);
+            padding: 15px;
+            border-radius: 20px;
+            margin-bottom: 20px;
+            text-align: center;
+            animation: slideDown 0.4s ease;
+        }
+
+        /* Aksiyon Butonları */
+        .action-btn {
+            background: var(--accent);
+            color: #fff;
+            border: none;
+            padding: 18px;
+            border-radius: 20px;
+            font-weight: 600;
+            width: 100%;
+            margin-top: 20px;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+
+        .send-btn {
+            display: none;
+            background: #10b981;
+        }
+
+        /* Animasyon: Yukarıdan aşağı süzülme */
+        @keyframes slideDown {
+            from {
+                transform: translateY(-20px);
+                opacity: 0;
+            }
+
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        /* Geri butonu */
+        header {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 25px;
+            padding-top: 15px;
+        }
+
+        .back-btn {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: var(--card);
+            border: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            color: var(--accent);
+            transition: 0.2s;
+        }
+
+            .back-btn:active {
+                transform: scale(0.9);
+            }
+        /* 1. Görüntüleme modundaki adres verisini sabitle */
+        #addressDisp {
+            height: 60px !important; /* İstediğin rakamı buraya yaz (ör: 60px) */
+            overflow-y: auto !important; /* Adres sığmazsa içinde kaydırma çubuğu çıksın */
+            display: block !important; /* Yüksekliğin çalışması için şart */
+            line-height: 1.4 !important; /* Satır aralığını biraz daraltalım sığsın */
+        }
+
+        /* 2. Düzenleme modundaki (textarea) giriş alanını sabitle */
+        #addressEdit {
+            height: 60px !important; /* Statik veriyle aynı yüksekliği yapalım (ör: 60px) */
+            resize: none !important; /* Kullanıcının köşesinden tutup büyütmesini yasaklar */
+            overflow-y: auto !important; /* Sığmazsa içinde kaysın */
+        }
+    </style>
+</head>
+
+<body class="dijital-kimlik-full">
+    <div class="container">
+        <header style="display: flex; align-items: center; gap: 15px; padding: 20px 0; margin-bottom: 10px;">
+            <a href="p-ayarlar.html" class="back-btn" style="text-decoration: none;">
+                <i class="fa-solid fa-chevron-left"></i>
+            </a>
+            <h2 id="pageTitle" style="margin:0; font-size:1.1rem; font-weight:600; color: var(--text);">
+                Dijital Kimlik
+                Bilgileri
+            </h2>
+        </header>
+
+        <div id="ikAlert" class="status-alert">
+            <i class="fa-solid fa-paper-plane"></i> Bilgileriniz İK onayına sunuldu. Onaylandığında bildirim
+            alacaksınız.
+        </div>
+
+        <div class="profile-card">
+            <div id="profilFotoKutu" class="profile-img" style="display: flex; align-items: center; justify-content: center; margin: 0 auto; background: rgba(56, 189, 248, 0.1);">
+                <i class="fa-solid fa-user" style="font-size: 3.5rem; color: var(--accent);"></i>
+            </div>
+            <h3 id="profilAd" style="margin:10px 0 0 0;">...</h3>
+            <p id="profilBilgi" style="color:var(--sub); font-size:0.8rem;">...</p>
+        </div>
+
+        <div class="info-list">
+            <div class="info-row">
+                <span class="info-title">Kişisel Telefon</span>
+                <span class="display-data" id="phoneDisp">0532 000 00 88</span>
+                <input type="text" class="edit-input" id="phoneEdit" value="0532 000 00 88">
+            </div>
+
+            <div class="info-row">
+                <span class="info-title">Acil Durum Yakını</span>
+                <span class="display-data" id="emergencyNameDisp">Mehmet Yılmaz (Eşi)</span>
+                <span class="display-sub" id="emergencyPhoneDisp">Tel: 0544 000 00 22</span>
+
+                <input type="text" class="edit-input" id="emergencyNameEdit" value="Mehmet Yılmaz (Eşi)"
+                       placeholder="Yakınlık derecesiyle birlikte isim">
+                <input type="text" class="edit-input" id="emergencyPhoneEdit" value="0544 000 00 22"
+                       placeholder="Telefon numarası" style="margin-top:8px;">
+            </div>
+
+            <div class="info-row">
+                <span class="info-title">İkamet Adresi</span>
+                <span class="display-data" id="addressDisp" style="font-size:0.9rem;">
+                    Atatürk Mah. 125. Sok. No:4
+                    Esenyurt / İstanbul
+                </span>
+                <textarea class="edit-input" id="addressEdit"
+                          rows="2">Atatürk Mah. 125. Sok. No:4 Esenyurt / İstanbul</textarea>
+            </div>
+        </div>
+
+        <button class="action-btn" id="editStartBtn" onclick="duzenlemeyiAc()">
+            <i class="fa-solid fa-pen-to-square"></i> Bilgilerimi Güncellemek İstiyorum
+        </button>
+
+        <button class="action-btn send-btn" id="submitBtn" onclick="ikyaGonder()">
+            Değişiklikleri İK'ya Gönder
+        </button>
+    </div>
+
+    <nav class="bottom-nav">
+        <a href="p-index.html" class="nav-item"><i class="fa-solid fa-house"></i><span>Panel</span></a>
+        <a href="p-ai.html" class="nav-item"><i class="fa-solid fa-brain"></i><span>AI</span></a>
+        <a href="p-qr.html" class="nav-item"><i class="fa-solid fa-qrcode"></i><span>QR</span></a>
+        <a href="p-ayarlar.html" class="nav-item active"><i class="fa-solid fa-gear"></i><span>Ayarlar</span></a>
+    </nav>
+
+    <script>
+
+        function apiFetch(url, options = {}) {
+            const token = localStorage.getItem('token');
+
+            options.headers = {
+                ...options.headers,
+                'Authorization': 'Bearer ' + token
+            };
+
+            return fetch(url, options).then(res => {
+                if (!res.ok) {
+                    throw new Error(`HTTP Hatası! Durum: ${res.status}`);
+                }
+                return res;
+            });
+        }
+
+        document.addEventListener("DOMContentLoaded", async function () {
+            console.log("Sayfa ve JS hazır!");
+
+            if (localStorage.getItem('temaTercihi') === 'light') {
+                document.body.classList.add('light-mode');
+            }
+
+            // Mevcut bilgileri getir
+            const aktifSicil = localStorage.getItem("aktifKullanici");
+
+            try {
+                const res = await apiFetch(`https://localhost:7183/api/pprofil/getir?sicilNo=${aktifSicil}`);
+                const d = await res.json();
+
+                document.getElementById('phoneDisp').innerText = d.telefon ?? '-';
+                document.getElementById('phoneEdit').value = d.telefon ?? '';
+                document.getElementById('emergencyNameDisp').innerText = d.acilDurumYakini ?? '-';
+                document.getElementById('emergencyNameEdit').value = d.acilDurumYakini ?? '';
+                document.getElementById('emergencyPhoneDisp').innerText = 'Tel: ' + (d.acilDurumTelefon ?? '-');
+                document.getElementById('emergencyPhoneEdit').value = d.acilDurumTelefon ?? '';
+                document.getElementById('addressDisp').innerText = d.adres ?? '-';
+                document.getElementById('addressEdit').value = d.adres ?? '';
+                const fotoKutu = document.getElementById('profilFotoKutu');
+                if (d.fotoUrl && d.fotoUrl.trim() !== "" && !d.fotoUrl.includes("default") && !d.fotoUrl.includes("img/")) {
+                    fotoKutu.innerHTML = `<img src="${d.fotoUrl}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 32px;">`;
+                } else {
+                    fotoKutu.innerHTML = `<i class="fa-solid fa-user" style="font-size: 3.5rem; color: var(--accent);"></i>`;
+                } document.getElementById('profilAd').innerText = d.adSoyad ?? '-';
+                document.getElementById('profilBilgi').innerText = `Sicil No: ${aktifSicil} · ${d.unvan ?? ''}`;
+
+            } catch (e) {
+                console.error("Profil yüklenemedi (Bağlantı veya Yetki Hatası):", e);
+            }
+        });
+
+        function duzenlemeyiAc() {
+            const title = document.getElementById('pageTitle');
+            if (title) title.innerText = "Bilgileri Düzenle";
+
+            document.querySelectorAll('.display-data, .display-sub').forEach(el => el.style.display = 'none');
+            document.querySelectorAll('.edit-input').forEach(el => el.style.display = 'block');
+
+            document.getElementById('editStartBtn').style.display = 'none';
+            document.getElementById('submitBtn').style.display = 'block';
+        }
+
+        async function ikyaGonder() {
+            const aktifSicil = localStorage.getItem("aktifKullanici");
+
+            const gidenVeri = {
+                SicilNo: aktifSicil,
+                Telefon: document.getElementById('phoneEdit').value,
+                AcilDurumYakini: document.getElementById('emergencyNameEdit').value,
+                AcilDurumTelefon: document.getElementById('emergencyPhoneEdit').value,
+                Adres: document.getElementById('addressEdit').value
+            };
+
+            try {
+                await apiFetch('https://localhost:7183/api/pprofil/guncelle', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(gidenVeri)
+                });
+
+                document.getElementById('ikAlert').style.display = 'block';
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+
+                document.querySelectorAll('.edit-input').forEach(el => el.style.display = 'none');
+                document.querySelectorAll('.display-data, .display-sub').forEach(el => el.style.display = 'block');
+
+                const submitBtn = document.getElementById('submitBtn');
+                submitBtn.innerHTML = "<i class='fa-solid fa-clock'></i> İK Onayı Bekleniyor...";
+                submitBtn.style.background = "#64748b";
+                submitBtn.style.pointerEvents = "none";
+
+            } catch (error) {
+                alert("Güncelleme işlemi başarısız. Yetkiniz olmayabilir veya sunucuya ulaşılamıyor.");
+                console.error("Güncelleme Hatası:", error);
+            }
+        }
+    </script>
+</body>
+
+</html>

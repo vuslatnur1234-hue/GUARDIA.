@@ -1,0 +1,1481 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <script>
+        if (!localStorage.getItem('token')) {
+            window.location.href = 'admin-login.html';
+        }
+    </script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Guardia | Bilgi İşlem</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/ik-sidebar.css">
+    <link rel="stylesheet" href="css/dept-common.css">
+    <style>
+        :root {
+            --sidebar: #0f172a;
+            --text-main: #1e293b;
+            --text-sub: #64748b;
+            --white: #fff;
+        }
+
+        .hero {
+            margin-bottom: 28px;
+        }
+
+            .hero h2 {
+                margin: 0 0 6px 0;
+                font-size: 1.6rem;
+                color: var(--sidebar);
+            }
+
+            .hero p {
+                margin: 0;
+                font-size: 0.95rem;
+                color: var(--text-sub);
+            }
+
+        .stats-container {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+            margin-bottom: 28px;
+        }
+
+        .card {
+            background: var(--white);
+            padding: 24px;
+            border-radius: 20px;
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
+            transition: all 0.3s ease;
+            border: 1px solid transparent;
+        }
+
+            .card:hover {
+                transform: translateY(-4px);
+                border-color: var(--accent);
+            }
+
+            .card h4 {
+                margin: 0;
+                color: #64748b;
+                font-size: 0.8rem;
+                text-transform: uppercase;
+            }
+
+            .card p {
+                margin: 10px 0 0 0;
+                font-size: 1.75rem;
+                font-weight: 700;
+                color: var(--text-main);
+            }
+
+        .gauge-section {
+            margin-bottom: 28px;
+        }
+
+            .gauge-section h4 {
+                margin: 0 0 20px 0;
+                font-size: 1rem;
+                color: var(--sidebar);
+            }
+
+        .gauge-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 24px;
+        }
+
+        .gauge-box {
+            background: var(--white);
+            padding: 24px;
+            border-radius: 20px;
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
+            text-align: center;
+        }
+
+            .gauge-box h5 {
+                margin: 0 0 12px 0;
+                font-size: 0.9rem;
+                color: var(--text-sub);
+            }
+
+        .gauge-bar {
+            height: 12px;
+            background: #f1f5f9;
+            border-radius: 10px;
+            overflow: hidden;
+            margin-bottom: 8px;
+        }
+
+        .gauge-fill {
+            height: 100%;
+            border-radius: 10px;
+        }
+
+            .gauge-fill.normal {
+                background: #22c55e;
+                width: 45%;
+            }
+
+            .gauge-fill.orta {
+                background: #eab308;
+                width: 72%;
+            }
+
+            .gauge-fill.yuksek {
+                background: #ef4444;
+                width: 88%;
+            }
+
+        .gauge-box span {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: var(--text-main);
+        }
+
+        .status-card {
+            background: white;
+            padding: 30px;
+            border-radius: 28px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.02);
+            min-height: 280px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            position: relative;
+        }
+
+        .bar-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+            position: relative;
+            cursor: pointer;
+        }
+
+        /* Şık Bilgi Kutusu (Tooltip) */
+        .custom-tooltip {
+            visibility: hidden;
+            position: absolute;
+            bottom: 100%;
+            left: 50%;
+            transform: translateX(-50%) translateY(-10px);
+            background: #0f172a;
+            color: white;
+            padding: 6px 10px;
+            border-radius: 8px;
+            font-size: 0.65rem;
+            font-weight: 600;
+            white-space: nowrap;
+            opacity: 0;
+            transition: 0.3s ease;
+            z-index: 10;
+        }
+
+        .bar-container:hover .custom-tooltip {
+            visibility: visible;
+            opacity: 1;
+            transform: translateX(-50%) translateY(-15px);
+        }
+
+        .status-bar {
+            border-radius: 8px;
+            transition: 0.3s ease;
+        }
+
+        .bar-container:hover .status-bar {
+            transform: scaleY(1.05);
+        }
+
+        /* ANA TABLO KARTININ STİLLERİ */
+        .table-card {
+            background: white;
+            padding: 35px;
+            border-radius: 28px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.02);
+            margin-top: 30px; /* Üstteki kartlarla boşluk */
+            min-height: 400px; /* Boyunu biraz uzun tutma */
+            display: flex;
+            flex-direction: column;
+            border: 1px solid rgba(0,0,0,0.01);
+        }
+
+        /* SEKME (TAB) BUTONLARININ STİLLERİ */
+        .tab-menu {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 30px;
+            border-bottom: 2px solid #f1f5f9; /* Hafif bir çizgi */
+            padding-bottom: 10px;
+        }
+
+        .tab-btn {
+            background: none;
+            border: none;
+            padding: 10px 20px;
+            font-size: 0.8rem;
+            font-weight: 700;
+            color: #94a3b8;
+            cursor: pointer;
+            transition: 0.3s;
+            border-radius: 12px;
+        }
+
+            /* Aktif olan sekmenin stili (Mavi) */
+            .tab-btn.active {
+                background: #3b82f6;
+                color: white;
+                box-shadow: 0 4px 10px rgba(59, 130, 246, 0.2);
+            }
+
+            .tab-btn:hover:not(.active) {
+                background: #eff6ff;
+                color: #3b82f6;
+            }
+
+        .personel-modal {
+            display: none; /* Başlangıçta gizli */
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(15, 23, 42, 0.6); /* Arka planı karart */
+            backdrop-filter: blur(8px); /* Hafif bulanıklaştır (Modern hava) */
+            z-index: 9999;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal-content {
+            background: white;
+            width: 90%;
+            max-width: 1100px;
+            height: 85vh;
+            border-radius: 32px;
+            padding: 40px;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+            position: relative;
+            animation: modalFadeIn 0.3s ease-out;
+        }
+
+        @keyframes modalFadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Departman Menüsü (Tablar) */
+        .dept-menu {
+            display: flex;
+            gap: 8px;
+            background: #f1f5f9; /* Gri arka plan artık hep orada */
+            padding: 8px;
+            border-radius: 16px;
+            margin-bottom: 25px;
+            min-height: 50px; /* Boyutu sabitledik, oynamaz */
+            align-items: center;
+        }
+
+        .dept-btn {
+            flex: 1;
+            padding: 12px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background: transparent;
+            color: #64748b;
+        }
+
+            .dept-btn.active {
+                background: white !important;
+                color: #3b82f6 !important;
+                box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+            }
+
+            .dept-btn:hover:not(.active) {
+                color: #0f172a;
+                background: #f8fafc;
+            }
+
+        /* Tablo Alanı */
+        .p-table-container {
+            max-height: 450px;
+            overflow-y: auto;
+            -ms-overflow-style: none; /* IE ve Edge */
+            scrollbar-width: none; /* Firefox */
+        }
+
+            .p-table-container::-webkit-scrollbar {
+                display: none; /* Chrome, Safari ve Opera */
+            }
+
+        .p-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+            .p-table th {
+                text-align: left;
+                padding: 15px;
+                color: #64748b;
+                font-size: 0.75rem;
+                text-transform: uppercase;
+                border-bottom: 2px solid #f1f5f9;
+            }
+
+            .p-table td {
+                padding: 20px 15px;
+                border-bottom: 1px solid #f1f5f9;
+                font-size: 0.9rem;
+                color: #1e293b;
+            }
+
+        /* Kapatma Butonu */
+        .close-modal {
+            position: absolute;
+            top: 30px;
+            right: 30px;
+            background: #f1f5f9;
+            border: none;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            cursor: pointer;
+            color: #64748b;
+            transition: 0.3s;
+        }
+
+            .close-modal:hover {
+                background: #fee2e2;
+                color: #ef4444;
+            }
+
+        /* 1. Tablo Başlığını (Thead) En Üstte Sabitleme */
+        #personelTable thead th {
+            position: sticky;
+            top: 0;
+            z-index: 20;
+            background: #f8fafc; /* Başlık kayarken arkası görünmesin */
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05); /* Başlık ve satırları ayıran zarif çizgi */
+        }
+
+        /* 2. Sütun Genişliklerini Sabitleme (Oynamayı Bitirir) */
+        #personelTable {
+            table-layout: fixed; /* Tablonun genişliğini dondurur */
+            width: 100%;
+        }
+
+            /* Her sütuna özel genişlik (Toplam %100 yapacak şekilde) */
+            #personelTable th:nth-child(1), #personelTable td:nth-child(1) {
+                width: 30%;
+            }
+            /* Ad Soyad */
+            #personelTable th:nth-child(2), #personelTable td:nth-child(2) {
+                width: 20%;
+            }
+            /* Departman */
+            #personelTable th:nth-child(3), #personelTable td:nth-child(3) {
+                width: 20%;
+            }
+            /* Zaman */
+            #personelTable th:nth-child(4), #personelTable td:nth-child(4) {
+                width: 15%;
+                text-align: center;
+            }
+            /* Durum */
+            #personelTable th:nth-child(5), #personelTable td:nth-child(5) {
+                width: 15%;
+                text-align: center;
+            }
+            /* Aksiyon */
+
+            /* 3. Uzun isimler tabloyu bozmasın diye kısaltma özelliği */
+            #personelTable td {
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis; /* İsim çok uzunsa sonuna ... koyar */
+            }
+
+        /*ÖNEMLİ O YER*/
+        /* 2. Ana içerik alanını ekran yüksekliğine mühürle */
+        .ik-content {
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden; /* İçerik taşmasın */
+            padding-bottom: 20px !important; /* Alt kısımdan biraz nefes payı */
+        }
+
+        /* 1. TABLO KUTUSU: Dünkü sayfadaki o sihirli formülü buraya uygulama */
+        .data-table-box {
+            flex: 1;
+            overflow-y: auto;
+            /* Dünkü sayfada kullandığımız o dinamik yükseklik formülü */
+            max-height: calc(100vh - 350px);
+            background: white;
+            border-radius: 22px;
+            padding: 0 20px 20px 20px; /* Üst padding'i 0 yaptık ki başlık tam sıfırlansın */
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
+            position: relative;
+            margin-bottom: 20px;
+            scrollbar-width: none; /* Firefox için çubuğu gizle */
+        }
+
+            /* Kaydırma çubuğunu Chrome/Safari için tamamen gizle */
+            .data-table-box::-webkit-scrollbar {
+                display: none;
+            }
+
+        .data-table-box {
+            margin-bottom: 10px !important; /* Dıştan (sayfa dibinden) boşluk */
+        }
+        /* 2. BAŞLIKLAR: Sızdırmazlık buradaki 'background' ve 'z-index' içinde */
+        thead th {
+            position: sticky !important;
+            top: 0;
+            /* ÖNEMLİ: Arka plan transparan kalmasın diye bembeyaz yapma */
+            background-color: #ffffff !important;
+            z-index: 10 !important;
+            padding: 18px 15px !important;
+            color: #94a3b8;
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            /* Başlık sabitlendiğinde altını net ayırmak için çizgi çekme */
+            border-bottom: 2px solid #f1f5f9 !important;
+        }
+
+        /* 3. TABLO YAPISI: border-collapse sticky'i bozmasın diye 'separate' yapma */
+        table {
+            width: 100%;
+            border-collapse: separate !important;
+            border-spacing: 0;
+        }
+
+        /* Satırların (td) kendi arka planı olsun ki kayarken başlığın arkasına geçince 'yok' olsunlar */
+        td {
+            background-color: #ffffff;
+            border-bottom: 1px solid #f1f5f9;
+            padding: 15px !important;
+        }
+        /*ÖNEMLİ BİTİŞ*/
+    </style>
+</head>
+<body class="ik-layout">
+    <div class="ik-sidebar">
+        <h2>🛡️ Guardia Bİ</h2>
+        <ul class="ik-nav-links">
+            <li class="active"><i class="fa-solid fa-chart-line"></i> Genel Bakış</li>
+            <li><a href="bi-envanter.html" style="text-decoration:none;color:inherit;display:flex;align-items:center;gap:12px;"><i class="fa-solid fa-laptop"></i> Envanter Takibi</a></li>
+            <li><a href="bi-destek.html" style="text-decoration:none;color:inherit;display:flex;align-items:center;gap:12px;"><i class="fa-solid fa-headset"></i> Destek Talepleri</a></li>
+            <li><a href="bi-guvenlik.html" style="text-decoration:none;color:inherit;display:flex;align-items:center;gap:12px;"><i class="fa-solid fa-network-wired" ></i> Ağ & Güvenlik</a></li>
+            <li><a href="bi-yedekleme.html" style="text-decoration:none;color:inherit;display:flex;align-items:center;gap:12px;"><i class="fa-solid fa-database"></i> Yedekleme Planı</a></li>
+        </ul>
+
+        
+        <div class="ik-user-tag" style="position: relative; display: flex; align-items: center;">
+    <div class="ik-user-avatar"><img src="img/selin_aksoy.jpg" alt=""></div>
+    <div class="ik-user-info"><span>Selin Aksoy</span><small>Bilgi İşlem Uzmanı</small></div>
+
+    <a href="javascript:void(0)" 
+       onclick="if(confirm('Oturumu kapatmak istediğinize emin misiniz?')) { window.location.href='admin-login.html'; }" 
+       style="position: absolute; right: 15px; color: white; opacity: 0.8; text-decoration: none; cursor: pointer;">
+        <i class="fa-solid fa-right-from-bracket" style="font-size: 1.1rem;"></i>
+    </a>
+</div>
+    </div>
+
+   <div class="ik-content">
+    <div class="dept-header">
+        <div class="page-title-group">
+            <h1>Bilgi İşlem Operasyon Merkezi</h1>
+            
+        </div>
+
+        <div class="notif-container">
+            <input type="checkbox" id="notif-toggle" aria-hidden="true" style="display:none;">
+            <label for="notif-toggle" class="notif-trigger">
+                <i class="fa-solid fa-bell"></i>
+                <span class="notif-badge">2</span>
+            </label>
+            <div class="notif-dropdown">
+    <h4>Mesaj Merkezi</h4>
+    
+    <div id="notif-incoming-list" class="notif-list">
+        <div class="notif-item" onclick="openReplyModal('SİSTEM', 'Ana sunucu yedeklemesi başarılı bir şekilde tamamlandı.')" style="cursor: pointer;">
+            <span class="notif-status"></span>
+            <strong>SİSTEM</strong>
+            <span>Ana sunucu yedeklemesi başarılı.</span>
+            <small style="display:block; color: #94a3b8; font-size: 0.75rem; margin-top: 5px;">
+                <i class="fa-regular fa-clock"></i> 03:00
+            </small>
+        </div>
+        
+        <div class="notif-item" onclick="openReplyModal('SATIN ALMA', 'Yeni laptoplar teslim alındı. Envanter kaydı için hazırlar.')" style="cursor: pointer;">
+            <span class="notif-status"></span>
+            <strong>SATIN ALMA</strong>
+            <span>Yeni laptoplar teslim alındı.</span>
+            <small style="display:block; color: #94a3b8; font-size: 0.75rem; margin-top: 5px;">
+                <i class="fa-regular fa-clock"></i> 10:20
+            </small>
+        </div>
+    </div>
+
+    <div id="notif-outgoing-list" class="notif-list" style="display:none;">
+        <div class="notif-item">
+            <strong>SİZDEN -> DEPO</strong>
+            <span>Arızalı monitörlerin iade süreci başlatıldı.</span>
+            <small style="display:block; color: #94a3b8; font-size: 0.75rem; margin-top: 5px;">
+                <i class="fa-regular fa-clock"></i> Dün
+            </small>
+        </div>
+    </div>
+
+    <div class="notif-footer">
+    <button type="button" class="notif-action-btn active" onclick="showIncoming()">
+                <i class="fa-solid fa-bell"></i> Gelenler
+            </button>
+        <button type="button" class="notif-action-btn" onclick="showOutgoing()">
+            <i class="fa-solid fa-paper-plane"></i> Gidenler
+        </button>
+    </div>
+</div>
+        </div>
+    </div>
+
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 25px; margin-bottom: 30px;">
+    <div class="card" style="display: flex; align-items: center; gap: 20px; padding: 30px; background: white; border-radius: 24px; box-shadow: 0 10px 25px rgba(0,0,0,0.02);">
+        <div style="background: #eff6ff; color: #3b82f6; width: 60px; height: 60px; border-radius: 18px; display: flex; align-items: center; justify-content: center; font-size: 1.8rem;">
+            <i class="fa-solid fa-users"></i>
+        </div>
+
+        <div>
+            <h4 style="margin: 0; color: #94a3b8; font-size: 0.8rem; letter-spacing: 1px; text-transform: uppercase;">
+                Aktif Kullanıcı
+            </h4>
+            <p style="margin: 8px 0 0 0; font-size: 1.8rem; font-weight: 800; color: #0f172a; display: flex; align-items: center; gap: 10px;">
+                <span id="ustAktifKullaniciSayisi" style="transition: all 0.4s ease; display: inline-block;">0</span>
+
+                <span id="yeniKullaniciRozeti" style="font-size: 0.9rem; color: #10b981; font-weight: 600; display: none;">
+                    +<span id="yeniSayisi">0</span> Yeni
+                </span>
+            </p>
+        </div>
+    </div>
+
+    <div class="card" style="display: flex; align-items: center; gap: 20px; padding: 30px; background: white; border-radius: 24px; box-shadow: 0 10px 25px rgba(0,0,0,0.02);">
+        <div style="background: #f0fdf4; color: #10b981; width: 60px; height: 60px; border-radius: 18px; display: flex; align-items: center; justify-content: center; font-size: 1.8rem;">
+            <i class="fa-solid fa-box-archive"></i>
+        </div>
+        <div>
+            <h4 style="margin: 0; color: #94a3b8; font-size: 0.8rem; letter-spacing: 1px;">ENVANTER GÜCÜ</h4>
+            <p style="margin: 5px 0 0 0; font-size: 1.8rem; font-weight: 800; color: #0f172a;"><span id="toplamEnvanterSayisi">0</span> <span style="font-size: 0.9rem; color: #94a3b8; font-weight: 600;">Toplam Parça</span></p>
+        </div>
+    </div>
+</div>
+
+    <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 25px; margin-bottom: 30px;">
+
+        <div class="card" style="background: white; padding: 35px 25px; border-radius: 28px; text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.02); min-height: 300px; display: flex; flex-direction: column; justify-content: space-between; position: relative;">
+
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; padding: 0 10px;">
+                <button onclick="changeMonth(-1)" id="prevMonth" style="background: none; border: none; color: #cbd5e1; cursor: pointer; font-size: 1.1rem; transition: 0.3s;" onmouseover="this.style.color='#3b82f6'" onmouseout="this.style.color='#cbd5e1'">
+                    <i class="fa-solid fa-chevron-left"></i>
+                </button>
+
+                <div style="text-align: center;">
+                    <h5 style="margin: 0; color: #64748b; font-size: 0.75rem; letter-spacing: 1px; font-weight: 700;">TALEP ÇÖZME HIZI</h5>
+                    <span id="currentMonthName" style="font-size: 1rem; font-weight: 800; color: #0f172a; margin-top: 5px; display: block;">NİSAN 2026</span>
+                </div>
+
+                <button onclick="changeMonth(1)" id="nextMonth" style="background: none; border: none; color: #cbd5e1; cursor: pointer; font-size: 1.1rem; transition: 0.3s; opacity: 0.3;" onmouseover="this.style.color='#3b82f6'" onmouseout="this.style.color='#cbd5e1'" disabled>
+                    <i class="fa-solid fa-chevron-right"></i>
+                </button>
+            </div>
+
+            <div style="position: relative; margin: 0 auto;">
+                <svg width="160" height="160" viewBox="0 0 36 36" style="transform: rotate(-90deg);">
+                    <path d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="#eff6ff" stroke-width="3" />
+                    <path id="progressCircle" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="#3b82f6" stroke-width="3" stroke-dasharray="90, 100" style="transition: stroke-dasharray 0.5s ease;" />
+                </svg>
+                <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-weight: 800; font-size: 1.8rem; color: #1e40af; text-shadow: 0 2px 4px rgba(59, 130, 246, 0.1);">
+                    <span id="progressText">%90</span>
+                </div>
+            </div>
+
+            <div style="margin-top: 25px; display: flex; justify-content: center; gap: 20px; font-size: 0.8rem; color: #94a3b8; font-weight: 600;">
+                <span><i class="fa-solid fa-circle" style="color: #3b82f6; font-size: 0.6rem; margin-right: 6px;"></i> Çözülen</span>
+                <span><i class="fa-solid fa-circle" style="color: #eff6ff; font-size: 0.6rem; margin-right: 6px;"></i> Bekleyen</span>
+            </div>
+        </div>
+
+        <div class="card" style="background: white; padding: 30px; border-radius: 28px; box-shadow: 0 10px 30px rgba(0,0,0,0.02); min-height: 300px; position: relative; display: flex; flex-direction: column; justify-content: space-between;">
+
+            <div style="text-align: center; margin-bottom: 25px;">
+                <h5 style="margin: 0; color: #64748b; font-size: 0.75rem; font-weight: 700; letter-spacing: 1px; text-transform: uppercase;">SİSTEM ÇALIŞMA SÜRESİ</h5>
+                <span style="font-size: 0.95rem; font-weight: 800; color: #0f172a; margin-top: 5px; display: block;" id="suAnkiHaftaAraligi">23 - 29 MART 2026</span>
+            </div>
+
+            <div style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; height: 160px; align-items: flex-end; text-align: center;">
+
+                <div class="bar-container">
+                    <div class="custom-tooltip">Pazartesi: %85</div>
+                    <div class="status-bar" style="width: 28px; height: 115px; background: #1e3a8a;"></div>
+                    <span style="font-size: 0.7rem; color: #94a3b8; font-weight: 700;">PAZ</span>
+                </div>
+
+                <div class="bar-container">
+                    <div class="custom-tooltip">Salı: %90</div>
+                    <div class="status-bar" style="width: 28px; height: 125px; background: #1e40af;"></div>
+                    <span style="font-size: 0.7rem; color: #94a3b8; font-weight: 700;">SAL</span>
+                </div>
+
+                <div class="bar-container">
+                    <div class="custom-tooltip">Çarşamba: %94</div>
+                    <div class="status-bar" style="width: 28px; height: 132px; background: #2563eb;"></div>
+                    <span style="font-size: 0.7rem; color: #94a3b8; font-weight: 700;">ÇAR</span>
+                </div>
+
+                <div class="bar-container">
+                    <div class="custom-tooltip">Perşembe: %97</div>
+                    <div class="status-bar" style="width: 28px; height: 138px; background: #3b82f6;"></div>
+                    <span style="font-size: 0.7rem; color: #94a3b8; font-weight: 700;">PER</span>
+                </div>
+
+                <div class="bar-container">
+                    <div class="custom-tooltip">Bugün: %100 - Stabil</div>
+                    <div class="status-bar" style="width: 28px; height: 145px; background: #22c55e; box-shadow: 0 0 15px rgba(34, 197, 94, 0.3);"></div>
+                    <span style="font-size: 0.7rem; color: #22c55e; font-weight: 800;">BUGÜN</span>
+                </div>
+            </div>
+
+            <div style="margin-top: 20px; text-align: center; border-top: 1px solid #f1f5f9; padding-top: 10px;">
+                <p id="altBilgiNotu" style="font-size: 0.65rem; color: #94a3b8; margin: 0; font-style: italic;">
+                    <i class="fa-solid fa-circle-check" style="color: #22c55e; margin-right: 4px;"></i>
+                    Mart ayı verileri güvenli sunucuda yedeklenmektedir.
+                </p>
+            </div>
+        </div>
+
+
+        <div class="card" style="background: #f8fafc; padding: 30px; border-radius: 28px; box-shadow: 0 10px 30px rgba(0,0,0,0.02); min-height: 280px; border: 1px solid #e2e8f0; display: flex; flex-direction: column; justify-content: space-between;">
+
+            <h5 style="margin: 0 0 25px 0; color: #64748b; font-size: 0.8rem; font-weight: 700; text-align: center; letter-spacing: 1px;">YEDEKLEME GÜVENLİĞİ</h5>
+
+            <div style="display: flex; flex-direction: column; gap: 18px;">
+                <div>
+                    <div style="display: flex; justify-content: space-between; font-size: 0.75rem; margin-bottom: 8px;">
+                        <span style="color: #1e293b; font-weight: 600;">Yerel Sunucu (RAID 5)</span>
+                        <span id="yerelSunucuDurum" style="font-weight: 700; color: #10b981;">YÜKLENİYOR</span>
+                    </div>
+                    <div style="height: 8px; background: #e2e8f0; border-radius: 10px; overflow: hidden;">
+                        <div id="yerelSunucuBar" style="width: 100%; height: 100%; background: #10b981; border-radius: 10px;"></div>
+                    </div>
+                </div>
+
+                <div>
+                    <div style="display: flex; justify-content: space-between; font-size: 0.75rem; margin-bottom: 8px;">
+                        <span style="color: #1e293b; font-weight: 600;">Bulut (AWS S3)</span>
+                        <span id="bulutDolulukOraniText" style="font-weight: 700; color: #3b82f6;">%0 DOLU</span>
+                    </div>
+                    <div style="height: 8px; background: #e2e8f0; border-radius: 10px; overflow: hidden;">
+                        <div id="bulutBarInner" style="width: 88%; height: 100%; background: #3b82f6; border-radius: 10px;"></div>
+                    </div>
+                </div>
+
+                <div>
+                    <div style="display: flex; justify-content: space-between; font-size: 0.75rem; margin-bottom: 8px;">
+                        <span style="color: #1e293b; font-weight: 600;">Harici Yedek (Off-site)</span>
+                        <span id="hariciYedekDurum" style="font-weight: 700; color: #f59e0b;">--</span>
+                    </div>
+                    <div style="height: 8px; background: #e2e8f0; border-radius: 10px; overflow: hidden;">
+                        <div style="width: 65%; height: 100%; background: #f59e0b; border-radius: 10px;"></div>
+                    </div>
+                </div>
+            </div>
+
+            <button onclick="yedeklemeRaporuIndir()" style="margin-top: 25px; width: 100%; padding: 14px; border-radius: 16px; border: none; background: #0f172a; color: white; font-size: 0.75rem; font-weight: 700; cursor: pointer; transition: 0.3s; display: flex; align-items: center; justify-content: center; gap: 8px;" onmouseover="this.style.background='#1e293b'; this.style.transform='translateY(-2px)'" onmouseout="this.style.background='#0f172a'; this.style.transform='translateY(0)'">
+                <i class="fa-solid fa-file-export"></i>
+                SİSTEM LOGLARINI İNDİR (PDF)
+            </button>
+        </div>
+
+        <input type="checkbox" id="note-box-toggle" aria-hidden="true">
+        <label for="note-box-toggle" class="quick-note-btn" aria-label="Birimler arası not"><i class="fa-solid fa-paper-plane"></i></label>
+        <div class="msg-box">
+            <div class="msg-box-head">
+                <span>Birimler Arası Not</span>
+                <label for="note-box-toggle" class="note-close-btn" aria-label="Kapat"><i class="fa-solid fa-xmark"></i></label>
+            </div>
+            <form action="#note-sent" method="get">
+                <p style="font-size:0.8rem; color:#94a3b8; margin-bottom:8px;">Hedef Birim (çoklu seçebilirsiniz)</p>
+                <ul class="target-list">
+                    <li><input type="checkbox" name="target" id="t1" value="İnsan Kaynakları"><label for="t1">İnsan Kaynakları</label></li>
+                    <li><input type="checkbox" name="target" id="t2" value="Satın Alma"><label for="t2">Satın Alma</label></li>
+                    <li><input type="checkbox" name="target" id="t3" value="Hukuk"><label for="t3">Hukuk</label></li>
+                    <li><input type="checkbox" name="target" id="t4" value="İdari İşler"><label for="t4">İdari İşler</label></li>
+                </ul>
+                <textarea name="note" rows="4" maxlength="1000" placeholder="Notunuzu yazın..."></textarea>
+                <button type="submit" class="btn-send">Notu Gönder</button>
+            </form>
+        </div>
+
+
+        <div id="personel-takip-bar" style="
+    grid-column: 1 / -1;
+    margin: 20px 0 30px 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 22px 35px;
+    background: #ffffff;
+    border-radius: 28px;
+    border: 1px solid #f1f5f9;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.02);
+    width: 100%;
+    box-sizing: border-box;">
+
+            <div style="display: flex; align-items: center; gap: 20px;">
+                <div style="width: 50px; height: 50px; background: #f0fdf4; border-radius: 16px; display: flex; align-items: center; justify-content: center; color: #10b981; font-size: 1.4rem; border: 1px solid #d1fae5;">
+                    <i class="fa-solid fa-id-card-clip"></i>
+                </div>
+
+                <div>
+                    <span style="font-size: 1.05rem; color: #0f172a; font-weight: 800; display: block; letter-spacing: -0.3px;">Personel Erişim Kontrolü</span>
+                    <small style="color: #94a3b8; font-size: 0.8rem; font-weight: 600;">
+                        <span style="color: #10b981;"><i class="fa-solid fa-circle" style="font-size: 0.5rem; margin-right: 5px;"></i><span id="aktifPersonelSayisi">0</span> Personel İçeride</span>
+                        | Tüm birimler aktif olarak izleniyor.
+                    </small>
+                </div>
+            </div>
+
+            <button onclick="openPersonelModal()" style="
+    background: #10b981;
+    color: white;
+    border: none;
+    padding: 14px 30px;
+    border-radius: 16px;
+    font-size: 0.85rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: 0.3s;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    box-shadow: 0 8px 20px rgba(16, 185, 129, 0.2);"
+                    onmouseover="this.style.transform='scale(1.03)'; this.style.background='#059669'"
+                    onmouseout="this.style.transform='scale(1)'; this.style.background='#10b981'">
+                DETAYLI TAKİP PANELİ <i class="fa-solid fa-arrow-right-to-bracket"></i>
+            </button>
+
+            <div id="replyModal" class="reply-modal">
+                <div class="reply-content">
+                    <div class="reply-header">
+                        <i class="fa-solid fa-reply"></i>
+                        <h3 id="replyTarget">HUKUK Birimine Cevap Yaz</h3>
+                    </div>
+
+                    <div id="replyOriginalMessage" class="original-msg-preview">
+                        "5 adet yeni iş sözleşmesi onaylandı."
+                    </div>
+
+                    <textarea id="replyText" class="reply-textarea" placeholder="Cevabınızı buraya yazın..."></textarea>
+
+                    <div class="reply-actions">
+                        <button class="btn-reply-cancel" onclick="closeReplyModal()">Vazgeç</button>
+                        <button class="btn-reply-send" onclick="sendReply()">Cevapla</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+
+
+
+
+        <div id="pModal" class="personel-modal" style="z-index: 999999; display: none;">
+            <div class="modal-content" style="border-radius: 24px; padding: 35px; background: #ffffff;">
+                <button class="close-modal" onclick="closePersonelModal()"><i class="fa-solid fa-xmark"></i></button>
+
+                <div style="margin-bottom: 30px;">
+                    <h2 style="margin: 0; color: #0f172a; font-weight: 800; font-size: 1.7rem;">Erişim Kontrol Merkezi</h2>
+                    <p style="color: #94a3b8; font-size: 0.85rem; margin-top: 5px;">Personel sistem bağlantıları anlık izleniyor.</p>
+                </div>
+
+                <div class="dept-menu" style="display: flex; gap: 5px; background: #f1f5f9; padding: 5px; border-radius: 14px; margin-bottom: 25px;">
+                    <button class="dept-btn active" onclick="filterByDept('TÜMÜ', this)">TÜMÜ</button>
+                    <button class="dept-btn" onclick="filterByDept('BİLGİ İŞLEM', this)">BİLGİ İŞLEM</button>
+                    <button class="dept-btn" onclick="filterByDept('SATIN ALMA', this)">SATIN ALMA</button>
+                    <button class="dept-btn" onclick="filterByDept('İDARİ İŞLER', this)">İDARİ İŞLER</button>
+                    <button class="dept-btn" onclick="filterByDept('HUKUK', this)">HUKUK</button>
+                    <button class="dept-btn" onclick="filterByDept('İNSAN KAYNAKLARI', this)">İNSAN KAYNAKLARI</button>
+                </div>
+
+                <div style="display: flex; gap: 20px; margin-bottom: 25px;">
+                    <div style="position: relative; flex: 1;">
+                        <i class="fa-solid fa-magnifying-glass" style="position: absolute; left: 18px; top: 15px; color: #cbd5e1;"></i>
+                        <input type="text" id="pSearch" onkeyup="filterTable()" placeholder="Personel ismi ara..." style="width: 100%; padding: 14px 14px 14px 50px; border-radius: 14px; border: 1px solid #e2e8f0; outline: none;">
+                    </div>
+                    <div style="display: flex; gap: 10px; align-items: center; background: #f8fafc; padding: 5px 15px; border-radius: 14px; border: 1px solid #e2e8f0;">
+                        <label style="font-size: 0.8rem; font-weight: 700; color: #64748b; display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                            <input type="checkbox" id="checkIceride" checked onchange="filterTable()" style="accent-color: #10b981;"> İÇERİDE
+                        </label>
+                        <label style="font-size: 0.8rem; font-weight: 700; color: #64748b; display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                            <input type="checkbox" id="checkCikis" checked onchange="filterTable()" style="accent-color: #ef4444;"> ÇIKIŞ YAPANLAR
+                        </label>
+                    </div>
+                </div>
+
+                <div class="p-table-container" style="border-radius: 16px; border: 1px solid #f1f5f9; overflow-y: auto; max-height: 400px;">
+                    <table class="p-table" id="personelTable" style="width: 100%; border-collapse: collapse;">
+                        <thead style="background: #f8fafc; position: sticky; top: 0; z-index: 5;">
+                            <tr>
+                                <th style="padding: 18px; text-align: left; font-size: 0.75rem; color: #94a3b8;">PERSONEL AD SOYAD</th>
+                                <th style="padding: 18px; text-align: left; font-size: 0.75rem; color: #94a3b8;">DEPARTMAN</th>
+                                <th style="padding: 18px; text-align: left; font-size: 0.75rem; color: #94a3b8;">GİRİŞ ZAMANI</th>
+                                <th style="padding: 18px; text-align: center; font-size: 0.75rem; color: #94a3b8;">DURUM</th>
+                                <th style="padding: 18px; text-align: center; font-size: 0.75rem; color: #94a3b8;">AKSİYON</th>
+                            </tr>
+                        </thead>
+                        <tbody id="pTableBody">
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
+
+
+        <script>
+            let gidenMesajlar = [];
+            /* 1. MODAL VE BİLDİRİM FONKSİYONLARI */
+            function showIncoming() {
+                document.getElementById('notif-incoming-list').style.display = 'block';
+                document.getElementById('notif-outgoing-list').style.display = 'none';
+                const btns = document.querySelectorAll('.notif-action-btn');
+                btns.forEach(btn => btn.classList.remove('active'));
+                if (btns[0]) btns[0].classList.add('active');
+            }
+
+
+            function updateOutgoingList() {
+                const listContainer = document.getElementById('notif-outgoing-list');
+                if (!listContainer) return;
+
+                // Ortak hafızadan (localStorage) mesajları çekme
+                const gidenlerHafiza = JSON.parse(localStorage.getItem('guardia_giden_mesajlar') || '[]');
+
+                listContainer.innerHTML = "";
+
+                if (gidenlerHafiza.length === 0) {
+                    listContainer.innerHTML = '<div class="notif-item"><span>Henüz gönderilmiş bir not bulunmuyor.</span></div>';
+                } else {
+                    gidenlerHafiza.forEach(msg => {
+                        listContainer.innerHTML += `
+                        <div class="notif-item">
+                            <strong>SİZDEN -> ${msg.hedef}</strong>
+                            <span>${msg.icerik}</span>
+                            <small style="display:block; color: #94a3b8; font-size: 0.75rem; margin-top: 5px;">
+                                <i class="fa-regular fa-clock"></i> ${msg.saat}
+                            </small>
+                        </div>
+                    `;
+                    });
+                }
+            }
+            function showOutgoing() {
+
+                updateOutgoingList();
+                document.getElementById('notif-incoming-list').style.display = 'none';
+                document.getElementById('notif-outgoing-list').style.display = 'block';
+                const btns = document.querySelectorAll('.notif-action-btn');
+                btns.forEach(btn => btn.classList.remove('active'));
+                if (btns[1]) btns[1].classList.add('active');
+            }
+
+            function openReplyModal(sender, message) {
+                document.getElementById('replyTarget').innerText = sender + " Birimine Cevap Yaz";
+                document.getElementById('replyOriginalMessage').innerText = '"' + message + '"';
+                document.getElementById('replyModal').style.display = 'flex';
+            }
+
+            function closeReplyModal() {
+                document.getElementById('replyModal').style.display = 'none';
+                document.getElementById('replyText').value = '';
+            }
+
+            /* 2. BİLDİRİM TOAST SİSTEMİ (2 Saniye Görünüp Kaybolan) */
+            function showToast(msg, type = 'success') {
+                const oldToast = document.querySelector('.toast-notification');
+                if (oldToast) oldToast.remove();
+
+                const toast = document.createElement('div');
+                toast.className = 'toast-notification';
+                toast.innerText = msg;
+                const bgColor = type === 'success' ? '#10b981' : '#ef4444';
+
+                toast.style.cssText = `
+                position: fixed; bottom: 30px; right: 90px;
+                background: ${bgColor}; color: white; padding: 12px 24px;
+                font-size: 14px; border-radius: 10px; z-index: 999999;
+                font-weight: 600; box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+                opacity: 0; transition: all 0.4s ease; transform: translateY(20px);
+            `;
+
+                document.body.appendChild(toast);
+                setTimeout(() => {
+                    toast.style.opacity = '1';
+                    toast.style.transform = 'translateY(0)';
+                }, 100);
+
+                setTimeout(() => {
+                    toast.style.opacity = '0';
+                    toast.style.transform = 'translateY(20px)';
+                    setTimeout(() => toast.remove(), 400);
+                }, 2000); // 2 saniye sonra kaybolur
+            }
+
+            function sendReply() {
+                const replyInput = document.getElementById('replyText');
+                if (!replyInput) return;
+                const text = replyInput.value.trim();
+                if (text === "") {
+                    showToast("Lütfen boş bir mesaj göndermeyin.", "error");
+                    return;
+                }
+                const target = document.getElementById('replyTarget').innerText.replace(" Cevap Yaz", "");
+                showToast(target + " birimine cevabınız iletildi!");
+                closeReplyModal();
+            }
+
+            document.addEventListener('DOMContentLoaded', function () {
+                tabloyuGuncelle();
+                const noteToggle = document.getElementById('note-box-toggle');
+                const notifToggle = document.getElementById('notif-toggle');
+                const msgBox = document.querySelector('.msg-box');
+                const quickNoteBtn = document.querySelector('.quick-note-btn');
+                const notifContainer = document.querySelector('.notif-container');
+                const notifTrigger = document.querySelector('.notif-trigger');
+                const noteForm = document.querySelector('.msg-box form');
+
+                if (quickNoteBtn) {
+                    quickNoteBtn.addEventListener('click', function (e) {
+                        e.preventDefault(); e.stopPropagation();
+                        noteToggle.checked = !noteToggle.checked;
+                    });
+                }
+
+                if (notifTrigger) {
+                    notifTrigger.addEventListener('click', function (e) { e.stopPropagation(); });
+                }
+
+                [msgBox, notifContainer].forEach(box => {
+                    if (box) { box.addEventListener('click', function (e) { e.stopPropagation(); }); }
+                });
+
+                document.addEventListener('click', function () {
+                    if (noteToggle) noteToggle.checked = false;
+                    if (notifToggle) notifToggle.checked = false;
+                });
+
+                // MESAJ GÖNDERME VE HAFIZAYA KAYDETME
+                if (noteForm) {
+                    noteForm.addEventListener('submit', function (e) {
+                        e.preventDefault();
+                        const targets = noteForm.querySelectorAll('input[name="target"]:checked');
+                        const noteTextarea = noteForm.querySelector('textarea[name="note"]');
+
+                        if (targets.length === 0) {
+                            showToast("Lütfen en az bir birim seçin!", "error");
+                            return;
+                        }
+                        if (noteTextarea.value.trim() === "") {
+                            showToast("Lütfen mesajınızı yazın.", "error");
+                            return;
+                        }
+
+                        // 1. Mesaj Verisini Oluştur
+                        const yeniNot = {
+                            hedef: Array.from(targets).map(t => t.value).join(", "),
+                            icerik: noteTextarea.value,
+                            saat: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+                        };
+
+                        // 2. SİHİRLİ DOKUNUŞ: Ortak Hafızaya (localStorage) Kaydet
+                        let tumGidenler = JSON.parse(localStorage.getItem('guardia_giden_mesajlar') || '[]');
+                        tumGidenler.unshift(yeniNot); // En başa ekle
+                        localStorage.setItem('guardia_giden_mesajlar', JSON.stringify(tumGidenler));
+
+                        // 3. Arayüz İşlemleri
+                        noteToggle.checked = false;
+                        showToast("Notunuz seçilen birimlere iletildi!", "success");
+                        noteForm.reset();
+
+                        // 4. Listeyi Hemen Tazele (Hafızadan okuyarak)
+                        updateOutgoingList();
+                    });
+                }
+            });
+
+
+
+            let monthData = []; // Backend'den gelecek dinamik liste
+            let currentMonthIndex = 0; // Başlangıçta en güncel ay (sonuncu eleman)
+
+
+
+            async function talepVerileriniGuncelle() {
+                try {
+                    const response = await fetch('https://localhost:7183/api/BiEnvanterKontrolcusu/talep-istatistikleri');
+
+                    if (!response.ok) throw new Error("Backend'den talep verileri alınamadı.");
+
+                    // Tarayıcı ekranında gördüğün o JSON listesi buraya düşer
+                    const data = await response.json();
+
+                    // 1. Backend'deki küçük harfli (camelCase) isimleri eşliyoruz
+                    monthData = data.map(item => ({
+                        name: item.ayAdi,    // Backend'deki "ayAdi"
+                        progress: item.oran, // Backend'deki "oran"
+                        cozulen: item.cozulen,
+                        bekleyen: item.bekleyen
+                    }));
+
+                    // 2. Eğer veri varsa, başlangıçta listenin en sonundaki (güncel) ayı göster
+                    if (monthData.length > 0) {
+                        currentMonthIndex = monthData.length - 1;
+                        updateChart();
+                    }
+
+                } catch (error) {
+                    console.error("Talep verileri işlenirken bir hata oluştu:", error);
+                }
+            }
+
+            function updateChart() {
+                if (monthData.length === 0) return; // Veri yoksa çalışma
+
+                const data = monthData[currentMonthIndex];
+                document.getElementById('currentMonthName').innerText = data.name;
+                document.getElementById('progressText').innerText = `%${data.progress}`;
+                const circle = document.getElementById('progressCircle');
+                if (circle) {
+                    circle.style.strokeDasharray = `${data.progress}, 100`;
+                }
+
+                const prevBtn = document.getElementById('prevMonth');
+                const nextBtn = document.getElementById('nextMonth');
+
+                // Geri Ok: İlk aydayken kapat (Index 0)
+                prevBtn.disabled = (currentMonthIndex === 0);
+                prevBtn.style.opacity = prevBtn.disabled ? '0.3' : '1';
+
+                // İleri Ok: En güncel (son) aydayken kapat
+                nextBtn.disabled = (currentMonthIndex === monthData.length - 1);
+                nextBtn.style.opacity = nextBtn.disabled ? '0.3' : '1';
+            }
+
+            function changeMonth(direction) {
+                if (direction === -1 && currentMonthIndex > 0) {
+                    currentMonthIndex--;
+                } else if (direction === 1 && currentMonthIndex < monthData.length - 1) {
+                    currentMonthIndex++;
+                }
+                updateChart();
+            }
+
+            function downloadLogs() {
+                alert('Log raporu hazırlanıyor... \nMart 2026_Yedekleme_Raporu.pdf indiriliyor.');
+                // Buraya gerçek bir indirme kodu veya modal açma kodu gelebilir
+            }
+
+            function calismaGunleriniGuncelle() {
+                const simdi = new Date();
+                const gun = simdi.getDay(); // 0: Pazar, 1: Pazartesi...
+
+                // Pazartesiye olan uzaklığı hesapla (Pazar ise 6 gün geri, değilse gün-1 geri)
+                const pazartesiFark = (gun === 0) ? -6 : 1 - gun;
+
+                const pazartesi = new Date(simdi);
+                pazartesi.setDate(simdi.getDate() + pazartesiFark);
+
+                const cuma = new Date(pazartesi);
+                cuma.setDate(pazartesi.getDate() + 4); // Pazartesi + 4 gün = Cuma
+
+                // Formatlama
+                const gunSecenek = { day: 'numeric' };
+                const tamSecenek = { day: 'numeric', month: 'long' };
+
+                const baslangic = pazartesi.toLocaleDateString('tr-TR', gunSecenek);
+                const bitis = cuma.toLocaleDateString('tr-TR', tamSecenek);
+
+                // Ekrana Yazdır: "13 - 17 Nisan" (Bugün 18 Nisan Cumartesi olsa da hafta içini verir)
+                const tarihMetni = `${baslangic} - ${bitis} ${cuma.getFullYear()}`;
+                const element = document.getElementById('suAnkiHaftaAraligi');
+
+                if (element) {
+                    element.innerText = tarihMetni;
+                }
+            }
+
+            async function sistemSuresiniGuncelle() {
+                try {
+                    const response = await fetch('https://localhost:7183/api/BiEnvanterKontrolcusu/sistem-calisma-suresi');
+                    const data = await response.json();
+
+                    const simdi = new Date();
+                    const mevcutAy = simdi.toLocaleDateString('tr-TR', { month: 'long' }); // Örn: "Nisan"
+
+                    const altNot = document.getElementById('altBilgiNotu');
+                    if (altNot) {
+                        altNot.innerText = `${mevcutAy} ayı verileri güvenli sunucuda yedeklenmektedir.`;
+                    }
+
+                    const barGrid = document.querySelector('.card:nth-child(2) div[style*="display: grid"]');
+                    if (!barGrid) return;
+
+                    barGrid.innerHTML = "";
+
+                    data.forEach(item => {
+                        const oran = item.aktiflikOrani || 0;
+                        const gun = item.gunAdi || "---";
+                        const detayMetni = item.detay || "";
+
+                        // Renk tonlaması (Görseldeki gibi)
+                        let barColor;
+                        if (oran >= 95) barColor = "#22c55e"; // Yeşil
+                        else if (oran >= 85) barColor = "#2563eb"; // Koyu Mavi
+                        else if (oran >= 70) barColor = "#3b82f6"; // Orta Mavi
+                        else barColor = "#1e3a8a"; // En Koyu Mavi
+
+                        // Cuma gününü veya o anki günü yeşil yapma mantığı
+                        const isToday = gun === "BUGÜN" || gun === "CUM";
+                        if (isToday) barColor = "#22c55e";
+
+                        // Max yükseklik ayarı
+                        const barHeight = (oran * 1.4);
+
+                        barGrid.innerHTML += `
+                <div class="bar-container" style="
+                    display: flex;
+                    flex-direction: column;
+                    align-items: center;
+                    justify-content: flex-end;
+                    height: 170px;
+                    min-width: 55px;
+                    position: relative;
+                ">
+                    <div class="custom-tooltip">${detayMetni}</div>
+
+                    <div class="status-bar" style="
+                        width: 25px;
+                        height: ${barHeight}px;
+                        background: ${barColor};
+                        border-radius: 10px;
+                        transition: height 0.6s ease-in-out;
+                        margin-bottom: 15px;
+                        ${isToday ? 'box-shadow: 0 0 15px rgba(34, 197, 94, 0.3);' : ''}">
+                    </div>
+
+                    <span style="
+                        font-size: 0.85rem;
+                        color: ${isToday ? '#22c55e' : '#94a3b8'};
+                        font-weight: 700;
+                    ">
+                        ${gun}
+                    </span>
+                </div>
+            `;
+                    });
+                } catch (error) {
+                    console.error("Sistem çalışma süresi güncellenemedi:", error);
+                }
+            }
+
+
+            // 1. Statik veriyi artık API'den alacağız, başlangıçta boş bırakıyoruz
+            let personelData = [];
+            let seciliDepartman = "TÜMÜ";
+
+            async function tabloyuGuncelle() {
+                const body = document.getElementById('pTableBody');
+                const searchInput = document.getElementById('pSearch');
+                const checkIceride = document.getElementById('checkIceride');
+                const checkCikis = document.getElementById('checkCikis');
+
+                // Sayıların yazdığı elementler
+                const ustSayiElem = document.getElementById('ustAktifKullaniciSayisi');
+                const yeniSayiElem = document.getElementById('yeniSayisi');
+                const altSayiElem = document.getElementById('aktifPersonelSayisi');
+
+                if (!body || !searchInput) return;
+
+                try {
+                    let url = 'https://localhost:7183/api/BiEnvanterKontrolcusu/baglantilar';
+
+                    if (seciliDepartman !== "TÜMÜ") {
+                        url += `?departman=${encodeURIComponent(seciliDepartman)}`;
+                    }
+
+                    const response = await fetch(url);
+                    if (!response.ok) throw new Error("Backend bağlantısı sağlanamadı!");
+
+                    // VERİYİ BİR KEZ OKUYORUZ
+                    const gelenVeri = await response.json();
+
+                    // --- SAYI GÜNCELLEME MANTIĞI ---
+                    const aktifler = gelenVeri.filter(p => p.baglantiDurumu === "Aktif");
+                    const pasifler = gelenVeri.filter(p => p.baglantiDurumu === "Pasif");
+
+                    if (ustSayiElem) ustSayiElem.innerText = aktifler.length;
+                    if (altSayiElem) altSayiElem.innerText = aktifler.length;
+                    if (yeniSayiElem) yeniSayiElem.innerText = pasifler.length; // Pasifleri 'Yeni' bekleyen gibi gösterdik
+
+                    // --- TABLO DOLDURMA MANTIĞI ---
+                    body.innerHTML = "";
+                    const aramaMetni = searchInput.value.toLowerCase().trim();
+                    const icerideSecili = checkIceride.checked;
+                    const cikisSecili = checkCikis.checked;
+
+                    gelenVeri.forEach(p => {
+                        const adUyuyor = p.personelAdSoyad.toLowerCase().includes(aramaMetni);
+                        const durumUyuyor = (p.baglantiDurumu === "Aktif" && icerideSecili) ||
+                            (p.baglantiDurumu === "Pasif" && cikisSecili);
+
+                        if (adUyuyor && durumUyuyor) {
+                            const isAktif = p.baglantiDurumu === "Aktif";
+                            const renkStili = isAktif ? "background:#d1fae5; color:#065f46;" : "background:#fee2e2; color:#991b1b;";
+                            const noktaRengi = isAktif ? "#10b981" : "#ef4444";
+
+                            body.innerHTML += `
+                            <tr style="border-bottom: 1px solid #f8fafc;">
+                                <td style="padding: 20px 18px; font-weight: 700; color: #0f172a;">${p.personelAdSoyad}</td>
+                                <td style="padding: 20px 18px; color: #64748b; font-weight: 600;">${p.departman}</td>
+                                <td style="padding: 20px 18px; font-weight: 700; color: #0f172a;">${p.sonErisimTarihi}</td>
+                                <td style="padding: 20px 18px; text-align: center;">
+                                    <span style="display: inline-flex; align-items: center; gap: 8px; ${renkStili} padding: 6px 14px; border-radius: 10px; font-size: 0.7rem; font-weight: 800; min-width: 100px; justify-content: center;">
+                                        <span style="width: 6px; height: 6px; background: ${noktaRengi}; border-radius: 50%;"></span> ${p.baglantiDurumu.toUpperCase()}
+                                    </span>
+                                </td>
+                                <td style="padding: 20px 18px; text-align: center;">
+                                    <button onclick="alert('${p.personelAdSoyad} detayları')" style="background: #f1f5f9; border: none; padding: 8px 15px; border-radius: 8px; color: #475569; font-size: 0.7rem; font-weight: 700; cursor: pointer;">
+                                        DETAY
+                                    </button>
+                                </td>
+                            </tr>
+                        `;
+                        }
+                    });
+
+                } catch (error) {
+                    console.error("Hata:", error);
+                    if (body) body.innerHTML = `<tr><td colspan="5" style="text-align:center; padding:30px; color:#ef4444;">⚠️ Sunucu Hatası.</td></tr>`;
+                }
+            }
+
+            async function istatistikleriGuncelle() {
+                try {
+                    // 1. Toplam Envanter Özetini Çek
+                    const resOzet = await fetch('https://localhost:7183/api/BiEnvanterKontrolcusu/ozet');
+                    const ozetData = await resOzet.json();
+
+                    const envanterSayiElem = document.getElementById('toplamEnvanterSayisi');
+                    if (envanterSayiElem) envanterSayiElem.innerText = ozetData.toplamParca;
+
+                    // 2. Son 24 Saat Zimmet Sayısını Çek (Yeni eklediğin endpoint)
+                    const resZimmet = await fetch('https://localhost:7183/api/BiEnvanterKontrolcusu/son24saat-zimmet-sayisi');
+                    const zimmetSayisi = await resZimmet.json();
+
+                    // Üstteki "Aktif Kullanıcı" yanındaki rozeti güncelle
+                    const usrRozet = document.getElementById('yeniKullaniciRozeti');
+                    const usrSayi = document.getElementById('yeniSayisi');
+                    if (usrRozet && usrSayi) {
+                        if (zimmetSayisi > 0) {
+                            usrRozet.style.display = 'inline-flex';
+                            usrSayi.innerText = zimmetSayisi;
+                        } else {
+                            usrRozet.style.display = 'none';
+                        }
+                    }
+
+                    // Envanter kartındaki mavi rozeti güncelle
+                    const envRozet = document.getElementById('yeniZimmetRozeti');
+                    const envSayi = document.getElementById('yeniZimmetSayisi');
+                    if (envRozet && envSayi) {
+                        if (zimmetSayisi > 0) {
+                            envRozet.style.display = 'inline-flex';
+                            envSayi.innerText = zimmetSayisi;
+                        } else {
+                            envRozet.style.display = 'none';
+                        }
+                    }
+
+                } catch (error) {
+                    console.error("İstatistikler yüklenirken hata:", error);
+                }
+            }
+
+
+            async function yedeklemeIstatisikleriGuncelle() {
+                try {
+                    // NOT: URL'deki Kontrolcü adını backend'deki yeni adıyla değiştirmeyi unutma!
+                    const response = await fetch('https://localhost:7183/api/BiEnvanterKontrolcusu/yedekleme-ozeti');
+                    const data = await response.json();
+
+                    // 1. Yerel Sunucu Güncelleme
+                    const yerelText = document.getElementById('yerelSunucuDurum');
+                    if (yerelText) yerelText.innerText = data.yerelSunucuDurum;
+
+                    // 2. Bulut Güncelleme
+                    const bulutText = document.getElementById('bulutDolulukOraniText');
+                    const bulutBar = document.getElementById('bulutBarInner');
+                    if (bulutText) bulutText.innerText = `%${data.bulutDolulukOrani} DOLU`;
+                    if (bulutBar) bulutBar.style.width = `${data.bulutDolulukOrani}%`;
+
+                    // 3. Harici Yedek Güncelleme
+                    const hariciText = document.getElementById('hariciYedekDurum');
+                    if (hariciText) hariciText.innerText = data.hariciYedekDurum;
+
+                } catch (error) {
+                    console.error("Yedekleme verileri senkronize edilemedi:", error);
+                }
+            }
+
+            async function yedeklemeRaporuIndir() {
+                const { jsPDF } = window.jspdf;
+                const doc = new jsPDF();
+
+                try {
+                    // 1. Backend'den güncel yedekleme özetini çek
+                    // Not: URL'yi kendi çalışan URL'nle (BiEnvanter veya BiYedekleme) eşitle
+                    const response = await fetch('https://localhost:7183/api/BiEnvanterKontrolcusu/yedekleme-ozeti');
+                    const data = await response.json();
+
+                    // 2. PDF Tasarımı
+                    doc.setFont("helvetica", "bold");
+                    doc.setFontSize(18);
+                    doc.text("GUARDIA BI - SISTEM YEDEKLEME RAPORU", 14, 20);
+
+                    doc.setFontSize(10);
+                    doc.setFont("helvetica", "normal");
+                    doc.setTextColor(100);
+                    doc.text(`Rapor Olusturma Tarihi: ${new Date().toLocaleString('tr-TR')}`, 14, 28);
+                    doc.line(14, 32, 196, 32); // Araya bir çizgi çekelim
+
+                    // 3. Verileri Tablo Formatına Hazırla
+                    // Backend'den gelen verileri tablo satırlarına dönüştürüyoruz
+                    const tabloVerisi = [
+                        ["Birim / Sistem", "Durum / Doluluk", "Aciklama"],
+                        ["Yerel Sunucu (RAID 5)", data.yerelSunucuDurum, "Sistem lokal yedekleme ünitesi"],
+                        ["Bulut (AWS S3)", `%${data.bulutDolulukOrani} DOLU`, "Bulut tabanli depolama alani"],
+                        ["Harici Yedek (Off-site)", data.hariciYedekDurum, "Fiziksel harici yedekleme durumu"]
+                    ];
+
+                    // 4. Tabloyu Oluştur
+                    doc.autoTable({
+                        startY: 40,
+                        head: [tabloVerisi[0]],
+                        body: tabloVerisi.slice(1),
+                        theme: 'striped',
+                        headStyles: { fillColor: [41, 128, 185] }, // Kurumsal mavi
+                        styles: { font: "helvetica", fontSize: 10, cellPadding: 5 }
+                    });
+
+                    // 5. Alt Bilgi
+                    const finalY = doc.lastAutoTable.finalY + 10;
+                    doc.setFontSize(9);
+                    doc.text("Bu rapor Guardia BI sistemi tarafindan otomatik olarak üretilmistir.", 14, finalY);
+
+                    // 6. PDF'i İndir
+                    doc.save(`Yedekleme_Durum_Raporu_${new Date().toLocaleDateString()}.pdf`);
+
+                } catch (error) {
+                    console.error("PDF oluşturulurken veri çekilemedi:", error);
+                    alert("Bağlantı hatası: Yedekleme verileri backend'den alınamadı.");
+                }
+            }
+
+            // --- KRİTİK: SAYFA AÇILDIĞINDA OTOMATİK ÇALIŞTIR ---
+            document.addEventListener('DOMContentLoaded', () => {
+                tabloyuGuncelle();
+                istatistikleriGuncelle();
+                talepVerileriniGuncelle();
+                sistemSuresiniGuncelle();
+                calismaGunleriniGuncelle();
+                yedeklemeIstatisikleriGuncelle();
+            });
+
+
+
+            // 3. Departman Butonlarını Çalıştıran Fonksiyon
+            function filterByDept(dept, btn) {
+                seciliDepartman = dept;
+                // Butonların aktiflik stilini temizle
+                document.querySelectorAll('.dept-btn').forEach(b => {
+                    b.classList.remove('active');
+                });
+                // Tıklanan butonu aktif yap
+                btn.classList.add('active');
+                tabloyuGuncelle();
+            }
+
+            // 4. Arama ve Checkbox'lar için Tetikleyici
+            function filterTable() {
+                tabloyuGuncelle();
+            }
+
+            // Modalı açan ana fonksiyon
+            function openPersonelPanel() {
+                const modal = document.getElementById('pModal');
+                if (modal) {
+                    modal.style.display = 'flex';
+                    tabloyuGuncelle(); // Açıldığında tabloyu doldurur
+                }
+            }
+            /* PERSONEL PANELİ FONKSİYONLARI */
+            function openPersonelModal() {
+                const modal = document.getElementById('pModal');
+                if (modal) {
+                    modal.style.setProperty('display', 'flex', 'important');
+                    tabloyuGuncelle(); // BU SATIRI EKLEDİK: Tabloyu doldurur
+                } else {
+                    alert("Hata: pModal ID'li eleman bulunamadı!");
+                }
+            }
+
+            function closePersonelModal() {
+                const modal = document.getElementById('pModal');
+                if (modal) {
+                    modal.style.display = 'none';
+                }
+            }
+
+            // Modal dışına (boşluğa) tıklayınca kapatma - Diğer kodlarla çakışmaz
+            window.addEventListener('click', function (e) {
+                const modal = document.getElementById('pModal');
+                if (e.target === modal) {
+                    closePersonelModal();
+                }
+            });
+
+        </script>
+</body>
+</html>

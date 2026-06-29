@@ -1,0 +1,800 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Guardia | Sipariş ve Lojistik</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/ik-sidebar.css">
+    <link rel="stylesheet" href="css/dept-common.css">
+    <style>
+        :root { --sidebar: #0f172a; --text-main: #1e293b; --text-sub: #64748b; --white: #fff; }
+        .hero { margin-bottom: 24px; }
+        .hero h2 { margin: 0 0 6px 0; font-size: 1.5rem; color: var(--sidebar); }
+        .hero p { margin: 0; font-size: 0.9rem; color: var(--text-sub); }
+        .data-table-box { background: var(--white); padding: 24px; border-radius: 20px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); }
+        table { width: 100%; border-collapse: collapse; }
+        th { text-align: left; padding: 14px; border-bottom: 2px solid #f1f5f9; color: #64748b; font-size: 0.9rem; }
+        td { padding: 14px; border-bottom: 1px solid #f1f5f9; font-size: 0.9rem; }
+        .badge { padding: 5px 12px; border-radius: 20px; font-size: 0.75rem; font-weight: 600; }
+        .badge.hazir { background: #fef3c7; color: #b45309; }
+        .badge.gumruk { background: #e0e7ff; color: #3730a3; }
+        .badge.yolda { background: #dbeafe; color: #1d4ed8; }
+        .badge.depo { background: #dcfce7; color: #166534; }
+        .badge.gecikti {
+    background: #fee2e2;
+    color: #ef4444;
+}
+/* Progress Bar (Süreç Takibi) */
+.progress-container {
+    width: 100%;
+    background-color: #f1f5f9;
+    border-radius: 10px;
+    margin-top: 8px;
+    height: 6px;
+    position: relative;
+}
+.progress-bar {
+    height: 100%;
+    border-radius: 10px;
+   
+}
+/* Timeline (Zaman Çizelgesi) Tasarımı */
+.timeline {
+    position: relative;
+    padding: 20px 0;
+    list-style: none;
+}
+.timeline::before {
+    content: '';
+    position: absolute;
+    top: 0; bottom: 0; left: 31px;
+    width: 2px;
+    background: #e2e8f0;
+}
+.timeline-item {
+    position: relative;
+    margin-bottom: 20px;
+    padding-left: 60px;
+}
+.timeline-icon {
+    position: absolute;
+    left: 20px;
+    width: 24px; height: 24px;
+    background: white;
+    border: 2px solid #3b82f6;
+    border-radius: 50%;
+    z-index: 1;
+}
+.timeline-item.completed .timeline-icon {
+    background: #3b82f6;
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+}
+.timeline-content h4 { margin: 0; font-size: 0.95rem; color: #1e293b; }
+.timeline-content p { margin: 4px 0 0; font-size: 0.85rem; color: #64748b; }
+
+/* Tablo sütunlarını sabitleme ve kaymayı önleme */
+#siparisTablosu {
+    table-layout: fixed; 
+    width: 100%;
+}
+
+#siparisTablosu th:nth-child(1), #siparisTablosu td:nth-child(1) { width: 12%; }
+#siparisTablosu th:nth-child(2), #siparisTablosu td:nth-child(2) { width: 22%; }
+#siparisTablosu th:nth-child(3), #siparisTablosu td:nth-child(3) { width: 13%; }
+#siparisTablosu th:nth-child(4), #siparisTablosu td:nth-child(4) { width: 15%; }
+#siparisTablosu th:nth-child(5), #siparisTablosu td:nth-child(5) { width: 23%; }
+#siparisTablosu th:nth-child(6), #siparisTablosu td:nth-child(6) { width: 15%; }
+
+#siparisTablosu td {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+/* İlerleme çubuğu (progress-bar) için renk sınıfları */
+.bg-hazir { background: #f59e0b !important; }   /* Turuncu/Sarı */
+.bg-yolda { background: #3b82f6 !important; }   /* Mavi */
+.bg-gumruk { background: #a855f7 !important; }  /* Mor */
+.bg-depo { background: #22c55e !important; }    /* Yeşil */
+.bg-gecikti { background: #ef4444 !important; }
+
+        /* Üst sabit; tablo alanı kayar, çubuk gizli */
+        .ik-content.sa-takip-page {
+            box-sizing: border-box;
+            height: 100vh;
+            max-height: 100vh;
+            overflow: hidden !important;
+            display: flex;
+            flex-direction: column;
+            min-height: 0;
+        }
+        .ik-content.sa-takip-page > .dept-header,
+        .ik-content.sa-takip-page > .sa-takip-toolbar {
+            flex-shrink: 0;
+        }
+        .ik-content.sa-takip-page > .data-table-box {
+            flex: 1;
+            min-height: 0;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            padding: 16px 20px;
+        }
+        .sa-takip-table-scroll {
+            flex: 1;
+            min-height: 0;
+            overflow: auto;
+            overscroll-behavior: contain;
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+        .sa-takip-table-scroll::-webkit-scrollbar {
+            display: none;
+        }
+        #siparisTablosu thead th {
+            position: sticky;
+            top: 0;
+            z-index: 2;
+            background: #fff;
+            box-shadow: 0 1px 0 #f1f5f9;
+        }
+        .ik-content.sa-takip-page > #note-sent {
+            flex-shrink: 0;
+        }
+
+    </style>
+
+</head>
+<body class="ik-layout">
+    <div class="ik-sidebar">
+        <h2>🛡️ Guardia SA</h2>
+        <ul class="ik-nav-links">
+            <li><a href="sa-index.html" style="text-decoration:none;color:inherit;display:flex;align-items:center;gap:12px;"><i class="fa-solid fa-chart-line"></i> Genel Bakış</a></li>
+            <li><a href="sa-talepler.html" style="text-decoration:none;color:inherit;display:flex;align-items:center;gap:12px;"><i class="fa-solid fa-cart-shopping"></i> Satın Alma Talepleri</a></li>
+            <li><a href="sa-onay.html" style="text-decoration:none;color:inherit;display:flex;align-items:center;gap:12px;"><i class="fa-solid fa-check-double"></i> Onay Bekleyenler</a></li>
+            <li><a href="sa-tedarikci.html" style="text-decoration:none;color:inherit;display:flex;align-items:center;gap:12px;"><i class="fa-solid fa-truck-fast"></i> Tedarikçi Listesi</a></li>
+            <li class="active"><i class="fa-solid fa-box-open"></i> Sipariş Takibi</li>
+            <li><a href="sa-stok.html" style="text-decoration:none;color:inherit;display:flex;align-items:center;gap:12px;"><i class="fa-solid fa-warehouse"></i> Stok Yönetimi</a></li>
+        </ul>
+        <div class="ik-user-tag">
+            <div class="ik-user-avatar"><img src="img/selin_aksoy.jpg" alt=""></div>
+            <div class="ik-user-info"><span>Selin Aksoy</span><small>Satın Alma Uzmanı</small></div>
+        </div>
+    </div>
+
+ <div class="ik-content sa-takip-page">
+    <div class="dept-header">
+        <div class="page-title-group">
+            <h1>Sipariş ve Lojistik Yönetimi</h1>
+            <p class="page-desc">Aktif sevkiyatların konumlarını, gümrük süreçlerini ve tahmini varış sürelerini uçtan uca takip edin.</p>
+        </div>
+
+
+        <div class="notif-container">
+            <input type="checkbox" id="notif-toggle" aria-hidden="true" style="display:none;">
+            <label for="notif-toggle" class="notif-trigger">
+                <i class="fa-solid fa-bell"></i>
+                <span class="notif-badge">2</span>
+            </label>
+            <div class="notif-dropdown">
+    <h4>Mesaj Merkezi</h4>
+    
+    <div id="notif-incoming-list" class="notif-list">
+        <div class="notif-item" onclick="openReplyModal('ÜRETİM', 'Hammadde stokları kritik seviyede, acil sipariş geçilmeli.')" style="cursor: pointer;">
+            <span class="notif-status"></span>
+            <strong>ÜRETİM:</strong>
+            <span>Acil hammadde talebi var.</span>
+            <small style="display:block; color: #94a3b8; font-size: 0.75rem; margin-top: 5px;">
+                <i class="fa-regular fa-clock"></i> 14:15
+            </small>
+        </div>
+        
+        <div class="notif-item" onclick="openReplyModal('BAKIM BİRİMİ', 'Yağ siparişi onaylandı, yarın depoya teslim edilecek.')" style="cursor: pointer;">
+            <span class="notif-status"></span>
+            <strong>BAKIM:</strong>
+            <span>Yağ siparişi onaylandı.</span>
+            <small style="display:block; color: #94a3b8; font-size: 0.75rem; margin-top: 5px;">
+                <i class="fa-regular fa-clock"></i> 11:30
+            </small>
+        </div>
+    </div>
+
+    <div id="notif-outgoing-list" class="notif-list" style="display:none;">
+        <div class="notif-item">
+            <strong>SİZDEN -> DEPO</strong>
+            <span>Hammadde talebi onaylandı.</span>
+            <small style="display:block; color: #94a3b8; font-size: 0.75rem; margin-top: 5px;">
+                <i class="fa-regular fa-clock"></i> 15:40
+            </small>
+        </div>
+    </div>
+
+    <div class="notif-footer">
+        <button type="button" class="notif-action-btn" onclick="showIncoming()">
+            <i class="fa-solid fa-bell"></i> Gelenler
+        </button>
+        <button type="button" class="notif-action-btn" onclick="showOutgoing()">
+            <i class="fa-solid fa-paper-plane"></i> Gidenler
+        </button>
+    </div>
+</div>
+</div>
+</div>
+   
+
+<div class="sa-takip-toolbar" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; background: white; padding: 12px 20px; border-radius: 12px; box-shadow: 0 2px 4px rgba(0,0,0,0.02);">
+ <div style="display: flex; flex-wrap: wrap; gap: 8px;">
+    <button type="button" class="notif-action-btn active" onclick="tabloFiltrele('Hepsi', this)">
+        <i class="fa-solid fa-list"></i> Hepsi
+    </button>
+    
+    <button type="button" class="notif-action-btn" onclick="tabloFiltrele('Gecikti', this)" style="border-bottom: 2px solid #ef4444;">
+         Gecikenler
+    </button>
+    
+    <button type="button" class="notif-action-btn" onclick="tabloFiltrele('Gümrükte', this)" style="border-bottom: 2px solid #a855f7;">
+         Gümrükte
+    </button>
+
+    <button type="button" class="notif-action-btn" onclick="tabloFiltrele('Yolda', this)" style="border-bottom: 2px solid #3b82f6;">
+        Yolda
+    </button>
+
+    <button type="button" class="notif-action-btn" onclick="tabloFiltrele('Hazırlanıyor', this)" style="border-bottom: 2px solid #f59e0b;">
+         Hazırlanıyor
+    </button>
+
+    
+</div>
+    <div style="position: relative;">
+        <i class="fa-solid fa-magnifying-glass" style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #94a3b8; font-size: 0.8rem;"></i>
+        <input type="text" 
+       id="searchInput" 
+       onkeyup="tabloAra()" 
+       placeholder="Sipariş veya tedarikçi ara..." 
+       style="padding: 8px 12px 8px 35px; border: 1px solid #e2e8f0; border-radius: 8px; font-size: 0.85rem; width: 250px; outline: none;">
+    </div>
+</div>
+
+
+    <div class="data-table-box">
+    <div class="sa-takip-table-scroll" aria-label="Sipariş tablosu">
+    <table id="siparisTablosu">
+        <thead>
+            <tr>
+                <th>Sipariş No</th>
+                <th>Tedarikçi Firma</th>
+                <th>Lojistik Türü</th>
+                <th>Tahmini Teslimat</th>
+                <th>Süreç İlerlemesi</th>
+                <th>Güncel Durum</th>
+            </tr>
+        </thead>
+        <tbody>
+    <tr onclick="detayGoster('SA-2841')" style="cursor: pointer;">
+        <td><strong>#SA-2841</strong></td>
+        <td>Demir Çelik A.Ş.</td>
+        <td><i class="fa-solid fa-truck"></i> Karayolu</td>
+        <td>15.03.2025</td>
+        <td>
+            <div class="progress-container"><div class="progress-bar bg-hazir" style="width: 25%;"></div></div>
+        </td>
+        <td><span class="badge hazir">Hazırlanıyor</span></td>
+    </tr>
+
+    <tr onclick="detayGoster('SA-2840')" style="cursor: pointer;">
+        <td><strong>#SA-2840</strong></td>
+        <td>Mega Ambalaj San.</td>
+        <td><i class="fa-solid fa-ship"></i> Denizyolu</td>
+        <td>12.03.2025</td>
+        <td>
+            <div class="progress-container"><div class="progress-bar bg-yolda" style="width: 75%;"></div></div>
+        </td>
+        <td><span class="badge yolda">Yolda</span></td>
+    </tr>
+
+    <tr onclick="detayGoster('SA-2837')" style="cursor: pointer;">
+        <td><strong>#SA-2837</strong></td>
+        <td>Global İthalat Ltd.</td>
+        <td><i class="fa-solid fa-plane"></i> Havayolu</td>
+        <td>18.03.2025</td>
+        <td>
+            <div class="progress-container"><div class="progress-bar bg-gumruk" style="width: 90%;"></div></div>
+        </td>
+        <td><span class="badge gumruk">Gümrükte</span></td>
+    </tr>
+
+    <tr onclick="detayGoster('SA-2839')" style="cursor: pointer;">
+        <td><strong>#SA-2839</strong></td>
+        <td>Yağsan Lübrikant</td>
+        <td><i class="fa-solid fa-box"></i> Kargo</td>
+        <td>10.03.2025</td>
+        <td>
+            <div class="progress-container"><div class="progress-bar bg-depo" style="width: 100%;"></div></div>
+        </td>
+        <td><span class="badge depo">Depoya Girdi</span></td>
+    </tr>
+
+<tr onclick="detayGoster('SA-2835')" style="cursor: pointer;">
+    <td><strong>#SA-2835</strong></td>
+    <td>Lojistik Çözüm Ortakları</td>
+    <td><i class="fa-solid fa-truck"></i> Karayolu</td>
+    <td>05.03.2025</td>
+    <td>
+        <div class="progress-container">
+            <div class="progress-bar bg-gecikti" style="width: 40%;"></div>
+        </div>
+    </td>
+    <td>
+        <span class="badge gecikti">Gecikti</span>
+    </td>
+</tr>
+
+    <tr onclick="detayGoster('SA-2834')" style="cursor: pointer;">
+        <td><strong>#SA-2834</strong></td>
+        <td>Alfa Mekanik San.</td>
+        <td><i class="fa-solid fa-truck"></i> Karayolu</td>
+        <td>22.03.2025</td>
+        <td>
+            <div class="progress-container"><div class="progress-bar bg-hazir" style="width: 30%;"></div></div>
+        </td>
+        <td><span class="badge hazir">Hazırlanıyor</span></td>
+    </tr>
+
+    <tr onclick="detayGoster('SA-2833')" style="cursor: pointer;">
+        <td><strong>#SA-2833</strong></td>
+        <td>Volt Elektrik A.Ş.</td>
+        <td><i class="fa-solid fa-ship"></i> Denizyolu</td>
+        <td>19.03.2025</td>
+        <td>
+            <div class="progress-container"><div class="progress-bar bg-yolda" style="width: 62%;"></div></div>
+        </td>
+        <td><span class="badge yolda">Yolda</span></td>
+    </tr>
+
+    <tr onclick="detayGoster('SA-2832')" style="cursor: pointer;">
+        <td><strong>#SA-2832</strong></td>
+        <td>ChemPro Kimya Ltd.</td>
+        <td><i class="fa-solid fa-plane"></i> Havayolu</td>
+        <td>21.03.2025</td>
+        <td>
+            <div class="progress-container"><div class="progress-bar bg-gumruk" style="width: 86%;"></div></div>
+        </td>
+        <td><span class="badge gumruk">Gümrükte</span></td>
+    </tr>
+
+    <tr onclick="detayGoster('SA-2831')" style="cursor: pointer;">
+        <td><strong>#SA-2831</strong></td>
+        <td>Tekstil Atlas A.Ş.</td>
+        <td><i class="fa-solid fa-box"></i> Kargo</td>
+        <td>08.03.2025</td>
+        <td>
+            <div class="progress-container"><div class="progress-bar bg-depo" style="width: 100%;"></div></div>
+        </td>
+        <td><span class="badge depo">Depoya Girdi</span></td>
+    </tr>
+
+    <tr onclick="detayGoster('SA-2830')" style="cursor: pointer;">
+        <td><strong>#SA-2830</strong></td>
+        <td>Borusan Hat Sanayi</td>
+        <td><i class="fa-solid fa-truck"></i> Karayolu</td>
+        <td>02.03.2025</td>
+        <td>
+            <div class="progress-container"><div class="progress-bar bg-gecikti" style="width: 35%;"></div></div>
+        </td>
+        <td><span class="badge gecikti">Gecikti</span></td>
+    </tr>
+
+    <tr onclick="detayGoster('SA-2829')" style="cursor: pointer;">
+        <td><strong>#SA-2829</strong></td>
+        <td>SuArıtma Sistemleri</td>
+        <td><i class="fa-solid fa-truck"></i> Karayolu</td>
+        <td>25.03.2025</td>
+        <td>
+            <div class="progress-container"><div class="progress-bar bg-hazir" style="width: 18%;"></div></div>
+        </td>
+        <td><span class="badge hazir">Hazırlanıyor</span></td>
+    </tr>
+
+    <tr onclick="detayGoster('SA-2828')" style="cursor: pointer;">
+        <td><strong>#SA-2828</strong></td>
+        <td>EuroParts GmbH</td>
+        <td><i class="fa-solid fa-ship"></i> Denizyolu</td>
+        <td>17.03.2025</td>
+        <td>
+            <div class="progress-container"><div class="progress-bar bg-yolda" style="width: 71%;"></div></div>
+        </td>
+        <td><span class="badge yolda">Yolda</span></td>
+    </tr>
+
+    <tr onclick="detayGoster('SA-2827')" style="cursor: pointer;">
+        <td><strong>#SA-2827</strong></td>
+        <td>PakoAmbalaj Plastik</td>
+        <td><i class="fa-solid fa-box"></i> Kargo</td>
+        <td>20.03.2025</td>
+        <td>
+            <div class="progress-container"><div class="progress-bar bg-gumruk" style="width: 92%;"></div></div>
+        </td>
+        <td><span class="badge gumruk">Gümrükte</span></td>
+    </tr>
+</tbody>
+    </table>
+    </div>
+</div>
+        
+        <div id="note-sent">Notunuz seçilen birimlere iletildi.</div>
+<div id="replyModal" class="reply-modal">
+    <div class="reply-content">
+        <div class="reply-header">
+            <i class="fa-solid fa-reply"></i>
+            <h3 id="replyTarget">HUKUK Birimine Cevap Yaz</h3>
+        </div>
+        
+        <div id="replyOriginalMessage" class="original-msg-preview">
+            "5 adet yeni iş sözleşmesi onaylandı."
+        </div>
+        
+        <textarea id="replyText" class="reply-textarea" placeholder="Cevabınızı buraya yazın..."></textarea>
+        
+        <div class="reply-actions">
+            <button class="btn-reply-cancel" onclick="closeReplyModal()">Vazgeç</button>
+            <button class="btn-reply-send" onclick="sendReply()">Cevapla</button>
+        </div>
+    </div>
+    </div>
+
+<div id="liveTrackingModal" class="reply-modal">
+    <div class="reply-content" style="max-width: 500px;">
+        <div class="reply-header">
+            <i class="fa-solid fa-location-dot"></i>
+            <h3>Sevkiyat Detayı: #SA-2840</h3>
+        </div>
+        
+        <div class="timeline">
+            <div class="timeline-item completed">
+                <div class="timeline-icon"><i class="fa-solid fa-check"></i></div>
+                <div class="timeline-content">
+                    <h4>Sipariş Onaylandı</h4>
+                    <p>01 Mart 2025 - 09:00</p>
+                </div>
+            </div>
+            <div class="timeline-item completed">
+                <div class="timeline-icon"><i class="fa-solid fa-check"></i></div>
+                <div class="timeline-content">
+                    <h4>Yola Çıktı (Fabrika Çıkış)</h4>
+                    <p>03 Mart 2025 - 14:30 | Berlin, Almanya</p>
+                </div>
+            </div>
+            <div class="timeline-item">
+                <div class="timeline-icon"></div>
+                <div class="timeline-content">
+                    <h4>Gümrük İşlemleri Başladı</h4>
+                    <p>Bekleniyor | Kapıkule Sınır Kapısı</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="reply-actions">
+            <button class="btn-reply-cancel" onclick="closeLiveTracking()">Kapat</button>
+            <button class="btn-reply-send" style="background: #0f172a;" onclick="surucuMesajAc('#SA-2840', 'Mehmet Yılmaz')">
+    <i class="fa-solid fa-comment-dots"></i> Sürücüye Ulaş
+</button>
+        </div>
+    </div>
+</div>
+    <script>
+         /* 1. MEVCUT CANLI TAKİP MODALLARI */
+function openLiveTracking() { document.getElementById('liveTrackingModal').style.display = 'flex'; }
+function closeLiveTracking() { document.getElementById('liveTrackingModal').style.display = 'none'; }
+
+/* 2. BİLDİRİM LİSTESİ GEÇİŞLERİ (Gelen/Giden) */
+function showIncoming() {
+    const incoming = document.getElementById('notif-incoming-list');
+    const outgoing = document.getElementById('notif-outgoing-list');
+    const btnIn = document.querySelector('.notif-action-btn[onclick="showIncoming()"]');
+    const btnOut = document.querySelector('.notif-action-btn[onclick="showOutgoing()"]');
+    if (incoming && outgoing) {
+        incoming.style.display = 'block';
+        outgoing.style.display = 'none';
+        btnIn.classList.add('active');
+        btnOut.classList.remove('active');
+    }
+}
+
+function showOutgoing() {
+    const incoming = document.getElementById('notif-incoming-list');
+    const outgoing = document.getElementById('notif-outgoing-list');
+    const btnIn = document.querySelector('.notif-action-btn[onclick="showIncoming()"]');
+    const btnOut = document.querySelector('.notif-action-btn[onclick="showOutgoing()"]');
+    if (incoming && outgoing) {
+        incoming.style.display = 'none';
+        outgoing.style.display = 'block';
+        btnOut.classList.add('active');
+        btnIn.classList.remove('active');
+    }
+}
+
+/* 3. YENİ HIZLI CEVAPLAMA SİSTEMİ */
+function openReplyModal(sender, message) {
+    document.getElementById('replyTarget').innerText = sender + " Birimine Cevap Yaz";
+    document.getElementById('replyOriginalMessage').innerText = '"' + message + '"';
+    document.getElementById('replyModal').style.display = 'flex';
+}
+
+function closeReplyModal() {
+    document.getElementById('replyModal').style.display = 'none';
+    document.getElementById('replyText').value = '';
+}
+
+function sendReply() {
+    const text = document.getElementById('replyText').value;
+    const target = document.getElementById('replyTarget').innerText.replace(" Cevap Yaz", "");
+    if(text.trim() !== "") {
+        alert("Cevabınız " + target + " birimine iletildi.");
+        closeReplyModal();
+    } else {
+        alert("Lütfen boş bir mesaj göndermeyin.");
+    }
+}
+
+/* 4. GENEL TIKLAMA VE BAŞLANGIÇ AYARLARI */
+window.onclick = function(event) {
+    let liveModal = document.getElementById('liveTrackingModal');
+    let replyModal = document.getElementById('replyModal');
+    
+    // Hangi modal açıksa ve dışına tıklandıysa onu kapat
+    if (event.target == liveModal) { liveModal.style.display = "none"; }
+    if (event.target == replyModal) { replyModal.style.display = "none"; }
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    const btnIn = document.querySelector('.notif-action-btn[onclick="showIncoming()"]');
+    if(btnIn) btnIn.classList.add('active');
+});
+function sendReply() {
+    const text = document.getElementById('replyText').value;
+    
+    // trim() metni temizler, eğer sonuç boş değilse gönderir
+    if(text.trim() !== "") {
+        alert("Cevabınız başarıyla iletildi.");
+        closeReplyModal();
+    } else {
+        // Kutu boşsa burası çalışır ve engeller
+        alert("Lütfen boş bir mesaj göndermeyin.");
+    }
+}
+// Boş alana tıklandığında açık olan her şeyi kapat
+document.addEventListener('click', function(event) {
+    // 1. Checkbox ile açılan menüleri kapat (Bildirimler ve Not Kutusu)
+    const notifToggle = document.getElementById('notif-toggle');
+    const noteToggle = document.getElementById('note-box-toggle');
+    
+    // Bildirimler için: Tıklanan yer bildirim alanı değilse ve menü açıksa kapat
+    const notifContainer = document.querySelector('.notif-container');
+    if (notifToggle.checked && !notifContainer.contains(event.target)) {
+        notifToggle.checked = false;
+    }
+
+    // Not Kutusu için: Tıklanan yer not kutusu veya onu açan buton değilse kapat
+    const msgBox = document.querySelector('.msg-box');
+    const quickNoteBtn = document.querySelector('.quick-note-btn');
+    if (noteToggle.checked && !msgBox.contains(event.target) && !quickNoteBtn.contains(event.target)) {
+        noteToggle.checked = false;
+    }
+
+    // 2. Modal'lar için (Zaten senin kodunda var ama daha temiz hali):
+    const replyModal = document.getElementById('replyModal');
+    if (event.target === replyModal) {
+        closeReplyModal();
+    }
+});
+
+function closeLiveTracking() {
+    document.getElementById('liveTrackingModal').style.display = 'none';
+}
+var takipAktifFiltre = 'Hepsi';
+
+function uygulaTakipTabloGorunurluk() {
+    const table = document.getElementById("siparisTablosu");
+    if (!table) return;
+    const tr = table.getElementsByTagName("tr");
+    const input = document.getElementById("searchInput");
+    const filter = (input && input.value.toUpperCase()) || '';
+    const durum = takipAktifFiltre;
+
+    for (let i = 1; i < tr.length; i++) {
+        const tdDurum = tr[i].getElementsByTagName("td")[5];
+        const tdSiparis = tr[i].getElementsByTagName("td")[0];
+        const tdTedarikci = tr[i].getElementsByTagName("td")[1];
+        const durumMetni = tdDurum ? (tdDurum.textContent || tdDurum.innerText).trim() : '';
+        const matchDurum = durum === 'Hepsi' || durumMetni === durum;
+        let matchSearch = true;
+        if (filter && tdSiparis && tdTedarikci) {
+            const txt = (tdSiparis.textContent || tdSiparis.innerText || '') + (tdTedarikci.textContent || tdTedarikci.innerText || '');
+            matchSearch = txt.toUpperCase().indexOf(filter) > -1;
+        }
+        tr[i].style.display = (matchDurum && matchSearch) ? "" : "none";
+    }
+}
+
+function tabloAra() {
+    uygulaTakipTabloGorunurluk();
+}
+
+function tabloFiltrele(durum, btnEl) {
+    takipAktifFiltre = durum;
+    document.querySelectorAll('.sa-takip-toolbar .notif-action-btn').forEach(function (btn) {
+        btn.classList.remove('active');
+    });
+    if (btnEl) btnEl.classList.add('active');
+    uygulaTakipTabloGorunurluk();
+}
+function surucuMesajAc(siparisNo, surucuIsim) {
+    // Önce detay modalını kapat
+    closeLiveTracking();
+    openReplyModal('SÜRÜCÜ (' + surucuIsim + ')', siparisNo + ' nolu sevkiyat hakkında bilgi rica ediyorum.');
+}
+    
+// Siparişlerin gerçekçi detay verileri
+const tumSiparisler = {
+    'SA-2841': {
+        baslik: '#SA-2841 - Demir Çelik',
+        surec: [
+            { h: 'Sipariş Onaylandı', p: '01 Mart - Fabrika', c: true },
+            { h: 'Üretim Aşamasında', p: 'Devam Ediyor', c: false },
+            { h: 'Sevkiyat Bekleniyor', p: '-', c: false }
+        ]
+    },
+    'SA-2840': {
+        baslik: '#SA-2840 - Mega Ambalaj',
+        surec: [
+            { h: 'Yola Çıktı', p: '03 Mart - Berlin, Almanya', c: true },
+            { h: 'Transit Geçiş', p: '05 Mart - Prag, Çekya', c: true },
+            { h: 'Varış Bekleniyor', p: 'Tahmini 12 Mart', c: false }
+        ]
+    },
+    'SA-2837': {
+        baslik: '#SA-2837 - Global İthalat',
+        surec: [
+            { h: 'Liman Çıkışı', p: 'Şanghay Port', c: true },
+            { h: 'Gümrük İşlemleri', p: 'Ambarlı Limanı - Beklemede', c: false }
+        ]
+    },
+    'SA-2839': {
+        baslik: '#SA-2839 - Yağsan Lübrikant',
+        surec: [
+            { h: 'Teslim Edildi', p: '10 Mart - Ana Depo', c: true },
+            { h: 'Stok Girişi Yapıldı', p: 'Raf No: A-12', c: true }
+        ]
+    },
+    // YENİ EKLEDİĞİMİZ GECİKEN SİPARİŞ:
+    'SA-2835': {
+        baslik: '#SA-2835 - Lojistik Çözüm Ortakları',
+        surec: [
+            { h: 'Yola Çıkış', p: '01 Mart - Varşova', c: true },
+            { h: 'Gecikme Bildirimi', p: 'Hava Muhalefeti Nedeniyle Beklemede', c: false },
+            { h: 'Yeni Tahmini Varış', p: 'Belirsiz', c: false }
+        ]
+    },
+    'SA-2834': {
+        baslik: '#SA-2834 - Alfa Mekanik',
+        surec: [
+            { h: 'Sipariş Onaylandı', p: '08 Mart - Fabrika', c: true },
+            { h: 'Üretim / Paketleme', p: 'Devam Ediyor', c: false },
+            { h: 'Sevkiyat Planı', p: 'Bekleniyor', c: false }
+        ]
+    },
+    'SA-2833': {
+        baslik: '#SA-2833 - Volt Elektrik',
+        surec: [
+            { h: 'Liman Yükleme', p: 'Rotterdam', c: true },
+            { h: 'Açık Deniz Transit', p: 'Akdeniz hattı', c: true },
+            { h: 'Türkiye Limanı', p: 'Tahmini 19 Mart', c: false }
+        ]
+    },
+    'SA-2832': {
+        baslik: '#SA-2832 - ChemPro Kimya',
+        surec: [
+            { h: 'Uçuş Kalkışı', p: 'Frankfurt', c: true },
+            { h: 'Gümrük Beyanı', p: 'IST Havalimanı - İşlemde', c: false }
+        ]
+    },
+    'SA-2831': {
+        baslik: '#SA-2831 - Tekstil Atlas',
+        surec: [
+            { h: 'Kargo Teslimi', p: '08 Mart - Fabrika Giriş', c: true },
+            { h: 'Depo Raf Yerleşimi', p: 'Bölüm C-4', c: true }
+        ]
+    },
+    'SA-2830': {
+        baslik: '#SA-2830 - Borusan Hat',
+        surec: [
+            { h: 'Sevkiyat Başladı', p: '26 Şubat - Bursa', c: true },
+            { h: 'Gecikme', p: 'Araç arıza - yedek çekici bekleniyor', c: false },
+            { h: 'Revize Teslimat', p: 'Henüz netleşmedi', c: false }
+        ]
+    },
+    'SA-2829': {
+        baslik: '#SA-2829 - SuArıtma Sistemleri',
+        surec: [
+            { h: 'Sipariş Alındı', p: '10 Mart', c: true },
+            { h: 'Hazırlık', p: 'Filtre seti toplanıyor', c: false }
+        ]
+    },
+    'SA-2828': {
+        baslik: '#SA-2828 - EuroParts GmbH',
+        surec: [
+            { h: 'Hamburg Çıkışı', p: 'Tamamlandı', c: true },
+            { h: 'Deniz Yolu', p: 'Yolda - ETA 17 Mart', c: false }
+        ]
+    },
+    'SA-2827': {
+        baslik: '#SA-2827 - PakoAmbalaj',
+        surec: [
+            { h: 'Kargo Merkezi', p: 'İstanbul - Dağıtımda', c: true },
+            { h: 'Gümrük Kontrolü', p: 'Beklemede', c: false }
+        ]
+    }
+};
+
+function detayGoster(id) {
+    const veri = tumSiparisler[id];
+    if(!veri) return;
+
+    // Modal başlığını değiştir
+    document.querySelector('#liveTrackingModal h3').innerText = "Sevkiyat Detayı: " + veri.baslik;
+    
+    // Timeline içeriğini temizle ve yeni verileri ekle
+    let html = "";
+    veri.surec.forEach(adim => {
+        html += `
+            <div class="timeline-item ${adim.c ? 'completed' : ''}">
+                <div class="timeline-icon">${adim.c ? '<i class="fa-solid fa-check"></i>' : ''}</div>
+                <div class="timeline-content">
+                    <h4>${adim.h}</h4>
+                    <p>${adim.p}</p>
+                </div>
+            </div>`;
+    });
+    
+    document.querySelector('#liveTrackingModal .timeline').innerHTML = html;
+    document.getElementById('liveTrackingModal').style.display = 'flex';
+}
+
+    // Sayfa her açıldığında giden mesajları ortak hafızadan (localStorage) çek
+    document.addEventListener('DOMContentLoaded', function() {
+        updateOutgoingList(); 
+    });
+
+    function updateOutgoingList() {
+        const listContainer = document.getElementById('notif-outgoing-list');
+        if (!listContainer) return;
+
+        // Tarayıcının ortak hafızasından mesajları alma
+        const gidenMesajlar = JSON.parse(localStorage.getItem('guardia_giden_mesajlar') || '[]');
+
+        listContainer.innerHTML = ""; 
+
+        if (gidenMesajlar.length === 0) {
+            listContainer.innerHTML = '<div class="notif-item"><span>Henüz gönderilmiş bir not bulunmuyor.</span></div>';
+        } else {
+            gidenMesajlar.forEach(msg => {
+                listContainer.innerHTML += `
+                    <div class="notif-item">
+                        <strong>SİZDEN -> ${msg.hedef}</strong>
+                        <span>${msg.icerik}</span>
+                        <small style="display:block; color: #94a3b8; font-size: 0.75rem; margin-top: 5px;">
+                            <i class="fa-regular fa-clock"></i> ${msg.saat}
+                        </small>
+                    </div>`;
+            });
+        }
+    }
+</script>
+</body>
+</html>

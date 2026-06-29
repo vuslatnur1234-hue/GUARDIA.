@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="tr">
+
+<head>
+
+    <script>
+        if (!localStorage.getItem('aktifKullanici')) {
+            window.location.href = 'p-login.html';
+        }
+    </script>
+
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Guardia | Panel</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/personel-style.css">
+
+    <style>
+        /* Ana kapsayıcıya telefonun üst kısmından kaçması için boşluk eklendi */
+        .container {
+            padding: 35px 20px 0 20px;
+        }
+
+        /* Üst Bilgi Alanı: Marj değerini biraz artırma */
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 35px;
+            padding-top: 10px;
+        }
+
+        .user-profile {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .avatar {
+            width: 50px;
+            height: 50px;
+            border-radius: 15px;
+            background: var(--card);
+            border: 2px solid var(--accent);
+            overflow: hidden;
+        }
+
+        /* Sayaç Kartı: Personelin o günkü çalışma süresini gösteren merkezi alan */
+        .stat-card {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 25px;
+            padding: 20px;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .timer {
+            font-size: 2.5rem;
+            font-weight: 600;
+            color: var(--accent);
+            margin: 5px 0;
+            letter-spacing: 2px;
+        }
+
+        /* Hızlı İşlem Butonları: 4 sütunlu ızgara yapısı */
+        .quick-actions {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+
+        .action-btn {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 18px;
+            padding: 15px 5px;
+            text-align: center;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+            .action-btn i {
+                color: var(--accent);
+                font-size: 1.2rem;
+                margin-bottom: 6px;
+                display: block;
+            }
+
+            .action-btn span {
+                font-size: 0.65rem;
+                color: var(--sub);
+                font-weight: 600;
+            }
+
+            /* Tıklama efekti: Kullanıcıya basma hissi verir */
+            .action-btn:active {
+                transform: scale(0.95);
+                background: rgba(56, 189, 248, 0.1);
+            }
+    </style>
+</head>
+
+<body>
+
+    <div class="container">
+        <header>
+            <div class="user-profile">
+                <div class="avatar" id="avatar-kutu" style="display: flex; align-items: center; justify-content: center; background: rgba(56, 189, 248, 0.1);">
+                    <i class="fa-solid fa-user" style="font-size: 1.8rem; color: var(--accent);"></i>
+                </div>
+                <div>
+                    <h4 id="panel-isim" style="margin:0; font-size: 0.95rem;">Yükleniyor...</h4>
+                    <small id="panel-unvan" style="color:var(--accent)">Yükleniyor...</small>
+                </div>
+            </div>
+
+            <div onclick="bildirimeGit()" style="cursor:pointer; position:relative;">
+                <i class="fa-regular fa-bell fa-xl" style="color:var(--sub)"></i>
+                <div id="panel-bildirim" style="position:absolute; top:-8px; right:-8px; min-width:18px; height:18px; background:var(--danger); border-radius:50%; font-size:0.65rem; font-weight:700; color:white; display:none; align-items:center; justify-content:center; padding:0 4px;"></div>
+            </div>
+        </header>
+
+        <div class="stat-card">
+            <span style="font-size: 0.75rem; color: var(--sub); letter-spacing: 1px;">AKTİF ÇALIŞMA SÜRESİ</span>
+            <div class="timer" id="shift-timer">00:00:00</div>
+            <div style="display:flex; justify-content:center; gap:15px; margin-top:10px;">
+                <small style="color:var(--success)"><i class="fa-solid fa-circle-dot"></i> Çevrimiçi</small>
+                <small id="panel-bitis" style="color:var(--sub)">Bitiş: --:--</small>
+            </div>
+        </div>
+
+        <div class="quick-actions">
+            <div class="action-btn" onclick="location.href='p-yemek.html'">
+                <i class="fa-solid fa-utensils"></i><span>Yemek</span>
+            </div>
+            <div class="action-btn" onclick="location.href='p-talep.html'">
+                <i class="fa-solid fa-calendar-day"></i><span>İzin Al</span>
+            </div>
+            <div class="action-btn" onclick="location.href='p-bordro.html'">
+                <i class="fa-solid fa-file-invoice-dollar"></i><span>Bordro</span>
+            </div>
+            <div class="action-btn" onclick="location.href='p-ariza.html'">
+                <i class="fa-solid fa-wrench"></i><span>Arıza</span>
+            </div>
+        </div>
+    </div>
+
+
+    <nav class="bottom-nav">
+        <a href="p-index.html" class="nav-item active"><i class="fa-solid fa-house"></i><span>Panel</span></a>
+        <a href="p-ai.html" class="nav-item"><i class="fa-solid fa-brain"></i><span>AI</span></a>
+        <a href="p-qr.html" class="nav-item"><i class="fa-solid fa-qrcode"></i><span>QR</span></a>
+        <a href="p-ayarlar.html" class="nav-item"><i class="fa-solid fa-gear"></i><span>Ayarlar</span></a>
+    </nav>
+
+    <script>
+        function apiFetch(url, options = {}) {
+            const token = localStorage.getItem('token');
+            options.headers = {
+                ...options.headers,
+                'Authorization': 'Bearer ' + token
+            };
+            return fetch(url, options).then(res => {
+                if (!res.ok) {
+                    throw new Error(`HTTP Hatası! Durum: ${res.status}`);
+                }
+                return res;
+            });
+        }
+
+        if (localStorage.getItem('temaTercihi') === 'light') {
+            document.body.classList.add('light-mode');
+        }
+
+        if (!localStorage.getItem('vardiyaBaslangic')) {
+            localStorage.setItem('vardiyaBaslangic', Date.now().toString());
+        }
+
+        function sayaciGuncelle() {
+            const baslangic = parseInt(localStorage.getItem('vardiyaBaslangic'));
+            const gecenMs = Date.now() - baslangic;
+            const toplamSaniye = Math.floor(gecenMs / 1000);
+            const h = Math.floor(toplamSaniye / 3600);
+            const m = Math.floor((toplamSaniye % 3600) / 60);
+            const s = toplamSaniye % 60;
+            document.getElementById("shift-timer").innerText =
+                `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+        }
+
+        sayaciGuncelle();
+        setInterval(sayaciGuncelle, 1000);
+
+        async function panelVerileriniCek() {
+            try {
+                const aktifSicil = localStorage.getItem("aktifKullanici");
+
+                if (!aktifSicil) {
+                    document.getElementById('panel-isim').innerText = "Giriş Yapılmadı";
+                    document.getElementById('panel-unvan').innerText = "Lütfen Login Ekranına Dönün";
+                    return;
+                }
+
+                const response = await apiFetch(`https://localhost:7183/api/panel/ozet?sicilNo=${aktifSicil}`);
+
+                try {
+                    const [duyuruRes, izinRes, bordroRes] = await Promise.all([
+                        apiFetch('https://localhost:7183/api/IkIstatistikKontrolcusu/duyuru-listesi').catch(() => ({ ok: false })),
+                        apiFetch('https://localhost:7183/api/IkIzinKontrolcusu/izin-listesi-getir').catch(() => ({ ok: false })),
+                        apiFetch('https://localhost:7183/api/IkBordroKontrolcusu/liste').catch(() => ({ ok: false }))
+                    ]);
+
+                    let okunmamisSayisi = 0;
+                    let okunanlar = JSON.parse(localStorage.getItem('okunanBildirimler') || '[]');
+
+                    if (duyuruRes.ok) {
+                        const duyurular = await duyuruRes.json();
+                        duyurular.forEach((d, index) => {
+                            let benzersizKimlik = new Date(d.yayinTarihi).getTime() || index;
+                            let notifId = "duyuru_" + benzersizKimlik;
+
+                            if (!okunanlar.includes(notifId)) okunmamisSayisi++;
+                        });
+                    }
+
+                    if (izinRes.ok) {
+                        const izinler = await izinRes.json();
+                        izinler.filter(i => i.sicilNo == aktifSicil).forEach((i, index) => {
+                            let notifId = "izin_" + (i.id || i.Id || index);
+                            if (!okunanlar.includes(notifId)) okunmamisSayisi++;
+                        });
+                    }
+
+                    if (bordroRes.ok) {
+                        const bordrolar = await bordroRes.json();
+                        bordrolar.filter(b => b.sicilNo == aktifSicil).forEach((b, index) => {
+                            let notifId = "bordro_" + (b.id || b.Id || index);
+                            if (!okunanlar.includes(notifId)) okunmamisSayisi++;
+                        });
+                    }
+
+                    const bildirimEl = document.getElementById('panel-bildirim');
+                    if (okunmamisSayisi > 0) {
+                        bildirimEl.innerText = okunmamisSayisi;
+                        bildirimEl.style.display = 'flex';
+                    } else {
+                        bildirimEl.style.display = 'none';
+                    }
+                } catch (e) { }
+
+                const data = await response.json();
+                document.getElementById('panel-isim').innerText = data.adSoyad || "İsim Yok";
+                document.getElementById('panel-unvan').innerText = data.unvan || "Unvan Yok";
+
+                const avatarKutu = document.getElementById('avatar-kutu');
+                if (data.fotoUrl && data.fotoUrl.trim() !== "" && !data.fotoUrl.includes("default") && !data.fotoUrl.includes("img/")) {
+                    avatarKutu.innerHTML = `<img src="${data.fotoUrl}" alt="Profil" style="width:100%; height:100%; object-fit:cover;">`;
+                } else {
+                    avatarKutu.innerHTML = `<i class="fa-solid fa-user" style="font-size: 1.8rem; color: var(--accent);"></i>`;
+                }
+                document.getElementById('panel-bitis').innerText = "Bitiş: " + data.vardiyaBitis;
+
+            } catch (error) {
+                console.error("API Hatası:", error);
+                document.getElementById('panel-isim').innerText = "Hata Oluştu";
+                document.getElementById('panel-unvan').innerText = "Bağlantı Kurulamadı";
+            }
+        }
+
+        function bildirimeGit() {
+            window.location.href = 'p-bildirimler.html';
+        }
+
+        window.onload = panelVerileriniCek;
+    </script>
+</body>
+
+</html>

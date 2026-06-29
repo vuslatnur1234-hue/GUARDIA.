@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="tr">
+
+<head>
+    <script>
+        if (!localStorage.getItem('token')) {
+            window.location.href = 'p-login.html';
+        }
+    </script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Guardia | Haftalık Menü</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/personel-style.css">
+    <style>
+        /* Üst Başlık: Geri butonu ve sayfa başlığı yerleşimi */
+        header {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 25px;
+            padding-top: 15px;
+        }
+
+        .back-btn {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: var(--card);
+            border: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            color: var(--accent);
+        }
+
+        /* Menü Kartları Listesi: Kartlar arası boşluk ve alt navigasyon için padding */
+        .menu-grid-container {
+            display: flex;
+            flex-direction: column;
+            gap: 25px;
+            padding-bottom: 120px;
+        }
+
+        /* Standart Yemek Kartı Tasarımı */
+        .menu-card {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 30px;
+            padding: 22px;
+            position: relative;
+        }
+
+            /* GÜNCEL GÜN VURGUSU: Bugün olan kartın parlayan ve mavi efekti */
+            .menu-card.today {
+                border-color: var(--accent);
+                background: linear-gradient(145deg, var(--card) 0%, rgba(56, 189, 248, 0.08) 100%);
+                box-shadow: 0 10px 30px rgba(56, 189, 248, 0.15);
+            }
+
+        /* Kart Başlığı: Gün ismi ve varsa 'Bugün' etiketi */
+        .day-title {
+            font-size: 0.75rem;
+            font-weight: 700;
+            color: var(--accent);
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            margin-bottom: 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 10px;
+        }
+
+        /* Yemek Listesi Yerleşimi: 2 sütunlu ızgara yapısı */
+        .food-details {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+
+        /* Yemek Kategorisi ve İsim Düzeni */
+        .food-group {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+
+        .food-label {
+            font-size: 0.75rem;
+            color: var(--sub);
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .food-name {
+            font-size: 0.85rem;
+            color: var(--text);
+            font-weight: 400;
+        }
+
+        /* Bugün olan kartın içindeki metinlerin daha okunaklı olması için kalınlaştırma */
+        .today .food-name {
+            font-weight: 600;
+            color: var(--accent)
+        }
+
+        /* Geçmiş günlerin hafif şeffaf görünmesi */
+        .past {
+            opacity: 0.95;
+            filter: none;
+        }
+
+        /* 'Bugün' yazan küçük etiket stili */
+        .badge {
+            background: var(--accent);
+            color: #0f172a;
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-size: 0.6rem;
+        }
+        /* TÜM SAYFADAKİ KAYDIRMA ÇUBUKLARINI GİZLE (Jilet Etkisi) */
+
+        /* 1. Chrome, Safari ve Yeni Edge için */
+        ::-webkit-scrollbar {
+            display: none !important;
+        }
+
+        /* 2. Firefox ve IE/Edge için */
+        html, body {
+            scrollbar-width: none !important; /* Firefox */
+            -ms-overflow-style: none !important; /* IE ve Edge */
+            overflow-y: scroll; /* Kaydırma özelliğini korur ama çubuğu saklar */
+        }
+
+        /* Sayfanın titremesini engellemek için ana taşıyıcıyı mühürleyelim */
+        .container {
+            overflow-x: hidden; /* Yatayda asla titreme yapmaz */
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="container">
+        <header>
+            <div class="back-btn" onclick="history.back()"><i class="fa-solid fa-chevron-left"></i></div>
+            <h2 style="margin:0; font-size:1.2rem; font-weight:600; color:var(--text);">Haftalık Yemek Listesi</h2>
+        </header>
+
+        <div class="menu-grid-container">
+
+    </div>
+
+    <script>
+
+        function apiFetch(url, options = {}) {
+            const token = localStorage.getItem('token');
+
+            // Başlıkları koruyarak Authorization JWT token'ını mühürlüyoruz
+            options.headers = {
+                ...options.headers,
+                'Authorization': 'Bearer ' + token
+            };
+
+            return fetch(url, options).then(res => {
+                if (!res.ok) {
+                    throw new Error(`HTTP Hatası! Durum: ${res.status}`);
+                }
+                return res;
+            });
+        }
+        if (localStorage.getItem('temaTercihi') === 'light') document.body.classList.add('light-mode');
+
+        async function menuYukle() {
+            try {
+                const response = await fetch('https://localhost:7183/api/pyemek/menu');
+                if (response.ok) {
+                    const menu = await response.json();
+                    const container = document.querySelector('.menu-grid-container');
+                    container.innerHTML = '';
+
+                    menu.forEach(gun => {
+                        const bugunClass = gun.bugunMu ? 'today' : '';
+                        const bugunBadge = gun.bugunMu ? '<span class="badge">BUGÜN</span>' : '';
+                        container.innerHTML += `
+                    <div class="menu-card ${bugunClass}">
+                        <span class="day-title">${gun.gun} ${bugunBadge}</span>
+                        <div class="food-details">
+                            <div class="food-group"><span class="food-label">İçecek</span><span class="food-name">${gun.icerek}</span></div>
+                            <div class="food-group"><span class="food-label">Çorba</span><span class="food-name">${gun.corba}</span></div>
+                            <div class="food-group"><span class="food-label">Ana Yemek</span><span class="food-name">${gun.anaYemek}</span></div>
+                            <div class="food-group"><span class="food-label">Eşantiyon</span><span class="food-name">${gun.esantiyon}</span></div>
+                            <div class="food-group"><span class="food-label">Tatlı</span><span class="food-name">${gun.tatli}</span></div>
+                            <div class="food-group"><span class="food-label">Meyve</span><span class="food-name">${gun.meyve}</span></div>
+                        </div>
+                    </div>`;
+                    });
+                }
+            } catch (error) {
+                console.error("Menü çekilemedi.");
+            }
+        }
+
+        window.onload = menuYukle;
+    </script>
+</body>
+
+</html>

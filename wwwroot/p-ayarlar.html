@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="tr">
+
+<head>
+
+
+    <script>
+        if (!localStorage.getItem('token')) {
+            window.location.href = 'p-login.html';
+        }
+    </script>
+
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Guardia | Ayarlar</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/personel-style.css">
+
+    <style>
+        /* Profil Başlık Alanı: Kullanıcı fotoğrafı ve temel bilgileri ortalama */
+        .settings-header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding-top: 20px;
+        }
+
+        /* Ayar Grupları: Menü seçeneklerini bir kutu içine toplar */
+        .settings-group {
+            background: var(--card);
+            border-radius: 25px;
+            border: 1px solid var(--border);
+            overflow: hidden;
+            margin-bottom: 20px;
+        }
+
+        /* Ayar Satırı: İkon, metin ve sağ taraftaki ok/switch yerleşimi */
+        .setting-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 18px 20px;
+            border-bottom: 1px solid var(--border);
+            cursor: pointer;
+            transition: 0.2s;
+            text-decoration: none;
+            color: inherit;
+        }
+
+            .setting-item:last-child {
+                border-bottom: none;
+            }
+
+        /* İkon ve Metin Hizalaması */
+        .setting-info {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+            .setting-info i {
+                width: 35px;
+                height: 35px;
+                background: rgba(56, 189, 248, 0.1);
+                border-radius: 10px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                color: var(--accent);
+            }
+
+        /* iOS Tarzı Switch (Açma/Kapama Düğmesi) Tasarımı */
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 46px;
+            height: 24px;
+        }
+
+            .switch input {
+                opacity: 0;
+                width: 0;
+                height: 0;
+            }
+
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #475569;
+            transition: .4s;
+            border-radius: 34px;
+        }
+
+            .slider:before {
+                position: absolute;
+                content: "";
+                height: 18px;
+                width: 18px;
+                left: 3px;
+                bottom: 3px;
+                background-color: white;
+                transition: .4s;
+                border-radius: 50%;
+            }
+
+        input:checked + .slider {
+            background-color: var(--accent);
+        }
+
+            input:checked + .slider:before {
+                transform: translateX(22px);
+            }
+
+        /* Çıkış butonu rengi */
+        .logout-btn {
+            color: var(--danger) !important;
+            font-weight: 600;
+        }
+
+        /* Sayfa başlığı ve geri butonu */
+        .settings-page-header {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 20px;
+            padding-top: 15px;
+        }
+
+        .setting-item span {
+            font-weight: 500;
+            color: var(--text);
+        }
+
+        .back-btn {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: var(--card);
+            border: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            color: var(--accent);
+            transition: 0.2s;
+        }
+
+            .back-btn:active {
+                transform: scale(0.9);
+            }
+        /* Sayfanın sağındaki o gri çubuğu tamamen yok eder */
+        ::-webkit-scrollbar {
+            display: none !important;
+        }
+
+        /* Firefox ve diğer tarayıcılar için de önlem alalım */
+        html, body {
+            scrollbar-width: none !important; /* Firefox */
+            -ms-overflow-style: none !important; /* IE ve Edge */
+            overflow-y: scroll; /* Kaydırma çalışsın ama görünmesin */
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="container">
+
+        <div class="settings-header">
+            <div id="ayarFotoKutu" style="width: 90px; height: 90px; border-radius: 30px; border: 3px solid var(--accent); margin: 0 auto 10px auto; display: flex; align-items: center; justify-content: center; background: rgba(56, 189, 248, 0.1); overflow: hidden;">
+                <i class="fa-solid fa-user" style="font-size: 3rem; color: var(--accent);"></i>
+            </div>
+
+            <h2 id="ayarAd" style="margin:0;">Yükleniyor...</h2>
+            <p id="ayarBilgi" style="color:var(--sub); font-size:0.85rem; margin:5px 0;">...</p>
+        </div>
+
+        <h5 style="margin-left: 15px; color: var(--sub); font-size: 0.75rem; letter-spacing: 1px;">PROFİLİM</h5>
+        <div class="settings-group">
+            <a href="p-profil.html" class="setting-item">
+                <div class="setting-info">
+                    <i class="fa-solid fa-id-card-clip"></i>
+                    <span>Dijital Kimlik Bilgileri</span>
+                </div>
+                <i class="fa-solid fa-chevron-right" style="color:var(--sub); font-size:0.8rem;"></i>
+            </a>
+
+        </div>
+
+        <h5 style="margin-left: 15px; color: var(--sub); font-size: 0.75rem; letter-spacing: 1px;">GENEL</h5>
+        <div class="settings-group">
+            <div class="setting-item">
+                <div class="setting-info">
+                    <i class="fa-solid fa-moon"></i>
+                    <span>Karanlık Mod</span>
+                </div>
+                <label class="switch">
+                    <input type="checkbox" id="theme-toggle" onchange="temaDegistir()">
+                    <span class="slider"></span>
+                </label>
+            </div>
+
+            <div class="setting-item" onclick="location.href='p-bildirimler.html'">
+                <div class="setting-info">
+                    <i class="fa-solid fa-bell"></i>
+                    <span>Bildirimler</span>
+                </div>
+                <i class="fa-solid fa-chevron-right" style="color:var(--sub); font-size:0.8rem;"></i>
+            </div>
+
+            <div class="setting-item" onclick="location.href='p-sifre-degistir.html'">
+                <div class="setting-info">
+                    <i class="fa-solid fa-lock"></i>
+                    <span>Şifre Değiştir</span>
+                </div>
+                <i class="fa-solid fa-chevron-right" style="color:var(--sub); font-size:0.8rem;"></i>
+            </div>
+        </div>
+
+        <div class="settings-group">
+            <div class="setting-item logout-btn" onclick="if(confirm('Çıkış yapmak istediğinize emin misiniz?')) { window.location.href='p-login.html'; }">
+                <div class="setting-info">
+                    <i class="fa-solid fa-right-from-bracket"
+                       style="background: rgba(244, 63, 94, 0.1); color: var(--danger);"></i>
+                    <span>Güvenli Çıkış</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <nav class="bottom-nav">
+        <a href="p-index.html" class="nav-item"><i class="fa-solid fa-house"></i><span>Panel</span></a>
+        <a href="p-ai.html" class="nav-item"><i class="fa-solid fa-brain"></i><span>AI</span></a>
+        <a href="p-qr.html" class="nav-item"><i class="fa-solid fa-qrcode"></i><span>QR</span></a>
+        <a href="p-ayarlar.html" class="nav-item active"><i class="fa-solid fa-gear"></i><span>Ayarlar</span></a>
+    </nav>
+
+    <script>
+
+        function apiFetch(url, options = {}) {
+            const token = localStorage.getItem('token');
+
+            options.headers = {
+                ...options.headers,
+                'Authorization': 'Bearer ' + token
+            };
+
+            return fetch(url, options).then(res => {
+                if (!res.ok) {
+                    throw new Error(`HTTP Hatası! Durum: ${res.status}`);
+                }
+                return res;
+            });
+        }
+
+        const mevcutTema = localStorage.getItem('temaTercihi');
+        const themeToggle = document.getElementById('theme-toggle');
+
+        if (mevcutTema === 'light') {
+            document.body.classList.add('light-mode');
+            if (themeToggle) themeToggle.checked = false;
+        } else {
+            if (themeToggle) themeToggle.checked = true;
+        }
+
+        function temaDegistir() {
+            if (themeToggle.checked) {
+                document.body.classList.remove('light-mode');
+                localStorage.setItem('temaTercihi', 'dark');
+            } else {
+                document.body.classList.add('light-mode');
+                localStorage.setItem('temaTercihi', 'light');
+            }
+        }
+
+        async function verileriGetir() {
+            try {
+                const aktifSicil = localStorage.getItem('aktifKullanici');
+                if (!aktifSicil) return;
+
+                const response = await fetch(`https://localhost:7183/api/personel/profil?sicilNo=${aktifSicil}`);
+
+                if (response.ok) {
+                    const data = await response.json();
+
+                    document.getElementById('ayarAd').innerText = data.adSoyad ?? '-';
+                    document.getElementById('ayarBilgi').innerText = `Sicil No: ${data.sicilNo} · ${data.unvan}`;
+
+                    const fotoKutu = document.getElementById('ayarFotoKutu');
+                    if (data.profilFoto && data.profilFoto.trim() !== "") {
+                        fotoKutu.innerHTML = `<img src="https://localhost:7183${data.profilFoto}"
+            style="width: 100%; height: 100%; object-fit: cover; image-rendering: -webkit-optimize-contrast; transform: translateZ(0);""
+            onerror="this.parentElement.innerHTML='<i class=\\'fa-solid fa-user\\'  style=\\'font-size:3rem; color:var(--accent); width:auto; height:auto; background:none;\\'></i>'">`;
+                    } else {
+                        fotoKutu.innerHTML = `<i class="fa-solid fa-user" style="font-size:3rem; color:var(--accent); width:auto; height:auto; background:none;"></i>`;
+                    }
+
+                    console.log("Ayarlar Başarıyla Yüklendi:", data);
+                }
+            } catch (error) {
+                console.error("API Bağlantı Hatası:", error);
+            }
+        }
+
+        document.addEventListener("DOMContentLoaded", function () {
+            verileriGetir();
+        });
+
+        // İK TALEBİ GÖNDERME
+        function guncellemeTalebiGonder() {
+            const ad = document.querySelector('.settings-header h2').innerText;
+            const talepVerisi = {
+                personel: ad,
+                tarih: new Date().toLocaleString(),
+                durum: "Beklemede"
+            };
+
+            let mevcutTalepler = JSON.parse(localStorage.getItem('ikTalepleri')) || [];
+            mevcutTalepler.push(talepVerisi);
+            localStorage.setItem('ikTalepleri', JSON.stringify(mevcutTalepler));
+
+            alert("Bilgileriniz başarıyla İK onayına gönderildi.");
+        }
+    </script>
+</body>
+
+</html>

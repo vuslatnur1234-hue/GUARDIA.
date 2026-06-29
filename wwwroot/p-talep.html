@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="tr">
+
+<head>
+    <script>
+        if (!localStorage.getItem('token')) {
+            window.location.href = 'p-login.html';
+        }
+    </script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Guardia | İzin Başvurusu</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/personel-style.css">
+    <style>
+        /* Başlık ve Geri Butonu Düzeni */
+        header {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 20px;
+            padding-top: 15px;
+        }
+
+        .back-btn {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: var(--card);
+            border: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            color: var(--accent);
+            transition: 0.2s;
+        }
+
+            .back-btn:active {
+                transform: scale(0.9);
+            }
+
+        /* Form Elemanları Etiketleri */
+        .input-label {
+            font-size: 0.75rem;
+            color: var(--sub);
+            font-weight: 600;
+            margin-left: 10px;
+            margin-bottom: 8px;
+            display: block;
+        }
+
+        /* Seçim Kutusu Tasarımı */
+        select {
+            width: 100%;
+            padding: 15px;
+            border-radius: 18px;
+            background: var(--card);
+            border: 1px solid var(--border);
+            color: var(--text);
+            font-family: 'Poppins';
+            margin-bottom: 20px;
+            outline: none;
+            font-size: 0.9rem;
+            appearance: none;
+        }
+
+        /* Metin Alanı Tasarımı */
+        textarea {
+            width: 100%;
+            padding: 15px;
+            border-radius: 18px;
+            background: var(--card);
+            border: 1px solid var(--border);
+            color: var(--text);
+            font-family: 'Poppins';
+            margin-bottom: 25px;
+            outline: none;
+            font-size: 0.9rem;
+            resize: none;
+        }
+
+        /* DİNAMİK TAKVİM TASARIMI */
+        .calendar-nav-box {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 25px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .nav-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+            .nav-header span {
+                font-weight: 600;
+                color: var(--text);
+                font-size: 1.1rem;
+            }
+
+        .nav-btn {
+            cursor: pointer;
+            color: var(--accent);
+            padding: 10px;
+            transition: 0.2s;
+            font-size: 1.2rem;
+        }
+
+        /* Takvim Izgarası: 7 Sütunlu (Haftanın günleri için) */
+        .days-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 5px;
+            text-align: center;
+        }
+
+        .day-header {
+            font-size: 0.65rem;
+            color: var(--sub);
+            font-weight: 700;
+            padding-bottom: 10px;
+        }
+
+        /* Günlük Tarih Kutucukları */
+        .date {
+            aspect-ratio: 1/1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.85rem;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: 0.2s;
+            color: var(--text);
+        }
+
+            .date.empty {
+                cursor: default;
+            }
+
+            /* Boş günler için */
+            .date.selected {
+                background: var(--accent) !important;
+                color: #0f172a !important;
+                font-weight: 700;
+                box-shadow: 0 4px 12px rgba(56, 189, 248, 0.4);
+            }
+
+            .date:hover:not(.selected):not(.empty) {
+                background: rgba(255, 255, 255, 0.05);
+            }
+
+        /* Ana Gönder Butonu */
+        .btn-glow {
+            width: 100%;
+            padding: 18px;
+            border: none;
+            border-radius: 22px;
+            background: linear-gradient(135deg, var(--accent) 0%, #0ea5e9 100%);
+            color: #0f172a;
+            font-weight: 700;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: 0.3s;
+            box-shadow: 0 10px 25px rgba(56, 189, 248, 0.2);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+            .btn-glow:active {
+                transform: scale(0.98);
+            }
+        /* TÜM SAYFADAKİ KAYDIRMA ÇUBUKLARINI GİZLE (Jilet Etkisi) */
+
+        /* 1. Chrome, Safari ve Yeni Edge için */
+        ::-webkit-scrollbar {
+            display: none !important;
+        }
+
+        /* 2. Firefox ve IE/Edge için */
+        html, body {
+            scrollbar-width: none !important; /* Firefox */
+            -ms-overflow-style: none !important; /* IE ve Edge */
+            overflow-y: scroll; /* Kaydırma özelliğini korur ama çubuğu saklar */
+        }
+
+        /* Sayfanın titremesini engellemek için ana taşıyıcıyı mühürleyelim */
+        .container {
+            overflow-x: hidden; /* Yatayda asla titreme yapmaz */
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="container" style="padding-bottom: 40px;">
+        <header>
+            <div class="back-btn" onclick="history.back()"><i class="fa-solid fa-chevron-left"></i></div>
+            <h2 style="margin:0; font-size:1.2rem; font-weight:600; color:var(--text);">İzin Başvurusu</h2>
+        </header>
+
+        <span class="input-label">İzin Türü</span>
+        <select id="izin-turu">
+            <option> Yıllık Ücretli İzin</option>
+            <option> Mazeret İzni (Ailevi, Özel)</option>
+            <option> Sağlık Raporu / Sevk</option>
+            <option> Ücretsiz İzin</option>
+            <option> Evlilik İzni</option>
+            <option> Vefat İzni</option>
+            <option> Babalık / Doğum İzni</option>
+            <option> İdari İzin</option>
+        </select>
+
+        <span class="input-label">Tarih Seçimi</span>
+        <div class="calendar-nav-box">
+            <div class="nav-header">
+                <i class="fa-solid fa-chevron-left nav-btn" onclick="degistirAy(-1)"></i>
+                <span id="ay-yil-baslik"></span>
+                <i class="fa-solid fa-chevron-right nav-btn" onclick="degistirAy(1)"></i>
+            </div>
+            <div class="days-grid" id="takvim-gunleri">
+            </div>
+        </div>
+
+        <span class="input-label">Kısa Açıklama</span>
+        <textarea id="izin-aciklama" rows="3" placeholder="Örn: Ailevi nedenler, düğün, taşınma vb."></textarea>
+
+        <button class="btn-glow" onclick="gonder()">Talebi İlet</button>
+    </div>
+
+    <script>
+
+        function apiFetch(url, options = {}) {
+            const token = localStorage.getItem('token');
+
+            // Başlıkları koruyarak Authorization JWT token'ını mühürlüyoruz
+            options.headers = {
+                ...options.headers,
+                'Authorization': 'Bearer ' + token
+            };
+
+            return fetch(url, options).then(res => {
+                if (!res.ok) {
+                    throw new Error(`HTTP Hatası! Durum: ${res.status}`);
+                }
+                return res;
+            });
+        }
+        let bugun = new Date();
+        let gosterilenAy = bugun.getMonth();
+        let gosterilenYil = bugun.getFullYear();
+
+        const aylar = ["Ocak", "Şubat", "Mart", "Nisan", "Mayıs", "Haziran", "Temmuz", "Ağustos", "Eylül", "Ekim", "Kasım", "Aralık"];
+        const haftaninGunleri = ["PT", "SA", "ÇA", "PE", "CU", "CT", "PZ"];
+
+        function takvimiCiz() {
+            const baslik = document.getElementById('ay-yil-baslik');
+            const gunlerKutusu = document.getElementById('takvim-gunleri');
+            gunlerKutusu.innerHTML = "";
+            baslik.innerText = `${aylar[gosterilenAy]} ${gosterilenYil}`;
+            haftaninGunleri.forEach(gun => {
+                gunlerKutusu.innerHTML += `<div class="day-header">${gun}</div>`;
+            });
+            let ilkGun = new Date(gosterilenYil, gosterilenAy, 1).getDay();
+            let boslukSayisi = (ilkGun === 0) ? 6 : ilkGun - 1;
+            let ayKacGun = new Date(gosterilenYil, gosterilenAy + 1, 0).getDate();
+            for (let b = 0; b < boslukSayisi; b++) {
+                gunlerKutusu.innerHTML += `<div class="date empty"></div>`;
+            }
+            for (let d = 1; d <= ayKacGun; d++) {
+                gunlerKutusu.innerHTML += `<div class="date" onclick="this.classList.toggle('selected')">${d}</div>`;
+            }
+        }
+
+        function degistirAy(yon) {
+            gosterilenAy += yon;
+            if (gosterilenAy < 0) { gosterilenAy = 11; gosterilenYil--; }
+            if (gosterilenAy > 11) { gosterilenAy = 0; gosterilenYil++; }
+            takvimiCiz();
+        }
+
+        async function gonder() {
+            const aktifSicil = localStorage.getItem("aktifKullanici");
+            const aciklamaMetni = document.getElementById('izin-aciklama').value.trim();
+            const izinTuru = document.getElementById('izin-turu').value;
+            const secilenGunler = [...document.querySelectorAll('.date.selected')];
+
+            if (secilenGunler.length === 0) {
+                alert("Lütfen takvimden izin alacağınız günleri işaretleyin.");
+                return;
+            }
+            if (aciklamaMetni === "") {
+                alert("Lütfen kısa bir açıklama yazınız.");
+                return;
+            }
+            if (!aktifSicil) {
+                alert("Oturum süresi dolmuş.");
+                return;
+            }
+
+            const gunler = secilenGunler.map(el => parseInt(el.innerText)).sort((a, b) => a - b);
+            const baslangic = `${gosterilenYil}-${String(gosterilenAy + 1).padStart(2, '0')}-${String(gunler[0]).padStart(2, '0')}`;
+            const bitis = `${gosterilenYil}-${String(gosterilenAy + 1).padStart(2, '0')}-${String(gunler[gunler.length - 1]).padStart(2, '0')}`;
+
+            const gidenVeri = {
+                SicilNo: aktifSicil,
+                IzinTuru: izinTuru,
+                BaslangicTarihi: baslangic,
+                BitisTarihi: bitis,
+                Aciklama: aciklamaMetni
+            };
+
+            try {
+                const response = await fetch('https://localhost:7183/api/pizin/gonder', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(gidenVeri)
+                });
+                const sonuc = await response.json();
+                alert(sonuc.mesaj);
+                if (response.ok) {
+                    const btn = document.querySelector('.btn-glow');
+                    btn.innerText = "TALEP İLETİLDİ";
+                    btn.style.background = "#10b981";
+                    btn.disabled = true;
+                }
+            } catch (error) {
+                alert("Sunucuya ulaşılamadı.");
+            }
+        }
+
+        takvimiCiz();
+        if (localStorage.getItem('temaTercihi') === 'light') document.body.classList.add('light-mode');
+    </script>
+</body>
+</html>

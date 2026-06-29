@@ -1,0 +1,2040 @@
+<!DOCTYPE html>
+<html lang="tr">
+
+<head>
+    <script>
+        if (!localStorage.getItem('token')) {
+            window.location.href = 'admin-login.html';
+        }
+    </script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Guardia | Personel Yönetimi</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/ik-sidebar.css">
+    <link rel="stylesheet" href="css/dept-common.css">
+    <style>
+        :root {
+            --sidebar: #0f172a;
+            --border: #e2e8f0;
+            --success: #22c55e;
+            --danger: #e11d48;
+            --text-main: #1e293b;
+            --text-sub: #64748b;
+        }
+
+        .add-btn {
+            background: var(--sidebar);
+            color: white;
+            padding: 12px 24px;
+            border-radius: 12px;
+            border: none;
+            cursor: pointer;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .filter-box {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 25px;
+            background: white;
+            padding: 15px;
+            border-radius: 18px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.02);
+        }
+
+            .filter-box input,
+            .filter-box select {
+                padding: 10px 15px;
+                border-radius: 10px;
+                border: 1px solid var(--border);
+                outline: none;
+                background: #f8fafc;
+            }
+
+        /* TABLE & ZİL ANİMASYONU */
+        /* overflow:hidden üst kutuda sticky thead'i çoğu tarayıcıda devre dışı bırakır; taşmayı iç scroll kutusunda kesiyoruz */
+        .table-container {
+            background: white;
+            border-radius: 24px;
+            padding: 0;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.02);
+            overflow: visible;
+        }
+
+        .personel-table-scroll {
+            max-height: min(52vh, 520px);
+            overflow: auto;
+            overflow-x: hidden;
+            overscroll-behavior: contain;
+            /* Alt satır yarım kesilmesin: son satır tamamen görünsün diye altta kaydırılabilir boşluk */
+            padding: 0 18px max(100px, 15vh) 10px;
+            scroll-padding-bottom: 32px;
+            border-radius: 24px;
+            background: #fff;
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+
+            .personel-table-scroll::-webkit-scrollbar {
+                display: none;
+            }
+
+        /* border-collapse: separate — sticky + collapse birlikte satırların başlığın üstüne sızmasına yol açar */
+        #personelTable {
+            width: 100%;
+            table-layout: fixed;
+            border-collapse: separate;
+            border-spacing: 0;
+        }
+
+            #personelTable col.col-ad {
+                width: 29%;
+            }
+
+            #personelTable col.col-poz {
+                width: 18%;
+            }
+
+            #personelTable col.col-dept {
+                width: 27%;
+            }
+
+            #personelTable col.col-durum {
+                width: 12%;
+            }
+
+            #personelTable col.col-actions {
+                width: 14%;
+            }
+
+            #personelTable thead th {
+                text-align: left;
+                padding: 18px;
+                color: var(--text-sub);
+                font-size: 0.75rem;
+                font-weight: 700;
+                text-transform: uppercase;
+                border-bottom: 2px solid #f8fafc;
+                position: -webkit-sticky;
+                position: sticky;
+                top: 0;
+                z-index: 20;
+                background: #fff !important;
+                box-shadow: 0 1px 0 #f8fafc;
+                -webkit-backface-visibility: hidden;
+                backface-visibility: hidden;
+            }
+
+                #personelTable thead th:first-child,
+                #personelTable td:first-child {
+                    padding-left: 26px;
+                }
+
+                #personelTable thead th.th-actions {
+                    text-align: right;
+                    padding-right: 22px;
+                }
+
+            #personelTable tbody tr {
+                position: relative;
+                z-index: 0;
+            }
+
+            #personelTable td {
+                padding: 18px;
+                border-bottom: 1px solid #f8fafc;
+                background: #fff;
+                position: relative;
+                z-index: 0;
+                vertical-align: middle;
+                overflow-wrap: break-word;
+                word-wrap: break-word;
+            }
+
+                #personelTable td:last-child {
+                    overflow: visible;
+                    white-space: nowrap;
+                    text-align: right;
+                    padding-right: 22px;
+                }
+
+        .person-cell {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            min-width: 0;
+        }
+
+        .person-img {
+            width: 42px;
+            height: 42px;
+            border-radius: 10px;
+            object-fit: cover;
+            flex-shrink: 0;
+        }
+
+        /* Yükleme yoksa tabloda ikon kutusu */
+        .person-img-placeholder {
+            width: 42px;
+            height: 42px;
+            border-radius: 10px;
+            background: #e8eef4;
+            border: 1px dashed #cbd5e1;
+            flex-shrink: 0;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            color: #94a3b8;
+            font-size: 0.85rem;
+        }
+
+            .person-img-placeholder.sm {
+                width: 35px;
+                height: 35px;
+                border-radius: 10px;
+                font-size: 0.75rem;
+            }
+
+        /* Sadece tablo alanı kayar; thead scroll kutusuna yapışır (sayfa kaydı başlığı oynatmaz) */
+        .ik-content.ik-content-personel {
+            display: flex;
+            flex-direction: column;
+            min-height: 0;
+            flex: 1 1 0;
+            overflow: hidden !important;
+            height: 100vh;
+            max-height: 100vh;
+            box-sizing: border-box;
+        }
+
+        .ik-content-personel > .dept-header,
+        .ik-content-personel > .page-header,
+        .ik-content-personel > .filter-box {
+            flex-shrink: 0;
+        }
+
+        .ik-content-personel > .table-container {
+            flex: 1 1 0;
+            min-height: 0;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .ik-content-personel .personel-table-scroll {
+            flex: 1 1 0;
+            min-height: 0;
+            max-height: none;
+        }
+
+        .status-badge {
+            padding: 5px 12px;
+            border-radius: 10px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            background: #dcfce7;
+            color: #166534;
+        }
+
+        .action-group {
+            display: flex;
+            gap: 8px;
+            justify-content: flex-end;
+        }
+
+        .icon-btn {
+            width: 36px;
+            height: 36px;
+            border-radius: 10px;
+            border: none;
+            cursor: pointer;
+            background: #f1f5f9;
+            color: var(--text-sub);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: 0.3s;
+        }
+
+            .icon-btn.icon-btn-danger:hover {
+                background: #ffe4e6;
+                color: var(--danger);
+            }
+
+        /* Titreyen Sarı Zil Efekti */
+        @keyframes ring-shake {
+            0% {
+                transform: rotate(0);
+            }
+
+            10% {
+                transform: rotate(15deg);
+            }
+
+            20% {
+                transform: rotate(-15deg);
+            }
+
+            30% {
+                transform: rotate(10deg);
+            }
+
+            40% {
+                transform: rotate(-10deg);
+            }
+
+            50% {
+                transform: rotate(0);
+            }
+
+            100% {
+                transform: rotate(0);
+            }
+        }
+
+        .bell-warning {
+            color: #f59e0b !important;
+            /* Canlı Sarı/Turuncu */
+            background: #fffbeb !important;
+            animation: ring-shake 2s infinite;
+            border: 1px solid #fde68a !important;
+        }
+
+            .bell-warning::after {
+                content: '';
+                position: absolute;
+                top: 6px;
+                right: 6px;
+                width: 8px;
+                height: 8px;
+                background: var(--danger);
+                border-radius: 50%;
+                border: 2px solid white;
+            }
+
+        /* MODAL */
+        .modal {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(15, 23, 42, 0.6);
+            z-index: 9999;
+            backdrop-filter: blur(10px);
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-card {
+            background: white;
+            width: 850px;
+            border-radius: 32px;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            height: 90vh;
+            position: relative;
+        }
+
+        .modal-header {
+            padding: 30px 40px;
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            background: #fafafa;
+            border-bottom: 1px solid #f1f5f9;
+        }
+
+        .header-image-container {
+            position: relative;
+            width: 64px;
+            height: 64px;
+        }
+
+        #headerImg {
+            width: 64px;
+            height: 64px;
+            border-radius: 18px;
+            border: 3px solid white;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+            object-fit: cover;
+        }
+
+        .photo-upload-placeholder {
+            width: 64px;
+            height: 64px;
+            border-radius: 18px;
+            border: 2px dashed var(--accent);
+            background: #f0f9ff;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            color: var(--accent);
+            cursor: pointer;
+        }
+
+        .modal-tabs {
+            display: flex;
+            gap: 25px;
+            padding: 0 40px;
+            border-bottom: 1px solid #f1f5f9;
+        }
+
+        .tab-btn {
+            padding: 18px 0;
+            border: none;
+            background: none;
+            cursor: pointer;
+            color: var(--text-sub);
+            font-weight: 700;
+            border-bottom: 3px solid transparent;
+        }
+
+            .tab-btn.active {
+                color: var(--accent);
+                border-bottom-color: var(--accent);
+            }
+
+        .modal-body {
+            padding: 30px 40px;
+            overflow-y: auto;
+            flex: 1;
+        }
+
+        .form-section {
+            display: none;
+        }
+
+            .form-section.active {
+                display: block;
+            }
+
+        .section-title {
+            font-size: 0.85rem;
+            font-weight: 800;
+            margin: 20px 0 15px;
+            text-transform: uppercase;
+            border-left: 4px solid var(--accent);
+            padding-left: 10px;
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 0.75rem;
+            color: var(--text-sub);
+            font-weight: 700;
+            margin-bottom: 6px;
+        }
+
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 12px;
+            border-radius: 12px;
+            border: 1.5px solid #f1f5f9;
+            background: #f8fafc;
+            outline: none;
+        }
+
+        .file-card {
+            padding: 15px;
+            border: 1.5px solid #f1f5f9;
+            border-radius: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 10px;
+        }
+
+        /* Karşılaştırma kutularını daha modern ve yumuşak yaptık */
+        .compare-box {
+            background: #f8fafc;
+            border-radius: 12px;
+            padding: 12px;
+            border: 1px solid var(--border);
+            margin-top: 5px;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .old-val {
+            color: #94a3b8;
+            /* Çok bağıran kırmızı yerine sönük bir gri (eski olduğunu belli eder) */
+            text-decoration: line-through;
+            font-size: 0.75rem;
+        }
+
+        .new-val {
+            color: var(--sidebar);
+            /* Yeşil yerine senin ana temanın lacivertini kullandık */
+            font-weight: 700;
+            font-size: 0.85rem;
+        }
+
+        /* Modal Footer Renkleri */
+        .modal-footer {
+            padding: 20px 40px;
+            background: #fafafa;
+            border-top: 1px solid #f1f5f9;
+            display: flex;
+            justify-content: flex-end;
+            /* Butonları sağa yaslar */
+            gap: 12px;
+            margin-top: auto;
+            /* İçerik az olsa bile footer'ı en alta iter */
+        }
+
+        /* Personel Listesi Başlık Karakterini Diğer Sayfalarla Eşitle */
+        .dept-header h1 {
+            font-family: 'Inter', sans-serif !important;
+            font-size: 1.75rem !important;
+            /* Diğerleriyle aynı boyut */
+            font-weight: 600 !important;
+            /* "Inter" fontunun o beğendiğin ideal kalınlığı */
+            color: #1e293b !important;
+            /* Standart ana metin rengi */
+            letter-spacing: -0.02em !important;
+            margin: 0;
+        }
+
+        .dept-header p {
+            font-family: 'Inter', sans-serif !important;
+            color: #64748b !important;
+            font-size: 0.9rem !important;
+            margin-top: 4px;
+            font-weight: 400 !important;
+        }
+
+        /* Personel Ekle butonunun olduğu satırı düzenle */
+        .page-header {
+            display: flex;
+            justify-content: flex-end;
+            /* Butonu sağa yaslar */
+            padding: 20px 0;
+            /* Üstten ve alttan boşluk bırakarak panelle birleşmesini engeller */
+            margin-top: 10px;
+            /* Başlık grubuyla arasına mesafe koyar */
+        }
+
+        /* Butonun kendisine küçük bir hover efekti (opsiyonel ama şık durur) */
+        .add-btn {
+            transition: all 0.3s ease;
+        }
+
+            .add-btn:hover {
+                transform: translateY(-2px);
+                /* Üzerine gelince hafifçe yukarı zıplar */
+                box-shadow: 0 5px 15px rgba(15, 23, 42, 0.2);
+            }
+
+        /* Modal gövdesindeki kaydırma çubuğunu gizler */
+        .modal-body::-webkit-scrollbar {
+            display: none;
+            /* Chrome, Safari ve yeni Edge için */
+        }
+
+        .modal-body {
+            -ms-overflow-style: none;
+            /* Internet Explorer ve eski Edge için */
+            scrollbar-width: none;
+            /* Firefox için */
+        }
+    </style>
+</head>
+
+<body class="ik-layout">
+
+    <div class="ik-sidebar">
+        <h2>🛡️ Guardia İK</h2>
+        <ul class="ik-nav-links">
+            <li>
+                <a href="ik-index.html"
+                   style="text-decoration:none;color:inherit;display:flex;align-items:center;gap:12px;">
+                    <i class="fa-solid fa-chart-line"></i> Genel Bakış
+                </a>
+            </li>
+            <li class="active"><i class="fa-solid fa-users"></i> Personel Listesi</li>
+            <li>
+                <a href="ik-izin-talepleri.html"
+                   style="text-decoration:none;color:inherit;display:flex;align-items:center;gap:12px;">
+                    <i class="fa-solid fa-calendar-check"></i> İzin Talepleri
+                </a>
+            </li>
+            <li>
+                <a href="ik-bordro.html"
+                   style="text-decoration:none;color:inherit;display:flex;align-items:center;gap:12px;">
+                    <i class="fa-solid fa-file-invoice-dollar"></i> Bordro Yönetimi
+                </a>
+            </li>
+            <li>
+                <a href="ik-duyuru-yayinla.html"
+                   style="text-decoration:none;color:inherit;display:flex;align-items:center;gap:12px;">
+                    <i class="fa-solid fa-bullhorn"></i> Duyuru Yayınla
+                </a>
+            </li>
+        </ul>
+        <div class="ik-user-tag">
+            <div class="ik-user-avatar" id="sidebarAvatar"><img src="img/erkek_1.jpg.png" alt="Selin Aksoy"></div>
+            <div class="ik-user-info"><span id="sidebarAdSoyad">Selin Aksoy</span><small id="sidebarDepartman">İK Yöneticisi</small></div>
+        </div>
+    </div>
+
+    <div class="ik-content ik-content-personel">
+        <div class="dept-header">
+            <div class="page-title-group">
+                <h1>Personel Yönetimi</h1>
+                <p class="page-desc">Personel kayıtlarını ve özlük dosyalarını düzenleyin.</p>
+            </div>
+
+            <div class="notif-container">
+                <input type="checkbox" id="notif-toggle" aria-hidden="true">
+                <label for="notif-toggle" class="notif-trigger" aria-label="Bildirimler">
+                    <i class="fa-solid fa-bell"></i>
+                    <span class="notif-badge">2</span>
+                </label>
+
+                <div class="notif-dropdown">
+                    <h4>Mesaj Merkezi</h4>
+
+                    <div id="notif-incoming-list" class="notif-list">
+                        <div class="notif-item" onclick="openReplyModal('HUKUK', '5 personelin sözleşmesi onaylandı.')"
+                             style="cursor: pointer;">
+                            <span class="notif-status"></span>
+                            <strong>HUKUK</strong>
+                            <span>5 personelin sözleşmesi onaylandı.</span>
+                            <small style="display:block; color: #94a3b8; font-size: 0.75rem; margin-top: 5px;">
+                                <i class="fa-regular fa-clock"></i> 10:45
+                            </small>
+                        </div>
+
+                        <div class="notif-item"
+                             onclick="openReplyModal('BİLGİ İŞLEM', 'Yeni işe alım mailleri açıldı.')"
+                             style="cursor: pointer;">
+                            <span class="notif-status"></span>
+                            <strong>BİLGİ İŞLEM</strong>
+                            <span>Yeni işe alım mailleri açıldı.</span>
+                            <small style="display:block; color: #94a3b8; font-size: 0.75rem; margin-top: 5px;">
+                                <i class="fa-regular fa-clock"></i> 09:20
+                            </small>
+                        </div>
+                    </div>
+
+                    <div id="notif-outgoing-list" class="notif-list" style="display:none;">
+                        <div class="notif-item">
+                            <strong>SİZDEN -> FİNANS</strong>
+                            <span>Mart ayı bordro verileri gönderildi.</span>
+                            <small style="display:block; color: #94a3b8; font-size: 0.75rem; margin-top: 5px;">
+                                <i class="fa-regular fa-clock"></i> 11:30
+                            </small>
+                        </div>
+                    </div>
+
+                    <div class="notif-footer">
+                        <button type="button" class="notif-action-btn" onclick="showIncoming()">
+                            <i class="fa-solid fa-bell"></i> Gelenler
+                        </button>
+                        <button type="button" class="notif-action-btn" onclick="showOutgoing()">
+                            <i class="fa-solid fa-paper-plane"></i> Gidenler
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <header class="page-header">
+            <button class="add-btn" onclick="openModal('new')">
+                <i class="fa-solid fa-user-plus"></i> Yeni Personel Ekle
+            </button>
+        </header>
+
+        <div class="filter-box">
+            <input type="search" id="personelSearchInput" placeholder="İsim veya Sicil No..." style="flex: 2;"
+                   autocomplete="off" oninput="filterPersonelTable()" onkeyup="filterPersonelTable()">
+            <select id="personelFilterDept" style="flex: 1;" onchange="filterPersonelTable()">
+                <option value="">Tüm Departmanlar</option>
+                <option value="İnsan Kaynakları">İnsan Kaynakları</option>
+                <option value="Hukuk ve Uyumluluk">Hukuk ve Uyumluluk</option>
+                <option value="İdari İşler">İdari İşler</option>
+                <option value="Satın Alma">Satın Alma</option>
+                <option value="Finans ve Muhasebe">Finans ve Muhasebe</option>
+                <option value="Bilgi İşlem">Bilgi İşlem</option>
+                <option value="İş Sağlığı ve Güvenliği">İş Sağlığı ve Güvenliği</option>
+                <option value="Bakım ve Enerji">Bakım ve Enerji</option>
+                <option value="Kalite Kontrol">Kalite Kontrol</option>
+                <option value="Mavi Yaka Üretim">Mavi Yaka Üretim</option>
+                <option value="Gri Yaka / Formen">Gri Yaka / Formen</option>
+                <option value="Lojistik ve Sevkiyat">Lojistik ve Sevkiyat</option>
+                <option value="Endüstriyel Temizlik">Endüstriyel Temizlik</option>
+                <option value="Güvenlik">Güvenlik</option>
+            </select>
+            <select id="personelFilterStatus" style="flex: 1;" onchange="filterPersonelTable()">
+                <option value="">Durum: Tümü</option>
+                <option value="Aktif">Aktif</option>
+                <option value="İzinli">İzinli</option>
+                <option value="Ayrıldı">Ayrıldı</option>
+            </select>
+        </div>
+
+        <div class="table-container">
+            <div class="personel-table-scroll">
+                <table id="personelTable">
+                    <colgroup>
+                        <col class="col-ad">
+                        <col class="col-poz">
+                        <col class="col-dept">
+                        <col class="col-durum">
+                        <col class="col-actions">
+                    </colgroup>
+                    <thead>
+                        <tr>
+                            <th>Ad Soyad</th>
+                            <th>Pozisyon</th>
+                            <th>Departman</th>
+                            <th>Durum</th>
+                            <th class="th-actions">İşlemler</th>
+                        </tr>
+                    </thead>
+                    <tbody id="personelTableBody">
+                        <tr data-departman="İnsan Kaynakları" data-durum="Aktif" data-sicil="202401"
+                            data-tckn="12345678901" data-birth-date="1989-03-22" data-kan="A Rh+" data-medeni="Evli" data-askerlik="Muaf"
+                            data-phone="0532 401 22 88" data-email="ayse.celik@guardia.com" data-address="Kadıköy, İstanbul — Moda Mah. No:12 D:4"
+                            data-emerg-name="Mehmet Çelik" data-emerg-rel="Eşi" data-emerg-phone="0544 401 00 11"
+                            data-iban="TR12 0006 1000 1234 5678 9012 01" data-bank-name="Garanti BBVA" data-bank-account="78451203"
+                            data-maas="42.500,00 ₺" data-has-evrak="1">
+                            <td>
+                                <div class="person-cell"><img src="img/kadın_4.jpg.png" class="person-img" alt="Ayşe Nur Çelik" decoding="async"><strong>Ayşe Nur Çelik</strong></div>
+                            </td>
+                            <td>Kıdemli Uzman</td>
+                            <td>İnsan Kaynakları</td>
+                            <td><span class="status-badge">Aktif</span></td>
+                            <td>
+                                <div class="action-group">
+                                    <button type="button" class="icon-btn" onclick="openModalFromRow(this)">
+                                        <i class="fa-solid fa-pen-to-square"></i>
+                                    </button>
+                                    <button type="button" id="mainBell" class="icon-btn bell-warning" onclick="openApproveModalFromRow(this)">
+                                        <i class="fa-solid fa-bell"></i>
+                                    </button>
+                                    <button type="button" class="icon-btn icon-btn-danger" title="Sil" onclick="deletePersonelRow(this)">
+                                        <i class="fa-solid fa-trash-can"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                        <tr data-departman="Mavi Yaka Üretim" data-durum="Aktif" data-sicil="202442"
+                            data-tckn="45678901234" data-birth-date="1988-05-14" data-kan="0 Rh+" data-medeni="Evli" data-askerlik="Yapıldı"
+                            data-phone="0533 442 66 10" data-email="mehmet.kaya@guardia.com" data-address="Kartal, İstanbul — Yukarı Mah. Sanayi Sitesi Blok C/7"
+                            data-emerg-name="Ayşe Kaya" data-emerg-rel="Anne" data-emerg-phone="0532 100 44 22"
+                            data-iban="TR45 0006 2000 9876 5432 1098 76" data-bank-name="Garanti BBVA" data-bank-account="99120765"
+                            data-maas="38.750,00 ₺" data-has-evrak="1">
+                            <td>
+                                <div class="person-cell"><img src="img/erkek_1.jpg.png" class="person-img" alt="Mehmet Kaya" decoding="async"><strong>Mehmet Kaya</strong></div>
+                            </td>
+                            <td>Üretim Mühendisi</td>
+                            <td>Mavi Yaka Üretim</td>
+                            <td><span class="status-badge">Aktif</span></td>
+                            <td>
+                                <div class="action-group">
+                                    <button type="button" class="icon-btn" onclick="openModalFromRow(this)">
+                                        <i class="fa-solid fa-pen-to-square"></i>
+                                    </button>
+                                    <button type="button" class="icon-btn" onclick="openApproveModalFromRow(this)">
+                                        <i class="fa-solid fa-bell"></i>
+                                    </button>
+                                    <button type="button" class="icon-btn icon-btn-danger" title="Sil" onclick="deletePersonelRow(this)">
+                                        <i class="fa-solid fa-trash-can"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                        <tr data-departman="Finans ve Muhasebe" data-durum="Aktif" data-sicil="202388"
+                            data-tckn="32109876543" data-birth-date="1992-11-03" data-kan="B Rh+" data-medeni="Bekar" data-askerlik="Muaf"
+                            data-phone="0534 388 15 90" data-email="zeynep.arslan@guardia.com" data-address="Beşiktaş, İstanbul — Sinanpaşa Mah. İş Hanı Kat:5"
+                            data-emerg-name="Ali Arslan" data-emerg-rel="Babası" data-emerg-phone="0536 200 33 55"
+                            data-pend-emerg-name="Ayşe Arslan" data-pend-emerg-rel="Kardeş"
+                            data-iban="TR78 0006 4000 1122 3344 5566 88" data-bank-name="Garanti BBVA" data-bank-account="44556677"
+                            data-maas="41.200,00 ₺" data-has-evrak="1">
+                            <td>
+                                <div class="person-cell"><img src="img/kadın_1.jpg.png" class="person-img" alt="Zeynep Arslan" decoding="async"><strong>Zeynep Arslan</strong></div>
+                            </td>
+                            <td>Finans Uzmanı</td>
+                            <td>Finans ve Muhasebe</td>
+                            <td><span class="status-badge">Aktif</span></td>
+                            <td>
+                                <div class="action-group">
+                                    <button type="button" class="icon-btn" onclick="openModalFromRow(this)">
+                                        <i class="fa-solid fa-pen-to-square"></i>
+                                    </button>
+                                    <button type="button" class="icon-btn" onclick="openApproveModalFromRow(this)">
+                                        <i class="fa-solid fa-bell"></i>
+                                    </button>
+                                    <button type="button" class="icon-btn icon-btn-danger" title="Sil" onclick="deletePersonelRow(this)">
+                                        <i class="fa-solid fa-trash-can"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                        <tr data-departman="Bilgi İşlem" data-durum="Aktif" data-sicil="202301"
+                            data-tckn="56789012345" data-birth-date="1995-02-20" data-kan="A Rh+" data-medeni="Evli" data-askerlik="Yapıldı"
+                            data-phone="0535 301 77 44" data-email="can.ozdemir@guardia.com" data-address="Üsküdar, İstanbul — Altunizade Bulvarı Apt:34 D:8"
+                            data-emerg-name="Zeynep Özdemir" data-emerg-rel="Eşi" data-emerg-phone="0537 301 99 00"
+                            data-iban="TR33 0006 5000 7788 9900 1122 33" data-bank-name="Garanti BBVA" data-bank-account="22334455"
+                            data-maas="52.900,00 ₺" data-has-evrak="1">
+                            <td>
+                                <div class="person-cell"><img src="img/erkek_2.jpg.png" class="person-img" alt="Can Özdemir" decoding="async"><strong>Can Özdemir</strong></div>
+                            </td>
+                            <td>Yazılım Geliştirici</td>
+                            <td>Bilgi İşlem</td>
+                            <td><span class="status-badge">Aktif</span></td>
+                            <td>
+                                <div class="action-group">
+                                    <button type="button" class="icon-btn" onclick="openModalFromRow(this)">
+                                        <i class="fa-solid fa-pen-to-square"></i>
+                                    </button>
+                                    <button type="button" class="icon-btn" onclick="openApproveModalFromRow(this)">
+                                        <i class="fa-solid fa-bell"></i>
+                                    </button>
+                                    <button type="button" class="icon-btn icon-btn-danger" title="Sil" onclick="deletePersonelRow(this)">
+                                        <i class="fa-solid fa-trash-can"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                        <tr data-departman="Satın Alma" data-durum="Aktif" data-sicil="202199"
+                            data-tckn="67890123456" data-birth-date="1991-07-08" data-kan="0 Rh+" data-medeni="Bekar" data-askerlik="Muaf"
+                            data-phone="0536 199 42 18" data-email="elif.sahin@guardia.com" data-address="Ataşehir, İstanbul — İçerenköy Mah. Plaza Ofis No:1402"
+                            data-emerg-name="Murat Şahin" data-emerg-rel="Kardeş" data-emerg-phone="0538 450 61 72"
+                            data-iban="TR61 0006 7000 3344 5566 7788 99" data-bank-name="Garanti BBVA" data-bank-account="66778899"
+                            data-maas="39.100,00 ₺" data-has-evrak="1">
+                            <td>
+                                <div class="person-cell"><img src="img/kadın2_.jpg.png" class="person-img" alt="Elif Şahin" decoding="async"><strong>Elif Şahin</strong></div>
+                            </td>
+                            <td>Satın Alma Uzmanı</td>
+                            <td>Satın Alma</td>
+                            <td><span class="status-badge">Aktif</span></td>
+                            <td>
+                                <div class="action-group">
+                                    <button type="button" class="icon-btn" onclick="openModalFromRow(this)">
+                                        <i class="fa-solid fa-pen-to-square"></i>
+                                    </button>
+                                    <button type="button" class="icon-btn" onclick="openApproveModalFromRow(this)">
+                                        <i class="fa-solid fa-bell"></i>
+                                    </button>
+                                    <button type="button" class="icon-btn icon-btn-danger" title="Sil" onclick="deletePersonelRow(this)">
+                                        <i class="fa-solid fa-trash-can"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                        <tr data-departman="Lojistik ve Sevkiyat" data-durum="Aktif" data-sicil="202077"
+                            data-tckn="78901234567" data-birth-date="1986-12-01" data-kan="B Rh+" data-medeni="Evli" data-askerlik="Yapıldı"
+                            data-phone="0537 077 55 33" data-email="burak.yildiz@guardia.com" data-address="Pendik, İstanbul — Velibaba Depo Bölgesi Parsel 18-B"
+                            data-emerg-name="Esra Yıldız" data-emerg-rel="Eşi" data-emerg-phone="0539 077 12 45"
+                            data-iban="TR99 0006 8000 8899 0011 2233 44" data-bank-name="Garanti BBVA" data-bank-account="11223344"
+                            data-maas="36.400,00 ₺" data-has-evrak="1">
+                            <td>
+                                <div class="person-cell"><img src="img/erkek_3.jpg.png" class="person-img" alt="Burak Yıldız" decoding="async"><strong>Burak Yıldız</strong></div>
+                            </td>
+                            <td>Depo Sorumlusu</td>
+                            <td>Lojistik ve Sevkiyat</td>
+                            <td><span class="status-badge">Aktif</span></td>
+                            <td>
+                                <div class="action-group">
+                                    <button type="button" class="icon-btn" onclick="openModalFromRow(this)">
+                                        <i class="fa-solid fa-pen-to-square"></i>
+                                    </button>
+                                    <button type="button" class="icon-btn" onclick="openApproveModalFromRow(this)">
+                                        <i class="fa-solid fa-bell"></i>
+                                    </button>
+                                    <button type="button" class="icon-btn icon-btn-danger" title="Sil" onclick="deletePersonelRow(this)">
+                                        <i class="fa-solid fa-trash-can"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                        <tr data-departman="İş Sağlığı ve Güvenliği" data-durum="Aktif" data-sicil="202155"
+                            data-tckn="89012345678" data-birth-date="1993-04-25" data-kan="A Rh+" data-medeni="Bekar" data-askerlik="Muaf"
+                            data-phone="0538 155 88 61" data-email="selin.aydin@guardia.com" data-address="Bakırköy, İstanbul — Ataköy 5. Kısım Site:2 Daire:18"
+                            data-emerg-name="Ahmet Aydın" data-emerg-rel="Babası" data-emerg-phone="0540 155 44 90"
+                            data-iban="TR21 0006 9000 5566 7788 9900 11" data-bank-name="Garanti BBVA" data-bank-account="99887766"
+                            data-maas="40.800,00 ₺" data-has-evrak="1">
+                            <td>
+                                <div class="person-cell"><img src="img/kadın_3.jpg.png" class="person-img" alt="Selin Aydın" decoding="async"><strong>Selin Aydın</strong></div>
+                            </td>
+                            <td>İSG Uzmanı</td>
+                            <td>İş Sağlığı ve Güvenliği</td>
+                            <td><span class="status-badge">Aktif</span></td>
+                            <td>
+                                <div class="action-group">
+                                    <button type="button" class="icon-btn" onclick="openModalFromRow(this)">
+                                        <i class="fa-solid fa-pen-to-square"></i>
+                                    </button>
+                                    <button type="button" class="icon-btn" onclick="openApproveModalFromRow(this)">
+                                        <i class="fa-solid fa-bell"></i>
+                                    </button>
+                                    <button type="button" class="icon-btn icon-btn-danger" title="Sil" onclick="deletePersonelRow(this)">
+                                        <i class="fa-solid fa-trash-can"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div id="staffModal" class="modal">
+        <div class="modal-card">
+            <button onclick="closeModal()"
+                    style="position: absolute; top: 25px; right: 30px; border: none; background: #eee; width: 32px; height: 32px; border-radius: 50%; cursor: pointer; z-index: 100;">
+                &times;
+            </button>
+            <div class="modal-header">
+                <div class="header-image-container">
+                    <img id="headerImg" alt=""
+                         style="display: none; width: 64px; height: 64px; border-radius: 18px; object-fit: cover; border: 3px solid white; box-shadow: 0 5px 15px rgba(0,0,0,0.1);">
+                    <div class="photo-upload-placeholder" id="photoPlaceholder"
+                         onclick="document.getElementById('photoInput').click()"><i class="fa-solid fa-camera"></i></div>
+                    <input type="file" id="photoInput" style="display: none;" accept="image/*"
+                           onchange="previewImage(this)">
+                </div>
+                <div>
+                    <h2 id="modalMainTitle" style="margin: 0; font-weight: 800;">Personel Dosyası</h2>
+                    <p style="margin: 0; font-size: 0.8rem; color: var(--text-sub);">Kurumsal Personel Bilgi Formu</p>
+                </div>
+            </div>
+
+            <div class="modal-tabs">
+                <button class="tab-btn active" onclick="switchTab(event, 'genel')">GENEL BİLGİLER</button>
+                <button class="tab-btn" onclick="switchTab(event, 'iletisim')">İLETİŞİM & YAKINLIK</button>
+                <button class="tab-btn" onclick="switchTab(event, 'mali')">BORDRO & BANKA</button>
+                <button class="tab-btn" onclick="switchTab(event, 'evrak')">EVRAKLAR</button>
+            </div>
+
+            <div class="modal-body">
+                <div id="tab-genel" class="form-section active">
+                    <div class="section-title">Temel Personel Dosyası</div>
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label>AD SOYAD</label><input type="text" id="formName"
+                                                          value="Ayşe Nur Çelik">
+                        </div>
+                        <div class="form-group">
+                            <label>T.C. KİMLİK NO</label><input type="text" id="formTckn" maxlength="11"
+                                                                value="12345678901">
+                        </div>
+                        <div class="form-group">
+                            <label>DEPARTMAN</label><select id="formDept">
+                                <option value="">Departman seçiniz</option>
+                                <option>İnsan Kaynakları</option>
+                                <option>Mavi Yaka Üretim</option>
+                                <option>Finans ve Muhasebe</option>
+                                <option>Bilgi İşlem</option>
+                                <option>Satın Alma</option>
+                                <option>Lojistik ve Sevkiyat</option>
+                                <option>İş Sağlığı ve Güvenliği</option>
+                                <option>Üretim Hattı</option>
+                                <option>Lojistik & Depo</option>
+                                <option>Bilgi İşlem / Yazılım</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>GÖREV / UNVAN</label><input type="text" id="formPozisyon" value="Kıdemli Uzman">
+                        </div>
+                        <div class="form-group"><label>DOĞUM TARİHİ</label><input type="date" id="formBirthDate"></div>
+                        <div class="form-group">
+                            <label>KAN GRUBU</label><select id="formKan">
+                                <option value="">Seçiniz</option>
+                                <option>A Rh+</option>
+                                <option>B Rh+</option>
+                                <option>0 Rh+</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>MEDENİ DURUM</label><select id="formMedeni">
+                                <option value="">Seçiniz</option>
+                                <option>Bekar</option>
+                                <option>Evli</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>ASKERLİK DURUMU</label><select id="formAskerlik">
+                                <option value="">Seçiniz</option>
+                                <option>Yapıldı</option>
+                                <option>Muaf</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="tab-iletisim" class="form-section">
+                    <div class="section-title">İletişim Detayları</div>
+                    <div class="form-grid">
+                        <div class="form-group"><label>TELEFON NO</label><input type="tel" id="formPhone" value="0500 000 00 00"></div>
+                        <div class="form-group">
+                            <label>KİŞİSEL E-POSTA</label><input type="email" id="formEmail"
+                                                                 value="ayse.celik@guardia.com">
+                        </div>
+                        <div class="form-group" style="grid-column: span 2;">
+                            <label>ADRES</label><textarea id="formAddress"
+                                                          rows="2">Kadıköy, İstanbul</textarea>
+                        </div>
+                    </div>
+                    <div class="section-title" style="border-left-color: var(--danger);">
+                        Acil Durumda Aranacak Yakını
+                    </div>
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label>YAKIN ADI SOYADI</label><input type="text" id="emergName"
+                                                                  value="Mehmet Çelik">
+                        </div>
+                        <div class="form-group">
+                            <label>YAKINLIK DERECESİ</label><input type="text" id="emergRel"
+                                                                   value="Eşi">
+                        </div>
+                        <div class="form-group">
+                            <label>YAKIN TELEFON</label><input type="tel" id="emergPhone"
+                                                               value="0544 000 00 00">
+                        </div>
+                    </div>
+                </div>
+
+                <div id="tab-mali" class="form-section">
+                    <div style="background: #f0fdf4; padding: 20px; border-radius: 20px; border: 1px solid #bbf7d0; margin-bottom: 25px; display: flex; justify-content: space-between; align-items: center;">
+                        <div>
+                            <small style="color: #166534; font-weight: 800;">GÜNCEL NET MAAŞ</small>
+                            <h2 id="formSalaryDisplay" style="color: #14532d;">42.500,00 ₺</h2>
+                        </div>
+                        <button style="background: #166534; color: white; border: none; padding: 10px 20px; border-radius: 12px; cursor: pointer;">
+                            Bordro
+                            İndir
+                        </button>
+                    </div>
+                    <div class="form-grid">
+                        <div class="form-group" style="grid-column: span 2;">
+                            <label>IBAN (TR...)</label><input id="formIban"
+                                                              type="text" style="font-family: monospace;" value="TR68 0000 0000 0000 0000 0000 00">
+                        </div>
+                        <div class="form-group"><label>BANKA ADI</label><input type="text" id="formBankName" value="Garanti BBVA"></div>
+                        <div class="form-group"><label>HESAP NUMARASI</label><input type="text" id="formBankAccount" value="12345678"></div>
+                    </div>
+                </div>
+
+                <div id="tab-evrak" class="form-section">
+                    <div class="section-title">Personel Özlük Dosyası</div>
+                    <div id="fileList">
+                        <div class="file-card">
+                            <span><i class="fa-solid fa-file-pdf"></i> İş Sözleşmesi</span><i class="fa-solid fa-circle-check" style="color: var(--success);"></i>
+                        </div>
+                        <div class="file-card">
+                            <span><i class="fa-solid fa-id-card"></i> Kimlik Fotokopisi</span><i class="fa-solid fa-circle-check" style="color: var(--success);"></i>
+                        </div>
+                        <div class="file-card">
+                            <span>
+                                <i class="fa-solid fa-graduation-cap"></i> Diploma / Mezuniyet
+                                Belgesi
+                            </span><i class="fa-solid fa-circle-check" style="color: var(--success);"></i>
+                        </div>
+                        <div class="file-card">
+                            <span><i class="fa-solid fa-file-medical"></i> Sağlık Raporu</span><i class="fa-solid fa-circle-exclamation" style="color: #f59e0b;"></i>
+                        </div>
+                        <div class="file-card">
+                            <span><i class="fas fa-file-alt"></i> Adli Sicil Kaydı</span><i class="fa-solid fa-circle-check" style="color: var(--success);"></i>
+                        </div>
+                        <div class="file-card">
+                            <span><i class="fa-solid fa-house-user"></i> İkametgah Belgesi</span><i class="fa-solid fa-circle-check" style="color: var(--success);"></i>
+                        </div>
+                    </div>
+                    <input type="file" id="docInput" style="display: none;" onchange="handleFileSelect(this)">
+                    <button onclick="document.getElementById('docInput').click()"
+                            style="width: 100%; margin-top: 15px; padding: 12px; border: 2px dashed #e2e8f0; background: none; border-radius: 12px; color: var(--text-sub); font-weight: 700; cursor: pointer;">
+                        +
+                        Yeni Belge Yükle
+                    </button>
+                </div>
+            </div>
+
+            <div class="modal-footer">
+                <button onclick="closeModal()"
+                        style="border: none; background: none; font-weight: 700; color: var(--text-sub); cursor: pointer;">
+                    İptal
+                </button>
+                <button type="button" id="staffPrimaryBtn"
+                        style="background: var(--sidebar); color: white; border: none; padding: 12px 35px; border-radius: 12px; font-weight: 700; cursor: pointer;">
+                    Kaydet
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div id="approveModal" class="modal">
+        <div class="modal-card" style="width: 480px; height: auto; border-radius: 24px;">
+            <div class="modal-header" style="padding: 20px 30px; background: white; border-bottom: 1px solid #f1f5f9;">
+                <h2 style="font-weight: 800; font-size: 1.1rem; color: var(--sidebar); margin: 0;">
+                    <i class="fa-solid fa-bell" style="color: #f59e0b; margin-right: 8px;"></i> Güncelleme Talebi
+                </h2>
+            </div>
+
+            <div class="modal-body" style="padding: 25px 30px;">
+                <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 20px;">
+                    <span id="approveModalPhoto" class="person-img-placeholder sm" aria-hidden="true"><i class="fa-solid fa-user"></i></span>
+                    <span style="font-size: 0.9rem; color: var(--text-main);">
+                        <strong id="approveModalPersonName">Ayşe Nur Çelik</strong> adlı
+                        personelin yeni verileri:
+                    </span>
+                </div>
+
+                <div class="form-group" style="margin-bottom:15px;">
+                    <label style="font-size: 0.7rem; letter-spacing: 0.5px;">CEP TELEFONU</label>
+                    <div class="compare-box">
+                        <span class="old-val" id="approveCmpPhoneOld">—</span>
+                        <span class="new-val">
+                            <i class="fa-solid fa-arrow-right"
+                               style="opacity: 0.4; font-size: 0.7rem;"></i> <span id="approveCmpPhoneNew">—</span>
+                        </span>
+                    </div>
+                </div>
+
+                <div class="form-group" style="margin-bottom:15px;">
+                    <label style="font-size: 0.7rem; letter-spacing: 0.5px;">EV ADRESİ</label>
+                    <div class="compare-box">
+                        <span class="old-val" id="approveCmpAddrOld">—</span>
+                        <span class="new-val">
+                            <i class="fa-solid fa-arrow-right"
+                               style="opacity: 0.4; font-size: 0.7rem;"></i> <span id="approveCmpAddrNew">—</span>
+                        </span>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label style="font-size: 0.7rem; letter-spacing: 0.5px;">ACİL DURUM YAKINI</label>
+                    <div class="compare-box">
+                        <span class="old-val" id="approveCmpEmergOld">—</span>
+                        <span class="new-val">
+                            <i class="fa-solid fa-arrow-right"
+                               style="opacity: 0.4; font-size: 0.7rem;"></i> <span id="approveCmpEmergNew">—</span>
+                        </span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="modal-footer"
+                 style="padding: 20px 30px; background: #f8fafc; display: flex; gap: 10px; justify-content: flex-end; align-items: center;">
+                <button onclick="closeApproveModal()"
+                        style="border:none; background:none; color:var(--text-sub); font-weight:700; cursor:pointer; font-size: 0.85rem; margin-right: auto;">
+                    Daha
+                    Sonra
+                </button>
+                <button id="confirmApproveBtn"
+                        style="background:var(--sidebar); color:white; border:none; padding:10px 22px; border-radius:10px; font-weight:700; cursor:pointer; font-size: 0.85rem;">
+                    Onayla
+                </button>
+            </div>
+        </div>
+    </div>
+    </div>
+    <div id="note-sent">Notunuz seçilen birimlere iletildi.</div>
+    <div id="replyModal" class="reply-modal">
+        <div class="reply-content">
+            <div class="reply-header">
+                <i class="fa-solid fa-reply"></i>
+                <h3 id="replyTarget">HUKUK Birimine Cevap Yaz</h3>
+            </div>
+
+            <div id="replyOriginalMessage" class="original-msg-preview">
+                "5 adet yeni iş sözleşmesi onaylandı."
+            </div>
+
+            <textarea id="replyText" class="reply-textarea" placeholder="Cevabınızı buraya yazın..."></textarea>
+
+            <div class="reply-actions">
+                <button class="btn-reply-cancel" onclick="closeReplyModal()">Vazgeç</button>
+                <button class="btn-reply-send" onclick="sendReply()">Cevapla</button>
+            </div>
+        </div>
+    </div>
+    <script>
+        const ikKanali = new BroadcastChannel('guardia-ik');
+
+        ikKanali.onmessage = (e) => {
+            console.log("İK Sistem Güncellemesi:", e.data.tip);
+
+            if (e.data.tip === 'personel-guncellendi' || e.data.tip === 'bordro-odendi') {
+                if (typeof personelleriYukle === 'function') personelleriYukle();
+                if (typeof loadPayrollData === 'function') loadPayrollData();
+            }
+        };
+
+
+        const BASE_URL = '/api/IkPersonelKontrolcusu';
+        const STAFF_MODAL_EMPTY_EVRAK_HTML = '<div style="color:var(--text-sub);padding:16px;text-align:center;font-size:0.875rem;border:1px dashed var(--border);border-radius:12px;">Henüz yüklenmiş evrak yok. İkametgah, kimlik ve diğer belgeler kayıt tamamlandıkça eklenebilir.</div>';
+
+
+        function apiFetch(url, options = {}) {
+            const token = localStorage.getItem('token');
+
+
+            let sayfaBirim = "HUKUK";
+            if (window.location.href.includes("ik-") || window.location.href.includes("ik-index")) {
+                sayfaBirim = "INSAN_KAYNAKLARI";
+            }
+
+            options.headers = {
+                ...options.headers,
+                'Authorization': 'Bearer ' + token,
+                'X-Aktif-Birim': sayfaBirim,
+                'Content-Type': 'application/json'
+            };
+
+            return fetch(url, options).then(res => {
+                return res;
+            });
+        }
+
+        let staffModalMode = 'edit';
+        let staffModalEditRow = null;
+        let staffModalPhotoDataUrl = '';
+        let aktifIletisimBirimi = "";
+
+        // --- 2. BAŞLATICI ---
+        document.addEventListener('DOMContentLoaded', function () {
+
+            const adminAdSoyad = localStorage.getItem('adminAdSoyad');
+            const adminDepartman = localStorage.getItem('adminDepartman');
+
+            if (adminAdSoyad) {
+                document.getElementById('sidebarAdSoyad').textContent = adminAdSoyad;
+            }
+            if (adminDepartman) {
+                document.getElementById('sidebarDepartman').textContent = adminDepartman;
+            }
+
+
+            personelleriYukle();
+            bildirimleriYukle();
+            updateOutgoingList();
+
+            // Otomatik talep polling: her 15 saniyede zilleri taze tut
+            setInterval(function () { talepleriTabloyaIsle(); }, 15000);
+
+            const notifTrigger = document.querySelector('.notif-trigger');
+            if (notifTrigger) {
+                notifTrigger.addEventListener('click', function () {
+                    const badge = document.querySelector('.notif-badge');
+                    if (badge) badge.style.display = 'none';
+                });
+            }
+
+            const aramaKutusu = document.getElementById('personelSearchInput');
+            const deptSecim = document.getElementById('personelFilterDept');
+            const durumSecim = document.getElementById('personelFilterStatus');
+
+            if (aramaKutusu) aramaKutusu.addEventListener('input', filterPersonelTable);
+            if (deptSecim) deptSecim.addEventListener('change', filterPersonelTable);
+            if (durumSecim) durumSecim.addEventListener('change', filterPersonelTable);
+
+            document.addEventListener('click', function (event) {
+                const notifToggle = document.getElementById('notif-toggle');
+                const notifContainer = document.querySelector('.notif-container');
+                const msgBox = document.querySelector('.msg-box');
+                const noteToggle = document.getElementById('note-box-toggle');
+
+                if (notifToggle && notifToggle.checked && notifContainer && !notifContainer.contains(event.target)) {
+                    notifToggle.checked = false;
+                }
+
+                if (noteToggle && noteToggle.checked && msgBox && !msgBox.contains(event.target)) {
+                    const quickNoteBtn = document.querySelector('.quick-note-btn');
+                    if (quickNoteBtn && !quickNoteBtn.contains(event.target)) {
+                        noteToggle.checked = false;
+                    }
+                }
+            });
+
+            const btnIn = document.querySelector('.notif-action-btn[onclick="showIncoming()"]');
+            if (btnIn) btnIn.classList.add('active');
+
+            (function snapshotStaffModalFileList() {
+                var fl = document.getElementById('fileList');
+                if (fl) window.__staffModalFileListHTML = fl.innerHTML;
+            })();
+        });
+
+        // --- 3. FİLTRELEME VE ARAMA ---
+        function filterPersonelTable() {
+            const input = document.getElementById('personelSearchInput');
+            const deptSel = document.getElementById('personelFilterDept');
+            const statSel = document.getElementById('personelFilterStatus');
+
+            if (!input || !deptSel || !statSel) return;
+
+            const q = input.value.trim().toLowerCase();
+            const dept = deptSel.value;
+            const stat = statSel.value;
+
+            document.querySelectorAll('#personelTableBody tr').forEach(tr => {
+                const rowDept = tr.getAttribute('data-departman') || '';
+                const rowDurum = tr.getAttribute('data-durum') || '';
+                const rowSicil = (tr.getAttribute('data-sicil') || '').toLowerCase();
+                const rowName = tr.querySelector('strong') ? tr.querySelector('strong').textContent.toLowerCase() : "";
+
+                const matchDept = !dept || rowDept === dept;
+                const matchStat = !stat || rowDurum === stat;
+                const matchQ = !q || rowName.includes(q) || rowSicil.includes(q);
+
+                tr.style.display = (matchDept && matchStat && matchQ) ? '' : 'none';
+            });
+        }
+
+        // --- YARDIMCI FONKSİYONLAR ---
+        function getInitials(name) {
+            if (!name) return '?';
+            const parts = name.trim().split(/\s+/);
+            if (parts.length === 1) return parts[0].substring(0, 2).toUpperCase();
+            return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+        }
+        function hashStr(str) {
+            let hash = 0;
+            for (let i = 0; i < (str || '').length; i++) hash = (hash << 5) - hash + str.charCodeAt(i);
+            return hash;
+        }
+
+        // --- 4. BACKEND VERİ İŞLEMLERİ ---
+        async function personelleriYukle() {
+            try {
+                const response = await apiFetch(`${BASE_URL}/personeller`);
+                const personeller = await response.json();
+                const tbody = document.getElementById('personelTableBody');
+                if (!tbody) return;
+
+                tbody.innerHTML = personeller.map(p => {
+                    const rawValue = (p.durum !== undefined) ? p.durum : p.Durum;
+                    let durumStr = 'Aktif';
+
+                    if (rawValue === 0 || rawValue === false || rawValue === "0" || rawValue === "Ayrıldı") {
+                        durumStr = 'Ayrıldı';
+                    } else {
+                        if (p.izinDurumu === true || p.IzinDurumu === true) {
+                            durumStr = 'İzinli';
+                        } else {
+                            durumStr = 'Aktif';
+                        }
+                    }
+
+                    const badgeStyle = durumStr === 'Aktif'
+                        ? 'background:#dcfce7;color:#166534;'
+                        : durumStr === 'İzinli'
+                            ? 'background:#fef9c3;color:#854d0e;'
+                            : 'background:#fee2e2;color:#991b1b;';
+
+                    const dbPhoto = p.avatarUrl || p.avatar_url || p.AvatarUrl;
+                    let avatarHtml;
+                    if (dbPhoto && dbPhoto.trim() !== '' && dbPhoto !== 'img/default-avatar.png') {
+                        avatarHtml = `<img src="${dbPhoto}" style="width:42px;height:42px;border-radius:10px;object-fit:cover;">`;
+                    } else {
+                        const bg = ['#6366f1', '#0ea5e9', '#ec4899'][Math.abs(hashStr(p.adSoyad)) % 3];
+                        avatarHtml = `<div style="width:42px;height:42px;border-radius:10px;background:${bg};color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;">${getInitials(p.adSoyad)}</div>`;
+                    }
+
+                    return `
+                       <tr data-departman="${p.departman || ''}" data-durum="${durumStr}" data-sicil="${p.sicilNo || ''}">
+                           <td>
+                               <div class="person-cell" onclick="goToDetails('${p.sicilNo}')" style="cursor:pointer; display: flex; align-items: center; gap: 15px;">
+                                   ${avatarHtml}
+                                   <strong style="color: #1e293b; font-size: 0.95rem;">${p.adSoyad}</strong>
+                               </div>
+                           </td>
+                           <td>${p.gorevUnvan || p.pozisyon || '-'}</td>
+                           <td>${p.departman || '-'}</td>
+                           <td><span class="status-badge" style="${badgeStyle}padding:5px 12px;border-radius:10px;font-size:0.75rem;font-weight:700;">${durumStr}</span></td>
+                           <td>
+                               <div class="action-group">
+                                   <button type="button" class="icon-btn" onclick="openModalFromRow(this)"><i class="fa-solid fa-pen-to-square"></i></button>
+                                   <button type="button" class="icon-btn" onclick="openApproveModalFromRow(this)"><i class="fa-solid fa-bell"></i></button>
+                                   <button type="button" class="icon-btn icon-btn-danger" onclick="deletePersonelRow(this)"><i class="fa-solid fa-trash-can"></i></button>
+                               </div>
+                           </td>
+                       </tr>`;
+                }).join('');
+
+                filterPersonelTable();
+
+
+                await talepleriTabloyaIsle();
+
+            } catch (err) { console.error('Personel listesi yüklenemedi:', err); }
+        }
+
+        function goToDetails(sicilNo) {
+            if (!sicilNo) {
+                console.error("Sicil numarası bulunamadı!");
+                return;
+            }
+            window.location.href = `ik-personel-detay.html?sicil=${sicilNo}`;
+        }
+
+        async function submitNewPersonel() {
+            if (!validateStaffModalGenelRequired()) { focusStaffModalGenelTab(); return; }
+
+            let maasRaw = document.getElementById('formSalaryDisplay').textContent.trim();
+            let temizMaas = maasRaw.replace(/[^\d]/g, '');
+
+            const yeniPersonel = {
+                AdSoyad: document.getElementById('formName').value.trim(),
+                TcKimlikNo: document.getElementById('formTckn').value.trim(),
+                Departman: document.getElementById('formDept').value,
+                GorevUnvan: document.getElementById('formPozisyon').value.trim(),
+                DogumTarihi: document.getElementById('formBirthDate').value,
+                KanGrubu: document.getElementById('formKan').value,
+                MedeniDurum: document.getElementById('formMedeni').value,
+                AskerlikDurumu: document.getElementById('formAskerlik').value,
+                Telefon: document.getElementById('formPhone').value.trim(),
+                Eposta: document.getElementById('formEmail').value.trim(),
+                Adres: document.getElementById('formAddress').value.trim(),
+                YakinAdiSoyadi: document.getElementById('emergName').value.trim(),
+                YakinlikDerecesi: document.getElementById('emergRel').value.trim(),
+                YakinTelefon: document.getElementById('emergPhone').value.trim(),
+                Maas: document.getElementById('formSalaryDisplay').textContent.trim(),
+                Iban: document.getElementById('formIban').value.trim(),
+                BankaAdi: document.getElementById('formBankName').value.trim(),
+                HesapNumarasi: document.getElementById('formBankAccount').value.trim()
+            };
+            try {
+
+                const response = await apiFetch(`${BASE_URL}/ekle`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+                    body: JSON.stringify(yeniPersonel)
+                });
+                if (response.ok) { alert("Yeni personel başarıyla eklendi!"); closeModal(); personelleriYukle(); ikKanali.postMessage({ tip: 'personel-guncellendi' }); }
+            } catch (err) { console.error(err); }
+        }
+
+        async function saveStaffModalEdit() {
+            if (!staffModalEditRow) return;
+            const sicilNo = staffModalEditRow.getAttribute('data-sicil');
+
+            const guncelVeri = {
+                SicilNo: sicilNo,
+                AdSoyad: document.getElementById('formName').value.trim(),
+                TcKimlikNo: document.getElementById('formTckn').value.trim(),
+                Departman: document.getElementById('formDept').value,
+                GorevUnvan: document.getElementById('formPozisyon').value.trim(),
+                DogumTarihi: document.getElementById('formBirthDate').value,
+                KanGrubu: document.getElementById('formKan').value,
+                MedeniDurum: document.getElementById('formMedeni').value,
+                AskerlikDurumu: document.getElementById('formAskerlik').value,
+                Telefon: document.getElementById('formPhone').value.trim(),
+                Eposta: document.getElementById('formEmail').value.trim(),
+                Adres: document.getElementById('formAddress').value.trim(),
+                Maas: document.getElementById('formSalaryDisplay').textContent.trim(),
+                Iban: document.getElementById('formIban').value.trim(),
+                BankaAdi: document.getElementById('formBankName').value.trim(),
+                HesapNumarasi: document.getElementById('formBankAccount').value.trim(),
+                YakinAdiSoyadi: document.getElementById('emergName').value.trim(),
+                YakinlikDerecesi: document.getElementById('emergRel').value.trim(),
+                YakinTelefon: document.getElementById('emergPhone').value.trim(),
+                Durum: staffModalEditRow.getAttribute('data-durum') === 'Aktif' ? "Aktif" : "Pasif",
+                IsActive: true
+            };
+
+            try {
+
+                const response = await apiFetch(`${BASE_URL}/guncelle/${sicilNo}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify(guncelVeri)
+                });
+
+                if (response.ok) {
+                    ikKanali.postMessage({ tip: 'personel-guncellendi' });
+                    alert("Personel bilgileri başarıyla güncellendi.");
+                    closeModal();
+                    await personelleriYukle();
+                } else {
+                    const errorJson = await response.json();
+                    console.error("Backend Validasyon Hatası:", errorJson);
+                    alert("Güncelleme başarısız! Lütfen tüm zorunlu alanları (Adres, E-posta, Kan Grubu vb.) doldurduğunuzdan emin olun.");
+                }
+            } catch (err) {
+                console.error('Bağlantı hatası:', err);
+                alert("Sunucuya bağlanılamadı.");
+            }
+        }
+
+        async function deletePersonelRow(btn) {
+            const tr = btn && btn.closest('tr');
+            if (!tr) return;
+            const sicilNo = tr.getAttribute('data-sicil');
+            if (!confirm(`Silmek istediğinize emin misiniz?`)) return;
+            try {
+
+                const response = await apiFetch(`${BASE_URL}/sil/${sicilNo}`, { method: 'DELETE' });
+                if (response.ok) { alert("Silindi."); personelleriYukle(); }
+            } catch (err) { console.error(err); }
+        }
+
+        // --- 5. MESAJ MERKEZİ ---
+
+
+
+
+        function showOutgoing() {
+            document.getElementById('notif-incoming-list').style.display = 'none';
+            document.getElementById('notif-outgoing-list').style.display = 'block';
+            document.querySelector('.notif-action-btn[onclick="showOutgoing()"]').classList.add('active');
+            document.querySelector('.notif-action-btn[onclick="showIncoming()"]').classList.remove('active');
+            updateOutgoingList();
+        }
+
+
+
+
+
+        function openReplyModal(sender, originalMessage, element, mesajId) {
+            aktifIletisimBirimi = sender.replace("SİZDEN ->", "").trim();
+
+            document.getElementById('replyTarget').innerText = aktifIletisimBirimi + " Birimine Cevap Yaz";
+            document.getElementById('replyOriginalMessage').innerText = '"' + originalMessage + '"';
+            document.getElementById('replyModal').style.display = 'flex';
+
+
+            if (element) {
+                const statusDot = element.querySelector('.notif-status');
+
+
+                if (statusDot && (statusDot.style.background === 'rgb(59, 130, 246)' || statusDot.style.background === '#3b82f6' || statusDot.style.background.includes('3b82f6'))) {
+
+
+                    statusDot.style.background = '#cbd5e1';
+
+
+                    const badge = document.querySelector('.notif-badge');
+                    if (badge && parseInt(badge.innerText) > 0) {
+                        const yeniSayi = parseInt(badge.innerText) - 1;
+                        badge.innerText = yeniSayi;
+                        if (yeniSayi === 0) badge.style.display = 'none';
+                    }
+
+
+                    if (mesajId) {
+                        apiFetch(`/api/IkIstatistikKontrolcusu/mesaj-okundu/${mesajId}`, {
+                            method: 'POST'
+                        }).catch(e => console.error("Mesaj okundu işareti veritabanına iletilemedi:", e));
+                    }
+                }
+            }
+        }
+
+
+
+        function guncelleNotifBadge(veriler) {
+            const unreadCount = veriler.filter(m => !m.okunduMu).length;
+
+            const badge = document.querySelector('.notif-badge');
+
+            if (badge) {
+                badge.innerText = unreadCount;
+
+                badge.style.display = unreadCount > 0 ? 'flex' : 'none';
+            }
+        }
+
+
+        async function showIncoming() {
+            document.getElementById('notif-incoming-list').style.display = 'block';
+            document.getElementById('notif-outgoing-list').style.display = 'none';
+            document.querySelector('.notif-action-btn[onclick="showIncoming()"]').classList.add('active');
+            document.querySelector('.notif-action-btn[onclick="showOutgoing()"]').classList.remove('active');
+
+            // Menü açıldığında kırmızı uyarıyı gizle
+            const badge = document.querySelector('.notif-badge');
+            if (badge) badge.style.display = 'none';
+        }
+
+
+
+
+
+
+        function closeReplyModal() {
+            document.getElementById('replyModal').style.display = 'none';
+            const input = document.getElementById('replyText');
+            if (input) input.value = '';
+            aktifIletisimBirimi = ""; // Hafızayı sıfırla
+        }
+
+
+        async function sendReply() {
+            const replyInput = document.getElementById('replyText');
+            if (!replyInput) return;
+
+            const text = replyInput.value.trim();
+            if (text === "") {
+                alert("Lütfen boş bir mesaj göndermeyin.");
+                return;
+            }
+
+
+            const suAnkiSaat = new Date().toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' });
+
+            const gonderilecekCevapPaketi = {
+                Birim: aktifIletisimBirimi,
+                Mesaj: text,
+                Saat: suAnkiSaat
+            };
+
+            try {
+
+                const response = await apiFetch('/api/IkIstatistikKontrolcusu/mesaj-gonder', {
+                    method: 'POST',
+                    body: JSON.stringify(gonderilecekCevapPaketi)
+                });
+
+                if (response.ok) {
+                    alert(`${aktifIletisimBirimi} birimine cevabınız başarıyla iletildi!`);
+                    closeReplyModal();
+
+                    // Eğer sayfada bildirimleri listeleyen fonksiyon varsa listeyi anlık yenile
+                    if (typeof bildirimleriYukle === 'function') await bildirimleriYukle();
+                    if (typeof updateOutgoingList === 'function') updateOutgoingList();
+                } else {
+                    alert("Cevap iletilirken sunucu katmanında bir hata oluştu.");
+                }
+            } catch (err) {
+                console.error("Cevap gönderme hatası:", err);
+                alert("Bağlantı hatası! Cevap gönderilemedi.");
+            }
+        }
+
+        function updateOutgoingList() {
+            const listContainer = document.getElementById('notif-outgoing-list');
+            if (!listContainer) return;
+            const gidenlerHafiza = JSON.parse(localStorage.getItem('guardia_giden_mesajlar') || '[]');
+            listContainer.innerHTML = gidenlerHafiza.length === 0
+                ? '<div class="notif-item"><span>Henüz gönderilmiş bir not bulunmuyor.</span></div>'
+                : gidenlerHafiza.map(msg => `
+                    <div class="notif-item">
+                                <strong>SİZDEN -> ${msg.hedef}</strong>
+                                <span>${msg.icerik}</span>
+                                <small style="display:block; color:#94a3b8; font-size:0.75rem; margin-top:5px;">
+                                    <i class="fa-regular fa-clock"></i> ${msg.saat}
+                                </small>
+                    </div>`).join('');
+        }
+
+        // --- 6. MODAL YÖNETİMİ ---
+        function openModalFromRow(btn) { const tr = btn && btn.closest('tr'); if (tr) openModal('edit', tr); }
+
+        async function populateStaffModalFromRow(tr) {
+            if (!tr) return;
+            const sicilNo = tr.getAttribute('data-sicil');
+            if (!sicilNo) return;
+
+            try {
+                const response = await apiFetch(`${BASE_URL}/personel/${sicilNo}`);
+                if (!response.ok) throw new Error("Veritabanından personel detayları okunamadı.");
+
+                const detay = await response.json();
+
+                document.getElementById('formName').value = detay.adSoyad || '';
+                document.getElementById('formTckn').value = detay.tcKimlik || '';
+                document.getElementById('formPozisyon').value = detay.gorevUnvan || tr.cells[1].textContent.trim();
+                document.getElementById('formDept').value = tr.getAttribute('data-departman');
+
+                if (detay.dogumTarihi) {
+                    const parts = detay.dogumTarihi.split('.');
+                    if (parts.length === 3) {
+                        document.getElementById('formBirthDate').value = `${parts[2]}-${parts[1]}-${parts[0]}`;
+                    }
+                }
+                if (document.getElementById('formKan')) {
+                    document.getElementById('formKan').value = detay.kanGrubu || 'Seçiniz';
+                }
+
+                if (document.getElementById('formMedeni')) {
+                    document.getElementById('formMedeni').value = detay.medeniDurum || 'Seçiniz';
+                }
+                if (document.getElementById('formAskerlik')) {
+                    document.getElementById('formAskerlik').value = detay.askerlikDurumu || 'Seçiniz';
+                }
+
+                if (document.getElementById('formPhone')) document.getElementById('formPhone').value = detay.telefon || '';
+                if (document.getElementById('formEmail')) document.getElementById('formEmail').value = detay.eposta || '';
+                if (document.getElementById('formAddress')) document.getElementById('formAddress').value = detay.adres || '';
+                if (document.getElementById('emergName')) document.getElementById('emergName').value = detay.yakinAdiSoyadi || '';
+                if (document.getElementById('emergPhone')) document.getElementById('emergPhone').value = detay.yakinTelefon || '';
+
+                if (document.getElementById('emergRel')) {
+                    document.getElementById('emergRel').value = detay.yakinlikDerecesi || '';
+                }
+
+                if (document.getElementById('formSalaryDisplay')) {
+                    document.getElementById('formSalaryDisplay').textContent = (detay.maas && detay.maas !== "0") ? detay.maas + " ₺" : "42.500,00 ₺";
+                }
+                if (document.getElementById('formIban')) document.getElementById('formIban').value = detay.iban || 'TR68 0000 0000 0000 0000 0000 00';
+                if (document.getElementById('formBankName')) document.getElementById('formBankName').value = detay.bankaAdi || 'Garanti BBVA';
+                if (document.getElementById('formBankAccount')) document.getElementById('formBankAccount').value = detay.hesapNumarasi || '12345678';
+
+                document.getElementById('modalMainTitle').textContent = (detay.adSoyad || tr.querySelector('strong').textContent.trim()) + " - Personel Dosyası";
+
+            } catch (err) {
+                console.error("Modal yüklenirken veri tabanı senkronizasyon hatası:", err);
+                document.getElementById('formName').value = tr.querySelector('strong').textContent.trim();
+                document.getElementById('formPozisyon').value = tr.cells[1].textContent.trim();
+                document.getElementById('formDept').value = tr.getAttribute('data-departman');
+                document.getElementById('modalMainTitle').textContent = document.getElementById('formName').value + " - Personel Dosyası";
+            }
+        }
+
+        async function openModal(mode, sourceRow) {
+            const modal = document.getElementById('staffModal');
+            const primary = document.getElementById('staffPrimaryBtn');
+
+            if (!modal || !primary) return;
+
+            modal.style.display = 'flex';
+            focusStaffModalGenelTab();
+
+            if (mode === 'new') {
+                document.getElementById('modalMainTitle').innerText = "Yeni Personel Kaydı";
+                resetStaffModalForNewPerson();
+                primary.innerText = "Kaydet";
+                primary.onclick = function () { submitNewPersonel(); };
+            } else {
+                staffModalEditRow = sourceRow;
+                primary.innerText = "Güncelle";
+                primary.onclick = function () { saveStaffModalEdit(); };
+                if (sourceRow) {
+                    await populateStaffModalFromRow(sourceRow);
+                }
+            }
+        }
+
+        function closeModal() { document.getElementById('staffModal').style.display = 'none'; staffModalEditRow = null; }
+
+        function validateStaffModalGenelRequired() {
+            const name = document.getElementById('formName').value.trim();
+            const tckn = document.getElementById('formTckn').value.trim();
+            if (!name || tckn.length !== 11) { alert('Hatalı giriş!'); return false; }
+            return true;
+        }
+
+        function focusStaffModalGenelTab() {
+            document.querySelectorAll('.tab-btn').forEach((b, i) => b.classList.toggle('active', i === 0));
+            document.querySelectorAll('.form-section').forEach(s => s.classList.remove('active'));
+            document.getElementById('tab-genel').classList.add('active');
+        }
+
+        function resetStaffModalForNewPerson() {
+            const modal = document.getElementById('staffModal');
+            if (!modal) return;
+
+            modal.querySelectorAll('input').forEach(inp => {
+                if (inp.type !== 'button' && inp.type !== 'submit') inp.value = '';
+            });
+
+            modal.querySelectorAll('select').forEach(sel => sel.selectedIndex = 0);
+
+            if (document.getElementById('formSalaryDisplay'))
+                document.getElementById('formSalaryDisplay').textContent = '—';
+
+            if (document.getElementById('fileList'))
+                document.getElementById('fileList').innerHTML = STAFF_MODAL_EMPTY_EVRAK_HTML;
+
+            resetStaffModalPhoto();
+        }
+
+        function resetStaffModalPhoto() {
+            const headerImg = document.getElementById('headerImg');
+            const placeholder = document.getElementById('photoPlaceholder');
+            if (headerImg) {
+                headerImg.src = '';
+                headerImg.style.display = 'none';
+            }
+            if (placeholder) {
+                placeholder.style.display = 'flex';
+            }
+            staffModalPhotoDataUrl = '';
+        }
+
+        window.onclick = function (event) {
+            if (event.target === document.getElementById('staffModal')) closeModal();
+            if (event.target === document.getElementById('replyModal')) closeReplyModal();
+            const approveModal = document.getElementById('approveModal');
+            if (event.target === approveModal) approveModal.style.display = 'none';
+        }
+
+
+        async function bildirimleriYukle() {
+            try {
+                const response = await apiFetch('/api/IkIstatistikKontrolcusu/mesajlar');
+                const veriler = await response.json();
+
+                const container = document.getElementById('notif-incoming-list');
+                if (!container) return;
+
+                container.innerHTML = "";
+
+                if (veriler.length === 0) {
+                    container.innerHTML = '<div class="notif-item"><span>Gelen kutunuz temiz. 📬</span></div>';
+                } else {
+                    container.innerHTML = veriler.map(m => {
+                        const temizMesaj = m.mesaj.replace(/'/g, "\\'").replace(/"/g, '\\"');
+                        const durumRengi = m.okunduMu ? '#cbd5e1' : '#3b82f6';
+
+                        return `
+                        <div class="notif-item"
+                             onclick="openReplyModal('${m.birim}', '${temizMesaj}', this, ${m.id})"
+                             style="cursor:pointer; padding:12px; border-bottom:1px solid #f1f5f9;">
+                            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+                                <strong style="color:#3b82f6; font-size:11px; text-transform:uppercase;">
+                                    <span class="notif-status" style="display:inline-block; width:8px; height:8px; border-radius:50%; background:${durumRengi}; margin-right:5px;"></span>
+                                    ${m.birim}
+                                </strong>
+                                <small style="color:#94a3b8; font-size:10px;">
+                                    <i class="fa-regular fa-clock"></i> ${m.saat}
+                                </small>
+                            </div>
+                            <span style="display:block; font-size:13px; color:#2c3e50; line-height:1.4; word-break: break-word;">${m.mesaj}</span>
+                        </div>`;
+                    }).join('');
+                }
+
+                guncelleNotifBadge(veriler);
+            } catch (e) {
+                console.error("Mesajlar yüklenemedi:", e);
+            }
+        }
+
+
+
+        async function talepleriTabloyaIsle() {
+            try {
+                const res = await apiFetch('/api/IkPersonelKontrolcusu/tum-bekleyen-talepler');
+                if (!res.ok) return;
+                const bekleyenTalepler = await res.json();
+                // API object veya array donebilir - ikisini de destekle
+                const sicilNolar = Array.isArray(bekleyenTalepler)
+                    ? bekleyenTalepler.map(t => String(t.sicilNo || t.SicilNo || t))
+                    : Object.keys(bekleyenTalepler);
+
+
+                document.querySelectorAll('#personelTableBody .bell-warning').forEach(btn => {
+                    btn.classList.remove('bell-warning');
+                });
+
+
+                sicilNolar.forEach(sicil => {
+                    const satir = document.querySelector(`tr[data-sicil="${sicil}"]`);
+                    if (satir) {
+                        const zilButonu = satir.querySelector('button[onclick*="openApproveModalFromRow"]');
+                        if (zilButonu) {
+                            zilButonu.classList.add('bell-warning');
+                            zilButonu.style.position = 'relative';
+                        }
+                    }
+                });
+            } catch (err) {
+                console.error("Tablo zilleri güncellenirken hata:", err);
+            }
+        }
+
+        // --- 7. ZİL (BİLDİRİM) VE ONAY İŞLEMLERİ ---
+        async function openApproveModalFromRow(btn) {
+            const tr = btn.closest('tr');
+            if (!tr) return;
+
+            const sicilNo = tr.getAttribute('data-sicil');
+            const adSoyad = tr.querySelector('strong').textContent.trim();
+
+
+            const eskiTelefon = tr.getAttribute('data-phone') || 'Kayıtlı Değil';
+            const eskiAdres = tr.getAttribute('data-address') || 'Kayıtlı Değil';
+            const eskiYakin = tr.getAttribute('data-emerg-name') || 'Kayıtlı Değil';
+
+            const modal = document.getElementById('approveModal');
+            if (!modal) return;
+
+            try {
+                const response = await apiFetch(`${BASE_URL}/onay-bekleyen/${sicilNo}`);
+                const bekleyenVeri = await response.json();
+
+                // Personel Adını Yaz
+                document.getElementById('approveModalPersonName').innerText = adSoyad;
+
+
+                document.getElementById('approveCmpPhoneOld').innerText = eskiTelefon;
+                document.getElementById('approveCmpAddrOld').innerText = eskiAdres;
+                document.getElementById('approveCmpEmergOld').innerText = eskiYakin;
+
+
+                document.getElementById('approveCmpPhoneNew').innerText = bekleyenVeri.telefon || 'Değişiklik Yok';
+                document.getElementById('approveCmpAddrNew').innerText = bekleyenVeri.adres || 'Değişiklik Yok';
+                document.getElementById('approveCmpEmergNew').innerText = bekleyenVeri.yakinAdiSoyadi || 'Değişiklik Yok';
+
+
+                const confirmBtn = document.getElementById('confirmApproveBtn');
+                if (confirmBtn) {
+
+                    confirmBtn.onclick = null;
+
+
+                    confirmBtn.onclick = () => {
+                        const satirPozisyon = btn.closest('tr')?.cells[1]?.textContent?.trim() || '';
+                        const guncellemePaketi = {
+                            SicilNo: sicilNo,
+                            AdSoyad: adSoyad,
+                            Telefon: bekleyenVeri.telefon || eskiTelefon,
+                            Adres: bekleyenVeri.adres || eskiAdres,
+                            YakinAdiSoyadi: bekleyenVeri.yakinAdiSoyadi || eskiYakin,
+                            GorevUnvan: bekleyenVeri.gorevUnvan || bekleyenVeri.GorevUnvan || satirPozisyon,
+                            Durum: "Aktif"
+                        };
+                        approveUpdate(sicilNo, btn, guncellemePaketi);
+                    };
+                }
+
+                modal.style.display = 'flex';
+            } catch (err) {
+                if (err.message && err.message.includes("404")) {
+                    alert("Bu personel için bekleyen bir güncelleme talebi bulunamadı.");
+                } else {
+                    console.error("Veri çekme hatası:", err);
+                }
+            }
+        }
+
+
+        function openApproveModalBySicil(sicilNo) {
+            const satir = document.querySelector(`tr[data-sicil="${sicilNo}"]`);
+            if (satir) {
+
+                const zilButonu = satir.querySelector('.bell-warning') || satir.querySelector('button[onclick*="openApproveModalFromRow"]');
+                if (zilButonu) {
+                    openApproveModalFromRow(zilButonu);
+                }
+            } else {
+                alert("Personel satırı şu an ekranda görünmüyor (Filtrelenmiş olabilir). Lütfen filtreleri temizleyip tekrar deneyin.");
+            }
+        }
+
+        async function approveUpdate(sicilNo, zilButonu, bekleyenVeri) {
+            try {
+
+                const mevcutRes = await apiFetch(`${BASE_URL}/personel/${sicilNo}`);
+                if (!mevcutRes.ok) {
+                    const errText = await mevcutRes.text();
+                    throw new Error(`Personel verisi çekilemedi (HTTP ${mevcutRes.status}): ${errText}`);
+                }
+                const mevcutVeri = await mevcutRes.json();
+                console.log("Mevcut personel verisi:", JSON.stringify(mevcutVeri));
+
+
+                const guncelPaket = {
+                    SicilNo: mevcutVeri.sicilNo || mevcutVeri.SicilNo,
+                    AdSoyad: mevcutVeri.adSoyad || mevcutVeri.AdSoyad,
+                    FotoUrl: mevcutVeri.fotoUrl || mevcutVeri.FotoUrl || "",
+                    Departman: mevcutVeri.departman || mevcutVeri.Departman || "",
+                    GorevUnvan: bekleyenVeri.GorevUnvan || bekleyenVeri.gorevUnvan || mevcutVeri.gorevUnvan || mevcutVeri.GorevUnvan || mevcutVeri.pozisyon || "",
+                    Durum: mevcutVeri.durum || mevcutVeri.Durum || "Aktif",
+                    TcKimlikNo: mevcutVeri.tcKimlik || mevcutVeri.tcKimlikNo || mevcutVeri.TcKimlikNo || "",
+                    DogumTarihi: mevcutVeri.dogumTarihi || mevcutVeri.DogumTarihi || "",
+                    KanGrubu: mevcutVeri.kanGrubu || mevcutVeri.KanGrubu || "",
+                    MedeniDurum: mevcutVeri.medeniDurum || mevcutVeri.MedeniDurum || "",
+                    AskerlikDurumu: mevcutVeri.askerlikDurumu || mevcutVeri.AskerlikDurumu || "",
+                    Eposta: mevcutVeri.eposta || mevcutVeri.Eposta || "",
+                    Maas: mevcutVeri.maas || mevcutVeri.Maas || 0,
+                    Iban: mevcutVeri.iban || mevcutVeri.Iban || "",
+                    BankaAdi: mevcutVeri.bankaAdi || mevcutVeri.BankaAdi || "",
+                    HesapNumarasi: mevcutVeri.hesapNumarasi || mevcutVeri.HesapNumarasi || "",
+                    YakinlikDerecesi: mevcutVeri.yakinlikDerecesi || mevcutVeri.YakinlikDerecesi || "",
+                    YakinTelefon: mevcutVeri.yakinTelefon || mevcutVeri.YakinTelefon || "",
+
+                    Telefon: bekleyenVeri.Telefon || bekleyenVeri.telefon || mevcutVeri.telefon || "",
+                    Adres: bekleyenVeri.Adres || bekleyenVeri.adres || mevcutVeri.adres || "",
+                    YakinAdiSoyadi: bekleyenVeri.YakinAdiSoyadi || bekleyenVeri.yakinAdiSoyadi || mevcutVeri.yakinAdiSoyadi || ""
+                };
+
+
+                const res = await apiFetch(`${BASE_URL}/guncelle/${sicilNo}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(guncelPaket)
+                });
+
+                if (res.ok) {
+                    alert("Bilgiler başarıyla mühürlendi ve güncellendi!");
+                    if (zilButonu) {
+                        const dot = zilButonu.querySelector('.notification-dot');
+                        if (dot) dot.style.display = 'none';
+                    }
+                    closeApproveModal();
+                    personelleriYukle();
+                } else {
+                    const errorDetail = await res.text();
+                    console.error("Backend hata verdi:", res.status, errorDetail);
+                    alert(`Güncelleme başarısız! (HTTP ${res.status})\n${errorDetail}`);
+                }
+            } catch (err) {
+                console.error("İşlem hatası:", err);
+                alert("Bağlantı hatası: " + (err.message || JSON.stringify(err)));
+            }
+        }
+
+        function closeApproveModal() {
+            const modal = document.getElementById('approveModal');
+            if (modal) modal.style.display = 'none';
+        }
+
+        async function personelGuncellemeTalebiGonder(sicilNo) {
+            const yeniVeri = {
+                telefon: document.getElementById('inputPhone').value,
+                adres: document.getElementById('inputAddress').value,
+                yakinAdiSoyadi: document.getElementById('inputEmergName').value
+            };
+
+
+            const res = await apiFetch(`${BASE_URL}/talep-gonder/${sicilNo}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(yeniVeri)
+            });
+
+            if (res.ok) {
+                alert("Güncelleme talebiniz İK onayına gönderildi.");
+            }
+        }
+
+
+
+        function switchTab(event, tabId) {
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            document.querySelectorAll('.form-section').forEach(s => s.classList.remove('active'));
+
+            if (event && event.currentTarget) {
+                event.currentTarget.classList.add('active');
+            }
+
+            const target = document.getElementById('tab-' + tabId);
+            if (target) target.classList.add('active');
+        }
+    </script>
+</body>
+</html>

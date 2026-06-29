@@ -1,0 +1,70 @@
+/* PERSONEL DEĞİŞKENLERİ */
+:root {
+    --bg: #0f172a;           /* Derin Lacivert */
+    --card: #1e293b;         /* Kart Rengi */
+    --text: #ffffff;         /* Ana Yazı */
+    --sub: #94a3b8;          /* Yardımcı Yazı */
+    --accent: #38bdf8;       /* Guardia Mavisi */
+    --danger: #f43f5e;       /* Uyarı Kırmızısı */
+    --success: #22c55e;      /* Onay Yeşili */
+    --border: rgba(255,255,255,0.08);
+    --nav-bg: rgba(30, 41, 59, 0.8);
+    --badge-text: #ffffff; /* Etiket Yazı Rengi */
+}
+
+/* AÇIK TEMA (LIGHT MODE) */
+body.light-mode {
+    --bg: #f8fafc;           /* Çok Açık Gri */
+    --card: #ffffff;         /* Saf Beyaz */
+    --text: #0f172a;         /* Koyu Lacivert Yazı */
+    --sub: #64748b;          /* Gri Yazı */
+    --border: #e2e8f0;       /* Belirgin Kenarlık */
+    --nav-bg: rgba(255, 255, 255, 0.9);
+}
+
+/* GENEL AYARLAR */
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+body { 
+    margin: 0; 
+    font-family: 'Poppins', sans-serif; 
+    background: var(--bg); 
+    color: var(--text); 
+    transition: all 0.3s ease;
+    padding-bottom: 90px; /* Alt menü için boşluk */
+}
+
+.container { max-width: 450px; margin: 0 auto; padding: 20px; }
+
+/* ALT NAVİGASYON (TÜM SAYFALARDA AYNI) */
+.bottom-nav {
+    position: fixed; bottom: 0; left: 50%; transform: translateX(-50%);
+    width: 100%; max-width: 450px;
+    background: var(--nav-bg);
+    backdrop-filter: blur(15px);
+    display: flex; justify-content: space-around;
+    padding: 12px 0;
+    border-top: 1px solid var(--border);
+    z-index: 1000;
+}
+
+.nav-item { 
+    text-decoration: none; color: var(--sub); 
+    text-align: center; font-size: 0.65rem; font-weight: 500;
+    transition: 0.2s;
+}
+
+.nav-item i { font-size: 1.3rem; display: block; margin-bottom: 4px; }
+.nav-item.active { color: var(--accent); }
+
+/* Dijital Kimlik ekranı: tam sayfa, alt bar yok (PDF gereği) */
+body.dijital-kimlik-full { padding-bottom: 0; }
+body.dijital-kimlik-full .bottom-nav { display: none; }
+
+/* Mobil Uyumluluk İyileştirmeleri (Çok küçük ekranlar için) */
+@media (max-width: 380px) {
+    .container { padding: 15px; }
+    .bottom-nav { padding: 10px 0; }
+    .nav-item i { font-size: 1.1rem; }
+    .nav-item { font-size: 0.6rem; }
+}

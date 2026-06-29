@@ -1,0 +1,1686 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Guardia | Stok Yönetimi</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/ik-sidebar.css">
+    <link rel="stylesheet" href="css/dept-common.css">
+    <style>
+        :root { --sidebar: #0f172a; --text-main: #1e293b; --text-sub: #64748b; --white: #fff; }
+        .hero { margin-bottom: 24px; }
+        .hero h2 { margin: 0 0 6px 0; font-size: 1.5rem; color: var(--sidebar); }
+        .hero p { margin: 0; font-size: 0.9rem; color: var(--text-sub); }
+        .data-table-box {
+            background: var(--white);
+            padding: 24px;
+            border-radius: 20px;
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
+        }
+
+        /* Üst sabit; sadece tablo alanı kayar, çubuk gizli */
+        .ik-content.sa-stok-page {
+            box-sizing: border-box;
+            height: 100vh;
+            max-height: 100vh;
+            overflow: hidden !important;
+            display: flex;
+            flex-direction: column;
+            min-height: 0;
+        }
+        .ik-content.sa-stok-page > .dept-header,
+        .ik-content.sa-stok-page > .stats-grid,
+        .ik-content.sa-stok-page > .table-tools,
+        .ik-content.sa-stok-page > #envanter-footer {
+            flex-shrink: 0;
+        }
+        .ik-content.sa-stok-page > .data-table-box {
+            flex: 1;
+            min-height: 0;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            margin-bottom: 12px;
+            padding: 16px 20px;
+        }
+        .sa-stok-table-scroll {
+            flex: 1;
+            min-height: 0;
+            overflow: auto;
+            overscroll-behavior: contain;
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+        .sa-stok-table-scroll::-webkit-scrollbar {
+            display: none;
+        }
+        #stokTable { width: 100%; border-collapse: collapse; table-layout: fixed; }
+        #stokTable th { padding: 14px; border-bottom: 2px solid #f1f5f9; color: #64748b; font-size: 0.9rem; }
+        #stokTable td { padding: 14px; border-bottom: 1px solid #f1f5f9; font-size: 0.9rem; word-wrap: break-word; }
+        #stokTable thead th {
+            position: sticky;
+            top: 0;
+            z-index: 2;
+            background: #fff;
+            box-shadow: 0 1px 0 #f1f5f9;
+        }
+        /* Başlık hücreleri, gövde ile aynı hizada (genel #stokTable th sola bastığı için önceden kayıyordu) */
+        #stokTable thead th:nth-child(1),
+        #stokTable tbody td:nth-child(1) { text-align: left; vertical-align: middle; }
+        #stokTable thead th:nth-child(2),
+        #stokTable thead th:nth-child(3),
+        #stokTable thead th:nth-child(4),
+        #stokTable thead th:nth-child(5),
+        #stokTable tbody td:nth-child(2),
+        #stokTable tbody td:nth-child(3),
+        #stokTable tbody td:nth-child(4),
+        #stokTable tbody td:nth-child(5) { text-align: center; vertical-align: middle; }
+        #stokTable col.col-prod { width: 32%; }
+        #stokTable col.col-num { width: 14%; }
+        #stokTable col.col-unit { width: 12%; }
+        #stokTable col.col-thresh { width: 14%; }
+        #stokTable col.col-stat { width: 14%; }
+        .kritik { color: #b91c1c; font-weight: 600; }
+        .panel { background: #f8fafc; padding: 20px; border-radius: 16px; border: 1px dashed #cbd5e1; }
+        .panel h4 { margin: 0 0 12px 0; font-size: 0.95rem; color: var(--sidebar); }
+    
+html, body {
+    height: 100%;
+    margin: 0;
+    overflow: hidden; 
+}
+
+/* Ana içerik alanının da taşmasını engelle */
+.ik-content {
+    overflow: hidden !important;
+    height: 100vh;
+}
+
+        /*  Yeni Eklenen Stiller  */
+.stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; margin-bottom: 24px; }
+.stat-card { background: var(--white); padding: 20px; border-radius: 16px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); cursor: pointer; transition: transform 0.2s; border: 1px solid transparent; }
+.stat-card:hover { transform: translateY(-3px); border-color: #3b82f6; }
+.stat-card h3 { margin: 0; font-size: 0.85rem; color: var(--text-sub); text-transform: uppercase; letter-spacing: 0.5px; }
+.stat-card .value { font-size: 1.8rem; font-weight: 600; margin: 8px 0; color: var(--sidebar); }
+.stat-card .trend { font-size: 0.8rem; display: flex; align-items: center; gap: 4px; }
+
+/* Renkli Badge/Rozetler */
+.badge { padding: 4px 10px; border-radius: 20px; font-size: 0.75rem; font-weight: 600; }
+.badge-red { background: #fee2e2; color: #b91c1c; }
+.badge-green { background: #dcfce7; color: #166534; }
+.badge-blue { background: #e0f2fe; color: #0369a1; }
+
+/* Tablo Üstü Araçlar */
+.table-tools { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+.search-box { position: relative; width: 300px; }
+.search-box i { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--text-sub); }
+.search-box input { width: 100%; padding: 10px 10px 10px 35px; border-radius: 10px; border: 1px solid #e2e8f0; outline: none; }
+.action-btns { display: flex; gap: 10px; }
+.btn-primary { background: #0f172a; color: white; border: none; padding: 10px 18px; border-radius: 10px; cursor: pointer; font-weight: 600; display: flex; align-items: center; gap: 8px; }
+.btn-outline { background: white; border: 1px solid #e2e8f0; padding: 10px 18px; border-radius: 10px; cursor: pointer; color: var(--text-main); }
+    /* Başlıkları ve hücreleri daha düzgün hizalayalım */
+th, td { 
+    padding: 14px; 
+    border-bottom: 1px solid #f1f5f9; 
+}
+
+/* Ürün adları solda kalsın (1. sütun) */
+td:nth-child(1), th:nth-child(1) { text-align: left; }
+td:nth-child(2), th:nth-child(2),
+td:nth-child(3), th:nth-child(3),
+td:nth-child(4), th:nth-child(4) { text-align: center; }
+td:nth-child(5), th:nth-child(5) { text-align: center; }
+
+table tbody tr:hover {
+    background-color: #f8fafc !important; /* Satırın rengini değiştirir */
+    cursor: pointer; /* Fare el işaretine döner, tıklanabilir hissi verir */
+}
+
+/* Tıklayınca (Focus) oluşacak sade ve şık kırmızı tasarım */
+.drawer-body input:focus, 
+.drawer-body select:focus {
+    outline: none;
+    border-color: #ef4444 !important; /* Tıklayınca kırmızı yanar */
+    background-color: #fffafa; /* Çok hafif bir arka plan rengi ekler, daha belirgin olur */
+    box-shadow: none; /* O eski mavi parıltıyı tamamen kaldırır */
+}
+
+/* Hata durumunda (boş geçilince) yanacak olan sabit kırmızı */
+.is-invalid {
+    border-color: #ef4444 !important;
+    background-color: #fef2f2 !important;
+}
+
+
+/* Drawer (Panel) Tasarımı */
+.drawer {
+    position: fixed; top: 0; right: -450px; width: 400px; height: 100%;
+    background: white; box-shadow: -5px 0 25px rgba(0,0,0,0.1);
+    z-index: 1000; transition: 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    display: flex; flex-direction: column;
+}
+.drawer.active { right: 0; }
+.drawer-overlay {
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(15, 23, 42, 0.4); backdrop-filter: blur(2px);
+    display: none; z-index: 999;
+}
+.drawer-header { padding: 24px; border-bottom: 1px solid #f1f5f9; display: flex; justify-content: space-between; align-items: center; }
+.drawer-body { padding: 24px; flex: 1; overflow-y: auto; }
+.drawer-footer { padding: 20px 24px; border-top: 1px solid #f1f5f9; display: flex; gap: 12px; }
+
+/* Form Elemanları */
+.form-group { margin-bottom: 20px; }
+.form-group label { display: block; font-size: 0.85rem; font-weight: 600; color: #475569; margin-bottom: 8px; }
+.form-group input, .form-group select {
+    width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #e2e8f0; font-family: inherit;
+}
+.btn-close-drawer { background: none; border: none; font-size: 1.5rem; cursor: pointer; color: #94a3b8; }
+   
+
+/* Modalların ekranın ortasında açılması için genel stil */
+.reply-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(15, 23, 42, 0.6);
+    backdrop-filter: blur(4px);
+    display: none; /* JS ile flex yapılacak */
+    align-items: center;
+    justify-content: center;
+    z-index: 2000;
+}
+
+.reply-content {
+    background: white;
+    border-radius: 16px;
+    box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1);
+    overflow: hidden;
+    animation: modalAppear 0.3s ease-out;
+}
+
+@keyframes modalAppear {
+    from { transform: scale(0.9); opacity: 0; }
+    to { transform: scale(1); opacity: 1; }
+}
+
+.reply-header {
+    padding: 20px 24px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.reply-actions {
+    padding: 15px 24px;
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+}
+
+/* Zil → gelen → cevap: dept-common / sa-index ile aynı kutu, textarea ve buton düzeni */
+#replyModal.reply-modal {
+    align-items: center;
+    justify-content: center;
+}
+
+#replyModal > .reply-content {
+    width: 90%;
+    max-width: 450px;
+    padding: 25px;
+    border-radius: 20px;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+    overflow: visible;
+    box-sizing: border-box;
+    animation: slideUp 0.3s ease;
+}
+
+#replyModal > .reply-content .reply-header {
+    padding: 0;
+    margin-bottom: 15px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    justify-content: flex-start;
+}
+
+#replyModal > .reply-content .reply-header i {
+    color: #3b82f6;
+    font-size: 1.2rem;
+    flex-shrink: 0;
+}
+
+#replyModal > .reply-content .reply-header h3 {
+    margin: 0;
+    font-size: 1.1rem;
+    color: #0f172a;
+    font-weight: 700;
+    text-align: left;
+    flex: 1;
+    min-width: 0;
+}
+
+#replyModal .original-msg-preview {
+    background: #f8fafc;
+    border-left: 4px solid #e2e8f0;
+    padding: 12px;
+    border-radius: 8px;
+    font-size: 0.85rem;
+    color: #64748b;
+    margin-bottom: 20px;
+    font-style: italic;
+}
+
+#replyModal .reply-textarea {
+    width: 100%;
+    height: 120px;
+    padding: 15px;
+    border: 1.5px solid #e2e8f0;
+    border-radius: 12px;
+    resize: none;
+    font-family: 'Inter', sans-serif;
+    font-size: 0.9rem;
+    outline: none;
+    transition: border-color 0.3s;
+    margin-bottom: 20px;
+    box-sizing: border-box;
+}
+
+#replyModal .reply-textarea:focus {
+    border-color: #3b82f6;
+}
+
+#replyModal .reply-actions {
+    padding: 0;
+    margin: 0;
+    display: flex;
+    gap: 12px;
+}
+
+/* Rapor içindeki bar grafiklerin renkleri */
+.bar-mekanik { background: #0f172a; height: 80%; width: 30px; border-radius: 4px; }
+.bar-elektrik { background: #3b82f6; height: 40%; width: 30px; border-radius: 4px; }
+.bar-sivi { background: #6366f1; height: 60%; width: 30px; border-radius: 4px; }
+.bar-diger { background: #94a3b8; height: 25%; width: 30px; border-radius: 4px; }
+  
+/* Hareket listesindeki kaydırma çubuğunu gizle ama kaydırmayı koru */
+.activity-list {
+    max-height: 350px;
+    overflow-y: auto;
+    scrollbar-width: none; /* Firefox */
+    -ms-overflow-style: none; /* IE ve Edge */
+}
+
+.activity-list::-webkit-scrollbar {
+    display: none; /* Chrome, Safari ve Opera */
+}
+
+.activity-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 16px;
+    margin-bottom: 10px;
+    background: #f8fafc;
+    border-radius: 12px;
+    border: 1px solid #e2e8f0;
+    transition: all 0.2s ease;
+}
+
+.activity-item:hover {
+    transform: translateX(5px);
+    border-color: #cbd5e1;
+}
+
+.activity-info {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.activity-icon {
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1rem;
+}
+
+.icon-in { background: #f0fdf4; color: #16a34a; border: 1px solid #dcfce7; }
+.icon-out { background: #fef2f2; color: #dc2626; border: 1px solid #fee2e2; }
+
+.activity-details span {
+    display: block;
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: #1e293b;
+}
+
+.activity-details small {
+    color: #64748b;
+    font-size: 0.75rem;
+}
+
+.activity-amount {
+    font-weight: 700;
+    font-size: 1rem;
+}
+
+.amount-plus { color: #16a34a; }
+.amount-minus { color: #dc2626; }
+  
+  /* Tarih Filtreleme Paneli */
+.history-filters {
+    display: none; /* Başlangıçta kapalı */
+    background: #f1f5f9;
+    padding: 15px;
+    border-radius: 12px;
+    margin-bottom: 15px;
+    gap: 10px;
+}
+
+.filter-group {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    flex: 1;
+}
+
+.filter-group label {
+    font-size: 0.7rem;
+    font-weight: 700;
+    color: #475569;
+    text-transform: uppercase;
+}
+
+.filter-group select {
+    padding: 8px;
+    border-radius: 6px;
+    border: 1px solid #cbd5e1;
+    font-size: 0.8rem;
+    outline: none;
+}
+/* Depo Blok Konteyner */
+.warehouse-map {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr); /* Yan yana iki blok */
+    gap: 16px;
+    margin-top: 15px;
+}
+
+.block-card {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 15px;
+    transition: all 0.3s ease;
+}
+
+.block-card:hover { border-color: #3b82f6; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
+
+.block-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+}
+
+.block-name { font-weight: 700; color: #0f172a; font-size: 1rem; }
+.block-usage { font-size: 0.75rem; color: #64748b; background: #fff; padding: 2px 8px; border-radius: 10px; border: 1px solid #e2e8f0; }
+
+.category-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    margin-bottom: 12px;
+}
+
+.tag {
+    font-size: 0.65rem;
+    padding: 2px 6px;
+    background: #e0f2fe;
+    color: #0369a1;
+    border-radius: 4px;
+    font-weight: 600;
+}
+
+/* Raf Çubukları */
+.shelf-bar {
+    height: 12px;
+    background: #e2e8f0;
+    border-radius: 6px;
+    margin-bottom: 8px;
+    position: relative;
+    overflow: hidden;
+}
+
+.shelf-progress {
+    height: 100%;
+    border-radius: 6px;
+    transition: width 1s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Doluluk Renkleri */
+.bg-danger { background: #ef4444;} /* %90+ */
+.bg-warning { background: #f59e0b; } /* %70-90 */
+.bg-success { background: #3b82f6; } /* %0-70 */
+.bg-low {background: #10b981;}
+   
+
+/* Atıl Stok Analiz Tablosu ve Aksiyonlar */
+.dead-stock-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 15px;
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    margin-bottom: 12px;
+}
+
+.dead-stock-info { display: flex; flex-direction: column; gap: 4px; }
+.dead-stock-days { 
+    font-size: 0.75rem; 
+    color: #ef4444; 
+    font-weight: 600; 
+    background: #fef2f2; 
+    padding: 2px 8px; 
+    border-radius: 4px;
+    width: fit-content;
+}
+
+.action-select {
+    padding: 8px;
+    border-radius: 8px;
+    border: 1px solid #cbd5e1;
+    font-size: 0.8rem;
+    outline: none;
+    background: #f8fafc;
+}
+
+  </style>
+</head>
+<body class="ik-layout">
+    <div class="ik-sidebar">
+        <h2>🛡️ Guardia SA</h2>
+        <ul class="ik-nav-links">
+            <li><a href="sa-index.html" style="text-decoration:none;color:inherit;display:flex;align-items:center;gap:12px;"><i class="fa-solid fa-chart-line"></i> Genel Bakış</a></li>
+            <li><a href="sa-talepler.html" style="text-decoration:none;color:inherit;display:flex;align-items:center;gap:12px;"><i class="fa-solid fa-cart-shopping"></i> Satın Alma Talepleri</a></li>
+            <li><a href="sa-onay.html" style="text-decoration:none;color:inherit;display:flex;align-items:center;gap:12px;"><i class="fa-solid fa-check-double"></i> Onay Bekleyenler</a></li>
+            <li><a href="sa-tedarikci.html" style="text-decoration:none;color:inherit;display:flex;align-items:center;gap:12px;"><i class="fa-solid fa-truck-fast"></i> Tedarikçi Listesi</a></li>
+            <li><a href="sa-takip.html" style="text-decoration:none;color:inherit;display:flex;align-items:center;gap:12px;"><i class="fa-solid fa-box-open"></i> Sipariş Takibi</a></li>
+            <li class="active"><i class="fa-solid fa-warehouse"></i> Stok Yönetimi</li>
+        </ul>
+        <div class="ik-user-tag">
+            <div class="ik-user-avatar"><img src="img/selin_aksoy.jpg" alt=""></div>
+            <div class="ik-user-info"><span>Selin Aksoy</span><small>Satın Alma Uzmanı</small></div>
+        </div>
+    </div>
+
+ <div class="ik-content sa-stok-page">
+        <div class="dept-header">
+            <div class="page-title-group">
+                <h1>Stok Yönetimi</h1>
+                <p class="page-desc">Envanter takibi yapın, kritik seviyeleri belirleyin ve eksikleri zamanında tamamlayın.</p>
+            </div>
+
+            <div class="notif-container">
+                <input type="checkbox" id="notif-toggle" aria-hidden="true" style="display:none;">
+                <label for="notif-toggle" class="notif-trigger">
+                    <i class="fa-solid fa-bell"></i>
+                    <span class="notif-badge">2</span>
+                </label>
+                
+                <div class="notif-dropdown">
+                    <h4>Mesaj Merkezi</h4>
+                    
+                    <div id="notif-incoming-list" class="notif-list">
+                        <div class="notif-item" onclick="openReplyModal('DEPO', 'Rulman sayımı tamamlandı, stok girişleri yapıldı mı?')" style="cursor: pointer;">
+                            <span class="notif-status"></span>
+                            <strong>DEPO:</strong>
+                            <span>Rulman sayımı tamamlandı.</span>
+                            <small style="display:block; color: #94a3b8; font-size: 0.75rem; margin-top: 5px;">
+                                <i class="fa-regular fa-clock"></i> 15:45
+                            </small>
+                        </div>
+                        
+                        <div class="notif-item" onclick="openReplyModal('SİSTEM', 'Kritik eşik altına düşen 2 ürün için sipariş oluşturulmalı.')" style="cursor: pointer;">
+                            <span class="notif-status"></span>
+                            <strong>SİSTEM:</strong>
+                            <span>2 ürün kritik eşik altında!</span>
+                            <small style="display:block; color: #94a3b8; font-size: 0.75rem; margin-top: 5px;">
+                                <i class="fa-regular fa-clock"></i> 10:20
+                            </small>
+                        </div>
+                    </div>
+
+                    <div id="notif-outgoing-list" class="notif-list" style="display:none;">
+                        <div class="notif-item">
+                            <strong>SİZDEN -> DEPO</strong>
+                            <span>Kritik stok kalemleri için onay formu gönderildi.</span>
+                            <small style="display:block; color: #94a3b8; font-size: 0.75rem; margin-top: 5px;">
+                                <i class="fa-regular fa-clock"></i> 09:15
+                            </small>
+                        </div>
+                    </div>
+
+                    <div class="notif-footer">
+                        <button type="button" class="notif-action-btn active" onclick="showIncoming()">
+                            <i class="fa-solid fa-bell"></i> Gelenler
+                        </button>
+                        <button type="button" class="notif-action-btn" onclick="showOutgoing()">
+                            <i class="fa-solid fa-paper-plane"></i> Gidenler
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+
+<div class="stats-grid">
+    <div class="stat-card" onclick="filterTable('kritik')">
+        <h3>Kritik Stok</h3>
+        <div class="value" id="stat-kritik-stok-count" style="color: #ef4444;">0</div>
+        <div class="trend" style="color: #ef4444;"><i class="fa-solid fa-triangle-exclamation"></i> Hemen İncele</div>
+    </div>
+    <div class="stat-card" onclick="openCapacityModal()">
+        <h3>Depo Doluluk</h3>
+        <div class="value">84%</div>
+        <div class="trend" style="color: #3b82f6;"><i class="fa-solid fa-warehouse"></i> Alan Azalıyor</div>
+    </div>
+    <div class="stat-card" onclick="showTodayActivity()">
+        <h3>Bugünkü Hareketler</h3>
+        <div class="value">36</div>
+        <div class="trend" style="color: #10b981;"><i class="fa-solid fa-arrow-up-right-from-square"></i> 24 Giriş / 12 Çıkış</div>
+    </div>
+    <div class="stat-card" onclick="openAtılStokModal()">
+        <h3>Atıl Stok</h3>
+        <div class="value">₺450K</div>
+        <div class="trend" style="color: #f59e0b;"><i class="fa-solid fa-clock-rotate-left"></i> 6+ Ay Hareketsiz</div>
+    </div>
+</div>
+
+<div class="table-tools">
+    <div class="search-box">
+        <i class="fa-solid fa-magnifying-glass"></i>
+        <input type="text" id="tableSearch" placeholder="Ürün veya SKU ara..." onkeyup="searchProducts()">
+    </div>
+    <div class="action-btns">
+        <select id="toolbarKategoriFiltresi" class="btn-outline" onchange="filterStokByToolbarCategory()" style="min-width: 200px; max-width: 260px; cursor: pointer;">
+    <option value="">Tüm Kategoriler</option>
+    <option value="mekanik">Mekanik Yedek Parça</option>
+    <option value="elektrik">Elektrik & Otomasyon</option>
+    <option value="sivi">Sıvı & Yağ Grubu</option>
+    <option value="sarf">Sarf Malzeme</option>
+    <option value="ambalaj">Ambalaj & Paketleme</option>
+    <option value="is_guvenligi">İş Güvenliği & KKD</option>
+    <option value="hirdavat">Hırdavat & El Aletleri</option>
+</select>
+        <button class="btn-primary" onclick="openStokDrawer()">
+    <i class="fa-solid fa-plus"></i> Yeni Stok Ekle
+</button>
+    </div>
+</div>
+
+        <div class="data-table-box">
+            <div class="sa-stok-table-scroll" aria-label="Stok tablosu">
+            <table id="stokTable">
+                <colgroup>
+                    <col class="col-prod"><col class="col-num"><col class="col-unit"><col class="col-thresh"><col class="col-stat">
+                </colgroup>
+                <thead>
+                    <tr><th>Ürün</th><th>Mevcut Miktar</th><th>Birim</th><th>Kritik Eşik</th><th>Durum</th></tr>
+                </thead>
+    <tbody id="stokTableBody">
+    <tr data-kategori="mekanik">
+        <td><strong>Rulman 6205</strong><br><small style="color: #94a3b8;">SKU-10024</small></td>
+        <td>45</td>
+        <td>ad</td>
+        <td>100</td>
+        <td><span class="badge badge-red">Kritik</span></td>
+    </tr>
+    <tr data-kategori="sivi">
+        <td><strong>Şanzıman Yağı</strong><br><small style="color: #94a3b8;">SKU-10087</small></td>
+        <td>80</td>
+        <td>L</td>
+        <td>50</td>
+        <td><span class="badge badge-green">Normal</span></td>
+    </tr>
+    <tr data-kategori="ambalaj">
+        <td><strong>Ambalaj Kolisi</strong><br><small style="color: #94a3b8;">SKU-20155</small></td>
+        <td>200</td>
+        <td>ad</td>
+        <td>500</td>
+        <td><span class="badge badge-red">Kritik</span></td>
+    </tr>
+    <tr data-kategori="mekanik">
+        <td><strong>Kayış Seti</strong><br><small style="color: #94a3b8;">SKU-10042</small></td>
+        <td>120</td>
+        <td>ad</td>
+        <td>80</td>
+        <td><span class="badge badge-green">Normal</span></td>
+    </tr>
+    <tr data-kategori="elektrik">
+        <td><strong>PLC CPU Modülü S7-1200</strong><br><small style="color: #94a3b8;">SKU-11008</small></td>
+        <td>6</td>
+        <td>ad</td>
+        <td>4</td>
+        <td><span class="badge badge-green">Normal</span></td>
+    </tr>
+    <tr data-kategori="mekanik">
+        <td><strong>Hidrolik Hortum 1/2&quot;</strong><br><small style="color: #94a3b8;">SKU-10091</small></td>
+        <td>95</td>
+        <td>m</td>
+        <td>40</td>
+        <td><span class="badge badge-green">Normal</span></td>
+    </tr>
+    <tr data-kategori="is_guvenligi">
+        <td><strong>Nitril Eldiven (L)</strong><br><small style="color: #94a3b8;">SKU-30220</small></td>
+        <td>600</td>
+        <td>çift</td>
+        <td>200</td>
+        <td><span class="badge badge-green">Normal</span></td>
+    </tr>
+    <tr data-kategori="sarf">
+        <td><strong>Su Arıtma Karbon Filtre</strong><br><small style="color: #94a3b8;">SKU-20488</small></td>
+        <td>8</td>
+        <td>ad</td>
+        <td>12</td>
+        <td><span class="badge badge-red">Kritik</span></td>
+    </tr>
+    <tr data-kategori="mekanik">
+        <td><strong>CNC Torna Uç Takım Seti</strong><br><small style="color: #94a3b8;">SKU-10055</small></td>
+        <td>14</td>
+        <td>takım</td>
+        <td>6</td>
+        <td><span class="badge badge-green">Normal</span></td>
+    </tr>
+</tbody>
+            </table>
+            </div>
+        </div>
+
+<div id="envanter-footer" style="margin-top: 20px; display: flex; justify-content: space-between; align-items: center; padding: 12px 20px; background: #ffffff; border-radius: 12px; border: 1px solid #e2e8f0; box-shadow: 0 2px 4px rgba(0,0,0,0.02);">
+    
+    <div style="display: flex; align-items: center; gap: 12px; color: #64748b; font-size: 0.85rem;">
+        <div style="width: 32px; height: 32px; background: #f1f5f9; border-radius: 8px; display: flex; align-items: center; justify-content: center; color: #0f172a;">
+            <i class="fa-solid fa-circle-check"></i>
+        </div>
+        <span>Son envanter doğrulaması <strong>12 Mart 2026</strong> tarihinde başarıyla tamamlandı.</span>
+    </div>
+
+    <div style="display: flex; gap: 8px;">
+        <button onclick="openRaporModal()" style="background: #f1f5f9; color: #0f172a; border: none; padding: 8px 14px; border-radius: 8px; font-size: 0.8rem; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 6px; transition: 0.2s;">
+            <i class="fa-solid fa-file-lines" style="font-size: 0.9rem;"></i> Raporu Görüntüle
+        </button>
+        
+        <button onclick="openSayimModal()" style="background: #0f172a; color: white; border: none; padding: 8px 14px; border-radius: 8px; font-size: 0.8rem; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 6px; transition: 0.2s;">
+            Yeni Sayım Emri
+        </button>
+    </div>
+</div>
+
+    <div id="replyModal" class="reply-modal">
+        <div class="reply-content">
+            <div class="reply-header">
+                <i class="fa-solid fa-reply"></i>
+                <h3 id="replyTarget">HUKUK Birimine Cevap Yaz</h3>
+            </div>
+            <div id="replyOriginalMessage" class="original-msg-preview">
+                "5 adet yeni iş sözleşmesi onaylandı."
+            </div>
+            <textarea id="replyText" class="reply-textarea" placeholder="Cevabınızı buraya yazın..."></textarea>
+            <div class="reply-actions">
+                <button class="btn-reply-cancel" onclick="closeReplyModal()">Vazgeç</button>
+                <button class="btn-reply-send" onclick="sendReply()">Cevapla</button>
+            </div>
+        </div>
+    </div>
+
+<div id="stokDrawer" class="drawer">
+    <div class="drawer-header">
+        <h3><i class="fa-solid fa-box-archive"></i> Yeni Stok Kaydı</h3>
+        <button onclick="closeStokDrawer()" class="btn-close-drawer">&times;</button>
+    </div>
+    
+   <div class="drawer-body">
+    <form id="yeniStokForm">
+        <div class="form-group">
+            <label> Ürün / Malzeme Adı</label>
+            <input type="text" id="stokUrunAdi" placeholder="Örn: Shell Tellus S2 M46 Hidrolik Yağ">
+        </div>
+        
+        <div class="form-group">
+            <label> Kategori</label>
+            <select id="stokKategori">
+                <option value="">Seçiniz...</option>
+                <option value="mekanik">Mekanik Yedek Parça</option>
+                <option value="elektrik">Elektrik & Otomasyon</option>
+                <option value="sivi">Sıvı & Yağ Grubu</option>
+                <option value="sarf">Sarf Malzeme</option>
+                <option value="ambalaj">Ambalaj & Paketleme</option>
+                <option value="is_guvenligi">İş Güvenliği & KKD</option>
+            </select>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+            <div class="form-group">
+                <label> Başlangıç Stoğu</label>
+                <input type="number" id="stokMiktar" placeholder="0" min="0">
+            </div>
+            <div class="form-group">
+                <label> Ölçü Birimi</label>
+                <select id="stokBirim">
+                    <option>ad</option>
+                    <option>L</option>
+                    <option>kg</option>
+                    <option>m</option>
+                    <option>set</option>
+                </select>
+            </div>
+        </div>
+
+        <hr style="border: 0; border-top: 1px solid #f1f5f9; margin: 20px 0;">
+
+        <div class="form-group" style="background: #fff1f2; padding: 15px; border-radius: 10px; border: 1px solid #ffe4e6;">
+            <label style="color: #be123c;"><i class="fa-solid fa-bell"></i> Kritik Eşik Seviyesi</label>
+            <input type="number" id="stokEsik" placeholder="Örn: 10" style="border-color: #fecdd3;" min="0">
+            <small style="color: #e11d48; font-size: 0.75rem; display: block; margin-top: 5px;">
+                Stok bu sayının altına düştüğünde sistem otomatik uyarı verir.
+            </small>
+        </div>
+
+        <div class="form-group">
+            <label>Depo / Raf Konumu</label>
+            <input type="text" id="stokKonum" placeholder="Örn: A-12-04 (Depo A, 12. Raf)">
+        </div>
+    </form>
+</div>
+
+    <div class="drawer-footer">
+        <button class="btn-outline" onclick="closeStokDrawer()" style="flex: 1;">Vazgeç</button>
+        <button class="btn-primary" onclick="saveNewStock()" style="flex: 2; justify-content: center;">Kaydet ve Ekle</button>
+    </div>
+</div>
+
+<div id="drawerOverlay" class="drawer-overlay" onclick="closeStokDrawer()"></div>
+
+<div id="raporModal" class="reply-modal" style="display:none;">
+    <div class="reply-content" style="max-width: 800px; width: 90%;">
+        <div class="reply-header" style="background: white; color: #0f172a; border-bottom: 1px solid #f1f5f9; border-radius: 12px 12px 0 0; display: flex; justify-content: space-between; align-items: center;">
+            <div style="display: flex; align-items: center; gap: 15px;">
+                <h3><i class="fa-solid fa-chart-pie" style="color: #3b82f6;"></i> Envanter Raporu</h3>
+                <select id="raporAySecici" onchange="updateRaporVerisi()" style="padding: 5px 10px; border-radius: 6px; border: 1px solid #e2e8f0; font-family: inherit; font-size: 0.85rem; cursor: pointer; background: #f8fafc;"></select>
+            </div>
+            <button onclick="closeRaporModal()" style="background:none; border:none; color:#64748b; font-size:1.5rem; cursor:pointer;">&times;</button>
+        </div>
+        
+        <div class="reply-body" style="padding: 24px; min-height: 450px;">
+            <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; margin-bottom: 25px;">
+            <div style="background: #f8fafc; padding: 15px; border-radius: 12px; border: 1px solid #e2e8f0;">
+    <small style="color: #64748b; font-weight: 600;">Toplam Stok Değeri</small>
+    <div id="val-stok" style="font-size: 1.2rem; font-weight: 700; color: #0f172a;">₺2.450.000</div>
+</div>
+
+<div style="background: #f8fafc; padding: 15px; border-radius: 12px; border: 1px solid #e2e8f0;">
+    <small style="color: #64748b; font-weight: 600;">Hareketli Kalemler</small>
+    <div id="val-hareket" style="font-size: 1.2rem; font-weight: 700; color: #3b82f6;">142 Ürün</div>
+</div>
+
+<div style="background: #f8fafc; padding: 15px; border-radius: 12px; border: 1px solid #e2e8f0;">
+    <small style="color: #64748b; font-weight: 600;">Doğruluk Oranı</small>
+    <div id="val-dogruluk" style="font-size: 1.2rem; font-weight: 700; color: #10b981;">%99.2</div>
+</div>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                <div>
+                    <h4 style="margin-bottom: 12px; font-size: 0.9rem; color: #475569;">Kategori Dağılımı</h4>
+    <div style="height: 150px; background: #f1f5f9; border-radius: 10px; display: flex; align-items: flex-end; justify-content: space-around; padding: 10px 20px;">
+        <div class="bar-mekanik" style="width: 30px; height: 80%; background: #0f172a; border-radius: 4px; transition: 0.5s;" title="Mekanik"></div>
+        <div class="bar-elektrik" style="width: 30px; height: 40%; background: #3b82f6; border-radius: 4px; transition: 0.5s;" title="Elektrik"></div>
+        <div class="bar-sivi" style="width: 30px; height: 60%; background: #6366f1; border-radius: 4px; transition: 0.5s;" title="Sıvı"></div>
+        <div class="bar-diger" style="width: 30px; height: 25%; background: #94a3b8; border-radius: 4px; transition: 0.5s;" title="Diğer"></div>
+    </div>
+    <div style="display: flex; justify-content: space-around; font-size: 0.65rem; margin-top: 8px; color: #64748b; padding: 0 10px;">
+        <span style="width: 30px; text-align: center;">Mek.</span>
+        <span style="width: 30px; text-align: center;">Elek.</span>
+        <span style="width: 30px; text-align: center;">Sıvı</span>
+        <span style="width: 30px; text-align: center;">Diğer</span>
+    </div>
+                    
+                </div>
+                <div>
+                    <h4 style="margin-bottom: 12px; font-size: 0.9rem; color: #475569;">En Çok Tüketilenler</h4>
+                    <ul id="top-products-list" style="list-style: none; padding: 0; font-size: 0.85rem;">
+   </ul>
+                        <li style="display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px dashed #e2e8f0;">
+                            <span>Şanzıman Yağı</span> <strong>420 L</strong>
+                        </li>
+                        <li style="display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px dashed #e2e8f0;">
+                            <span>Ambalaj Kolisi</span> <strong>1.250 Ad</strong>
+                        </li>
+                        <li style="display: flex; justify-content: space-between; padding: 6px 0;">
+                            <span>Rulman 6205</span> <strong>85 Ad</strong>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div class="reply-actions" style="background: #f8fafc; border-radius: 0 0 12px 12px;">
+            <button class="btn-reply-cancel" onclick="closeRaporModal()">Kapat</button>
+            <button class="btn-reply-send" style="background: #10b981;" onclick="downloadPDF()">
+                <i class="fa-solid fa-file-pdf"></i> PDF Olarak İndir
+            </button>
+        </div>
+    </div>
+</div>
+
+<div id="sayimModal" class="reply-modal" style="display:none;">
+    <div class="reply-content" style="max-width: 500px; width: 90%;">
+        <div class="reply-header" style="background: white; color: #0f172a; border-bottom: 1px solid #f1f5f9;">
+            <h3> Yeni Sayım Emri Oluştur</h3>
+            <button onclick="closeSayimModal()" style="background:none; border:none; color:#64748b; font-size:1.5rem; cursor:pointer;">&times;</button>
+        </div>
+        
+        <div class="reply-body" style="padding: 24px;">
+            <div class="form-group">
+                <label>Görev Atanacak Personel</label>
+                <select id="sayimPersonel" style="width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #e2e8f0;">
+                    <option value="">Personel Seçiniz...</option>
+                    <option value="ahmet">Ahmet Yılmaz (Depo Şefi)</option>
+                    <option value="mehmet">Mehmet Demir (Depo Görevlisi)</option>
+                    <option value="can">Can Yıldız (Stajyer)</option>
+                </select>
+            </div>
+            
+            <div class="form-group" style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 15px;">
+    <div>
+        <label>Sayım Bölgesi</label>
+        <select id="sayimBolge" style="width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #e2e8f0;">
+            <option value="hirdavat"> Hırdavat</option>
+    <option value="is_guvenligi"> İş Güvenliği (KKD)</option>
+    <option value="ambalaj">Ambalaj Ürünleri</option>
+    <option value="kimyasal_yag"> Kimyasallar ve Yağlar</option>
+    <option value="elektrik"> Elektrik Malzemeleri</option>
+    <option value="ofis"> Ofis ve Kırtasiye</option>
+    <option value="yedek_parca"> Makine Yedek Parça</option>
+        </select>
+    </div>
+    <div>
+        <label>Öncelik</label>
+        <select id="sayimOncelik" style="width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #e2e8f0;">
+            <option value="normal">Normal</option>
+            <option value="acil">ACİL</option>
+            <option value="rutin">Rutin Kontrol</option>
+        </select>
+    </div>
+</div>
+
+            <div class="form-group" style="margin-top: 15px;">
+                <label>Notlar / Özel Talimatlar</label>
+                <textarea id="sayimNot" placeholder="Örn: Raf arkasındaki kutuları kontrol etmeyi unutma." style="width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #e2e8f0; height: 80px; font-family: inherit; resize: none;"></textarea>
+            </div>
+        </div>
+
+        <div class="reply-actions" style="background: #fff;">
+            <button class="btn-reply-cancel" onclick="closeSayimModal()">Vazgeç</button>
+            <button class="btn-primary" onclick="sendSayimEmri()" style="background: #0f172a;">
+                <i class="fa-solid fa-paper-plane"></i> Emri Gönder
+            </button>
+        </div>
+    </div></div>
+
+
+<div id="activityModal" class="reply-modal" style="display:none;">
+    <div class="reply-content" style="max-width: 500px; width: 95%; border: none;">
+        <div class="reply-header" style=" color: white;">
+            <h3 style="margin:0; font-size: 1.1rem;"> Stok Hareket Geçmişi</h3>
+            <button onclick="document.getElementById('activityModal').style.display='none'" style="background:none; border:none; color:#0f172a; font-size:1.5rem; cursor:pointer;">&times;</button>
+        </div>
+        
+        <div class="reply-body" style="padding: 20px;">
+            
+            <div id="historyFilters" class="history-filters">
+    <div class="filter-group">
+        <label>Yıl</label>
+        <select id="filterYear">
+            <option value="2026">2026</option>
+            <option value="2025">2025</option>
+            <option value="2024">2024</option>
+        </select>
+    </div>
+    <div class="filter-group">
+        <label>Ay</label>
+        <select id="filterMonth">
+            <option value="1">Ocak</option>
+            <option value="2">Şubat</option>
+            <option value="3" selected>Mart</option>
+            <option value="4">Nisan</option>
+            <option value="5">Mayıs</option>
+            <option value="6">Haziran</option>
+            <option value="7">Temmuz</option>
+            <option value="8">Ağustos</option>
+            <option value="9">Eylül</option>
+            <option value="10">Ekim</option>
+            <option value="11">Kasım</option>
+            <option value="12">Aralık</option>
+        </select>
+    </div>
+    <div class="filter-group">
+        <label>Gün</label>
+        <select id="filterDay">
+            <option value="1">1</option><option value="2">2</option><option value="3">3</option>
+            <option value="4">4</option><option value="5">5</option><option value="6">6</option>
+            <option value="7">7</option><option value="8">8</option><option value="9">9</option>
+            <option value="10">10</option><option value="11">11</option><option value="12">12</option>
+            <option value="13">13</option><option value="14">14</option><option value="15">15</option>
+            <option value="16">16</option><option value="17" selected>17</option><option value="18">18</option>
+            <option value="19">19</option><option value="20">20</option><option value="21">21</option>
+            <option value="22">22</option><option value="23">23</option><option value="24">24</option>
+            <option value="25">25</option><option value="26">26</option><option value="27">27</option>
+            <option value="28">28</option><option value="29">29</option><option value="30">30</option>
+            <option value="31">31</option>
+        </select>
+    </div>
+                <button onclick="applyDateFilter()" style="align-self: flex-end; padding: 10px 18px; background: #0f172a; color: white; border: none; border-radius: 8px; cursor: pointer;">
+                    <i class="fa-solid fa-magnifying-glass"></i>
+                </button>
+            </div>
+
+           <div id="activityList" class="activity-list">
+    <div class="activity-item" data-activity-date="2026-03-17">
+        <div class="activity-info">
+            <div class="activity-icon icon-in"><i class="fa-solid fa-arrow-down"></i></div>
+            <div class="activity-details"><span>Rulman 6205</span><small>14:20 • Mal Kabul (Depo A)</small></div>
+        </div>
+        <div class="activity-amount amount-plus">+10 ad</div>
+    </div>
+
+    <div class="activity-item" data-activity-date="2026-03-17">
+        <div class="activity-info">
+            <div class="activity-icon icon-out"><i class="fa-solid fa-arrow-up"></i></div>
+            <div class="activity-details"><span>Şanzıman Yağı</span><small>11:45 • Atölye Sevk</small></div>
+        </div>
+        <div class="activity-amount amount-minus">-5 L</div>
+    </div>
+
+    <div class="activity-item" data-activity-date="2026-03-17">
+        <div class="activity-info">
+            <div class="activity-icon icon-in"><i class="fa-solid fa-arrow-down"></i></div>
+            <div class="activity-details"><span>İş Eldevini (L)</span><small>09:30 • Satın Alma Girişi</small></div>
+        </div>
+        <div class="activity-amount amount-plus">+50 çift</div>
+    </div>
+
+    <div class="activity-item" data-activity-date="2026-03-16">
+        <div class="activity-info">
+            <div class="activity-icon icon-out"><i class="fa-solid fa-arrow-up"></i></div>
+            <div class="activity-details"><span>Hidrolik Hortum</span><small>Dün 16:50 • Bakım Onarım</small></div>
+        </div>
+        <div class="activity-amount amount-minus">-12 mt</div>
+    </div>
+
+    <div class="activity-item" data-activity-date="2026-03-16">
+        <div class="activity-info">
+            <div class="activity-icon icon-in"><i class="fa-solid fa-arrow-down"></i></div>
+            <div class="activity-details"><span>M12 Somun</span><small>Dün 14:10 • Stok Güncelleme</small></div>
+        </div>
+        <div class="activity-amount amount-plus">+200 ad</div>
+    </div>
+</div>
+            <button id="toggleHistoryBtn" class="btn-outline" onclick="toggleHistoryMode()" style="width: 100%; margin-top: 15px; font-size: 0.85rem; border-style: dashed; padding: 12px; display: block;">
+                <i class="fa-solid fa-calendar-days"></i> Tüm Hareket Geçmişini Görüntüle
+            </button>
+        </div>
+    </div>
+</div>
+
+<div id="capacityModal" class="reply-modal">
+    <div class="reply-content" style="max-width: 700px; width: 95%;">
+        <div class="reply-header">
+            <h3> Depo Yerleşim Planı (Blok Bazlı)</h3>
+            <button onclick="document.getElementById('capacityModal').style.display='none'" style="background:none; border:none; font-size:1.5rem; cursor:pointer;">&times;</button>
+        </div>
+        
+        <div class="reply-body" style="padding: 20px;">
+            <p style="font-size: 0.85rem; color: #64748b; margin-bottom: 20px;">Kategorilerin depodaki fiziksel konumları ve doluluk oranları aşağıdadır.</p>
+            
+            <div class="warehouse-map">
+                <div class="block-card">
+                    <div class="block-header">
+                        <span class="block-name">A-BLOK</span>
+                        <span class="block-usage">%92 Dolu</span>
+                    </div>
+                    <div class="category-tags">
+                        <span class="tag">Mekanik</span>
+                        <span class="tag">Hırdavat</span>
+                    </div>
+                    <div class="shelf-bar"><div class="shelf-progress bg-danger" style="width: 92%;"></div></div>
+                    <small style="font-size: 0.7rem; color: #94a3b8;">Kritik Seviye: Yer açılması önerilir.</small>
+                </div>
+
+                <div class="block-card">
+                    <div class="block-header">
+                        <span class="block-name">B-BLOK</span>
+                        <span class="block-usage">%65 Dolu</span>
+                    </div>
+                    <div class="category-tags">
+                        <span class="tag">Sıvı & Yağ</span>
+                        <span class="tag">Kimyasallar</span>
+                    </div>
+                    <div class="shelf-bar"><div class="shelf-progress bg-success" style="width: 65%;"></div></div>
+                    <small style="font-size: 0.7rem; color: #94a3b8;">Normal: 14 palet boş yer var.</small>
+                </div>
+
+                <div class="block-card">
+                    <div class="block-header">
+                        <span class="block-name">C-BLOK</span>
+                        <span class="block-usage">%40 Dolu</span>
+                    </div>
+                    <div class="category-tags">
+                        <span class="tag">Ambalaj</span>
+                        <span class="tag">Sarf Malzeme</span>
+                    </div>
+                    <div class="shelf-bar"><div class="shelf-progress bg-low" style="width: 40%;"></div></div>
+    <small style="font-size: 0.7rem; color: #94a3b8;">Müsait: Hacimli ürünler için uygun.</small>
+</div>
+
+                <div class="block-card">
+                    <div class="block-header">
+                        <span class="block-name">D-BLOK</span>
+                        <span class="block-usage">%82 Dolu</span>
+                    </div>
+                    <div class="category-tags">
+                        <span class="tag">Elektrik</span>
+                        <span class="tag">İş Güvenliği</span>
+                    </div>
+                    <div class="shelf-bar"><div class="shelf-progress bg-warning" style="width: 82%;"></div></div>
+                    <small style="font-size: 0.7rem; color: #94a3b8;">Dikkat: Raf kapasitesi dolmak üzere.</small>
+                </div>
+            </div>
+        </div>
+
+        <div class="reply-actions">
+            <button class="btn-reply-cancel" onclick="document.getElementById('capacityModal').style.display='none'">Kapat</button>
+            <button class="btn-primary" onclick="alert('PDF Yerleşim Planı İndiriliyor...')"><i class="fa-solid fa-print"></i> Planı Yazdır</button>
+        </div>
+    </div>
+</div>
+
+
+<div id="atılStokModal" class="reply-modal">
+    <div class="reply-content" style="max-width: 650px; width: 95%;">
+        <div class="reply-header">
+            <h3> Atıl Stok Analizi (6+ Ay)</h3>
+            <button onclick="document.getElementById('atılStokModal').style.display='none'" style="background:none; border:none; font-size:1.5rem; cursor:pointer;">&times;</button>
+        </div>
+        
+        <div class="reply-body" style="padding: 20px;">
+            <div style="background: #fffbeb; border: 1px solid #fef3c7; padding: 12px; border-radius: 10px; margin-bottom: 20px; display: flex; gap: 12px; align-items: center;">
+                <i class="fa-solid fa-circle-info" style="color: #d97706; font-size: 1.2rem;"></i>
+                <p style="font-size: 0.8rem; color: #92400e; margin: 0;">Aşağıdaki ürünler son 180 gündür hiçbir harekete (giriş/çıkış) sahip değildir. Toplam bağlı sermaye: <strong>₺450.000</strong></p>
+            </div>
+
+            <div class="dead-stock-list">
+                <div class="dead-stock-item">
+                    <div class="dead-stock-info">
+                        <strong>Hidrolik Pompa Gövdesi</strong>
+                        <span class="dead-stock-days">214 Gündür Hareketsiz</span>
+                        <small style="color: #64748b;">Değer: ₺12.400 | Stok: 3 Adet</small>
+                    </div>
+                    <select class="action-select" onchange="processDeadStockAction(this, 'Hidrolik Pompa')">
+                        <option value="">Aksiyon Seçin...</option>
+                        <option value="return">Tedarikçiye İade</option>
+                        <option value="transfer">Başka Birime Devir</option>
+                        <option value="scrap">Hurdaya Ayır</option>
+                        <option value="sale">Kullanıma Zorla</option>
+                    </select>
+                </div>
+
+                <div class="dead-stock-item">
+                    <div class="dead-stock-info">
+                        <strong>Özel Alaşım Miller (V3)</strong>
+                        <span class="dead-stock-days">305 Gündür Hareketsiz</span>
+                        <small style="color: #64748b;">Değer: ₺85.000 | Stok: 12 Adet</small>
+                    </div>
+                    <select class="action-select" onchange="processDeadStockAction(this, 'Özel Alaşım Miller')">
+                        <option value="">Aksiyon Seçin...</option>
+                        <option value="return">Tedarikçiye İade</option>
+                        <option value="transfer">Başka Birime Devir</option>
+                        <option value="scrap">Hurdaya Ayır</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <div class="reply-actions">
+    <button class="btn-reply-cancel" onclick="document.getElementById('atılStokModal').style.display='none'">Kapat</button>
+    
+    <button class="btn-primary" onclick="alert('Analiz raporu Excel formatında hazırlanıyor ve indiriliyor...')">
+        <i class="fa-solid fa-file-arrow-down"></i> Raporu İndir (Excel)
+    </button>
+</div>
+    </div>
+</div>
+    <script>
+         /* 1. MEVCUT CANLI TAKİP MODALLARI */
+function openLiveTracking() { document.getElementById('liveTrackingModal').style.display = 'flex'; }
+function closeLiveTracking() { document.getElementById('liveTrackingModal').style.display = 'none'; }
+
+/* 2. BİLDİRİM LİSTESİ GEÇİŞLERİ (Gelen/Giden) */
+function showIncoming() {
+    const incoming = document.getElementById('notif-incoming-list');
+    const outgoing = document.getElementById('notif-outgoing-list');
+    const btnIn = document.querySelector('.notif-action-btn[onclick="showIncoming()"]');
+    const btnOut = document.querySelector('.notif-action-btn[onclick="showOutgoing()"]');
+    if (incoming && outgoing) {
+        incoming.style.display = 'block';
+        outgoing.style.display = 'none';
+        btnIn.classList.add('active');
+        btnOut.classList.remove('active');
+    }
+}
+
+function showOutgoing() {
+    if (typeof updateOutgoingList === 'function') updateOutgoingList();
+    const incoming = document.getElementById('notif-incoming-list');
+    const outgoing = document.getElementById('notif-outgoing-list');
+    const btnIn = document.querySelector('.notif-action-btn[onclick="showIncoming()"]');
+    const btnOut = document.querySelector('.notif-action-btn[onclick="showOutgoing()"]');
+    if (incoming && outgoing) {
+        incoming.style.display = 'none';
+        outgoing.style.display = 'block';
+        btnOut.classList.add('active');
+        btnIn.classList.remove('active');
+    }
+}
+
+/* 3. YENİ HIZLI CEVAPLAMA SİSTEMİ */
+function openReplyModal(sender, message) {
+    const ta = document.getElementById('replyText');
+    if (ta) ta.value = '';
+    document.getElementById('replyTarget').innerText = sender + " Birimine Cevap Yaz";
+    document.getElementById('replyOriginalMessage').innerText = '"' + message + '"';
+    document.getElementById('replyModal').style.display = 'flex';
+}
+
+function closeReplyModal() {
+    document.getElementById('replyModal').style.display = 'none';
+    document.getElementById('replyText').value = '';
+}
+
+function sendReply() {
+    const text = (document.getElementById('replyText').value || '').trim();
+    const target = document.getElementById('replyTarget').innerText.replace(/\s*Birimine Cevap Yaz\s*$/, '').trim();
+    if (!text) {
+        alert("Lütfen boş bir mesaj göndermeyin.");
+        return;
+    }
+    /* Gidenler yalnızca ana sayfadaki birimler arası notlardan; bildirim cevabı listeye yazılmaz */
+    closeReplyModal();
+    alert("Cevabınız " + target + " birimine iletildi.");
+}
+
+/* 4. GENEL TIKLAMA VE BAŞLANGIÇ AYARLARI */
+document.addEventListener('DOMContentLoaded', function() {
+    const btnIn = document.querySelector('.notif-action-btn[onclick="showIncoming()"]');
+    if(btnIn) btnIn.classList.add('active');
+    syncKritikStokStatCard();
+});
+// Boş alana tıklandığında açık olan her şeyi kapat
+document.addEventListener('click', function(event) {
+    // 1. Checkbox ile açılan menüleri kapat (Bildirimler ve Not Kutusu)
+    const notifToggle = document.getElementById('notif-toggle');
+    const noteToggle = document.getElementById('note-box-toggle');
+    
+    // Bildirimler için: Tıklanan yer bildirim alanı değilse ve menü açıksa kapat
+    const notifContainer = document.querySelector('.notif-container');
+    if (notifToggle.checked && !notifContainer.contains(event.target)) {
+        notifToggle.checked = false;
+    }
+
+    // Not Kutusu için: Tıklanan yer not kutusu veya onu açan buton değilse kapat
+    const msgBox = document.querySelector('.msg-box');
+    const quickNoteBtn = document.querySelector('.quick-note-btn');
+    if (noteToggle.checked && !msgBox.contains(event.target) && !quickNoteBtn.contains(event.target)) {
+        noteToggle.checked = false;
+    }
+
+    // 2. Modal'lar için (Zaten senin kodunda var ama daha temiz hali):
+    const replyModal = document.getElementById('replyModal');
+    if (event.target === replyModal) {
+        closeReplyModal();
+    }
+});
+
+
+
+/*Kritik Stok kartındaki sayıyı #stokTableBody satırlarındaki Durum sütununa göre günceller */
+function syncKritikStokStatCard() {
+    const tbody = document.getElementById('stokTableBody');
+    const el = document.getElementById('stat-kritik-stok-count');
+    if (!tbody || !el) return;
+    let n = 0;
+    const rows = tbody.getElementsByTagName('tr');
+    for (let i = 0; i < rows.length; i++) {
+        const cells = rows[i].getElementsByTagName('td');
+        if (cells.length < 5) continue;
+        if ((cells[4].innerText || '').trim() === 'Kritik') n++;
+    }
+    el.textContent = String(n);
+}
+
+/* 5. ARAMA VE FİLTRELEME SİSTEMİ */
+function searchProducts() {
+    let input = document.getElementById("tableSearch").value.toUpperCase();
+    let table = document.getElementById("stokTable");
+    if (!table) return;
+    let tr = table.getElementsByTagName("tr");
+
+    for (let i = 1; i < tr.length; i++) {
+        let td = tr[i].getElementsByTagName("td")[0];
+        if (td) {
+            let txtValue = td.textContent || td.innerText;
+            tr[i].style.display = txtValue.toUpperCase().indexOf(input) > -1 ? "" : "none";
+        }
+    }
+}
+
+/** 'Yeni Stok Ekle' solundaki kategori kutusu — satırlar data-kategori ile eşleşir */
+function filterStokByToolbarCategory() {
+    const sel = document.getElementById('toolbarKategoriFiltresi');
+    const tbody = document.getElementById('stokTableBody');
+    if (!sel || !tbody) return;
+    const v = sel.value;
+    const rows = tbody.getElementsByTagName('tr');
+    for (let i = 0; i < rows.length; i++) {
+        const row = rows[i];
+        const kat = row.getAttribute('data-kategori') || '';
+        row.style.display = (!v || kat === v) ? '' : 'none';
+    }
+}
+
+// 5. ARAMA VE FİLTRELEME SİSTEMİ
+let isFiltered = false; 
+
+function filterTable(type) {
+    let table = document.getElementById("stokTable");
+    if (!table) return;
+    let tr = table.getElementsByTagName("tr");
+    let footerInfo = document.getElementById('envanter-footer'); 
+
+    if (!isFiltered) {
+        for (let i = 1; i < tr.length; i++) {
+            let status = tr[i].getElementsByTagName("td")[4].innerText;
+            tr[i].style.display = (status === "Kritik") ? "" : "none";
+        }
+        // GECİKMEYİ ÖNLEMEK İÇİN: visibility yerine display:none yapıyoruz
+        if(footerInfo) footerInfo.style.display = 'none'; 
+        isFiltered = true;
+    } else {
+        for (let i = 1; i < tr.length; i++) {
+            tr[i].style.display = "";
+        }
+        // TEKRAR GÖSTERİRKEN: flex yapıyoruz (footer tasarımı flex olduğu için)
+        if(footerInfo) footerInfo.style.display = 'flex'; 
+        isFiltered = false;
+    }
+}
+
+function showTodayActivity() {
+    console.log("Butona basıldı, modal açılıyor..."); // Test için
+    const activityModal = document.getElementById('activityModal');
+    if (activityModal) {
+        activityModal.style.display = 'flex';
+    } else {
+        console.error("Hata: 'activityModal' ID'li div bulunamadı!");
+    }
+}
+
+// MODAL DIŞINA TIKLAYINCA KAPATMA (Tüm modalları kapsayacak şekilde güncelleme)
+window.onclick = function(event) {
+    const liveModal = document.getElementById('liveTrackingModal');
+    const replyModal = document.getElementById('replyModal');
+    const activityModal = document.getElementById('activityModal');
+    const raporModal = document.getElementById('raporModal');
+    const sayimModal = document.getElementById('sayimModal');
+
+    if (event.target === liveModal) liveModal.style.display = "none";
+    if (event.target === replyModal && typeof closeReplyModal === 'function') closeReplyModal();
+    if (event.target == activityModal) activityModal.style.display = "none";
+    if (event.target == raporModal) raporModal.style.display = "none";
+    if (event.target == sayimModal) sayimModal.style.display = "none";
+}
+function openCapacityModal() {
+    document.getElementById('capacityModal').style.display = 'flex';
+}
+
+function showTodayActivity() {
+    document.getElementById('activityModal').style.display = 'flex';
+}
+function openStokDrawer() {
+    document.getElementById('stokDrawer').classList.add('active');
+    document.getElementById('drawerOverlay').style.display = 'block';
+}
+
+function closeStokDrawer() {
+    document.getElementById('stokDrawer').classList.remove('active');
+    document.getElementById('drawerOverlay').style.display = 'none';
+}
+
+function saveNewStock() {
+    const form = document.getElementById('yeniStokForm');
+    const inputs = form.querySelectorAll('input, select');
+    let isFormValid = true;
+
+    inputs.forEach(input => {
+        if (input.value.trim() === "") {
+            input.classList.add('is-invalid'); 
+            isFormValid = false;
+        } else {
+            input.classList.remove('is-invalid'); 
+        }
+    });
+
+    if (!isFormValid) {
+        alert("Lütfen kırmızı alanları doldurun.");
+        return;
+    }
+
+    const urun = document.getElementById('stokUrunAdi').value.trim();
+    const miktar = parseInt(document.getElementById('stokMiktar').value, 10) || 0;
+    const birim = document.getElementById('stokBirim').value;
+    const esik = parseInt(document.getElementById('stokEsik').value, 10) || 0;
+    const kritik = miktar < esik;
+    const sku = 'SKU-' + String(Date.now()).slice(-6);
+
+    const kategori = document.getElementById('stokKategori').value;
+    const tbody = document.getElementById('stokTableBody');
+    const tr = document.createElement('tr');
+    if (kategori) tr.setAttribute('data-kategori', kategori);
+    tr.innerHTML = `
+        <td><strong>${urun}</strong><br><small style="color: #94a3b8;">${sku}</small></td>
+        <td>${miktar}</td>
+        <td>${birim}</td>
+        <td>${esik}</td>
+        <td><span class="badge ${kritik ? 'badge-red' : 'badge-green'}">${kritik ? 'Kritik' : 'Normal'}</span></td>`;
+    tbody.insertBefore(tr, tbody.firstChild);
+
+    form.reset();
+    closeStokDrawer();
+    syncKritikStokStatCard();
+}
+
+// Rapor Modalı Fonksiyonları
+const RAPOR_AYLAR = ['Ocak', 'Şubat', 'Mart', 'Nisan', 'Mayıs', 'Haziran', 'Temmuz', 'Ağustos', 'Eylül', 'Ekim', 'Kasım', 'Aralık'];
+
+function populateRaporAySecici() {
+    const sel = document.getElementById('raporAySecici');
+    if (!sel) return;
+    const now = new Date();
+    const y = now.getFullYear();
+    const bugununAyi = now.getMonth() + 1;
+    sel.innerHTML = '';
+    for (let m = 1; m <= 12; m++) {
+        const opt = document.createElement('option');
+        opt.value = y + '-' + String(m).padStart(2, '0');
+        opt.textContent = RAPOR_AYLAR[m - 1] + ' ' + y;
+        if (m > bugununAyi) opt.disabled = true;
+        sel.appendChild(opt);
+    }
+    sel.value = y + '-' + String(bugununAyi).padStart(2, '0');
+}
+
+function openRaporModal() {
+    populateRaporAySecici();
+    document.getElementById('raporModal').style.display = 'flex';
+    updateRaporVerisi();
+}
+
+function closeRaporModal() {
+    document.getElementById('raporModal').style.display = 'none';
+}
+
+function downloadPDF() {
+    const btn = event.currentTarget;
+    const sel = document.getElementById('raporAySecici');
+    const etiket = sel && sel.options[sel.selectedIndex] ? sel.options[sel.selectedIndex].textContent.replace(/\s+/g, '_') : 'Rapor';
+    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Hazırlanıyor...';
+    btn.style.opacity = "0.7";
+    
+    setTimeout(() => {
+        alert("Envanter_Raporu_" + etiket + ".pdf dosyası başarıyla indirildi.");
+        btn.innerHTML = '<i class="fa-solid fa-file-pdf"></i> PDF Olarak İndir';
+        btn.style.opacity = "1";
+    }, 2000);
+}
+function updateRaporVerisi() {
+    const secilenAy = document.getElementById('raporAySecici').value;
+    const stokVal = document.getElementById('val-stok');
+    const hareketVal = document.getElementById('val-hareket');
+    const dogrulukVal = document.getElementById('val-dogruluk');
+    const productList = document.getElementById('top-products-list');
+    
+    // Grafik Barları
+    const bMek = document.querySelector('.bar-mekanik');
+    const bElek = document.querySelector('.bar-elektrik');
+    const bSivi = document.querySelector('.bar-sivi');
+    const bDig = document.querySelector('.bar-diger');
+
+    // YYYY-MM anahtarına göre 12 ay (geçmiş/bugün seçilebilir; liste her yıl güncellenir)
+    const ayVerileri = {
+        '-01': {
+            stok: '₺1.980.000', hareket: '95 Ürün', dogruluk: '%97.5',
+            grafik: ['40%', '60%', '80%', '20%'],
+            liste: [['Kaynak Teli', '200 Kg'], ['Kesici Taş', '300 Ad'], ['Maskeleme Bandı', '120 Ad']]
+        },
+        '-02': {
+            stok: '₺2.120.000', hareket: '118 Ürün', dogruluk: '%98.7',
+            grafik: ['55%', '75%', '30%', '40%'],
+            liste: [['Hidrolik Hortum', '150 Mt'], ['Eldiven (XL)', '500 Çift'], ['Gres Yağı', '25 Kg']]
+        },
+        '-03': {
+            stok: '₺2.450.000', hareket: '142 Ürün', dogruluk: '%99.2',
+            grafik: ['80%', '40%', '60%', '25%'],
+            liste: [['Şanzıman Yağı', '420 L'], ['Ambalaj Kolisi', '1.250 Ad'], ['Rulman 6205', '85 Ad']]
+        },
+        '-04': {
+            stok: '₺2.310.000', hareket: '128 Ürün', dogruluk: '%98.9',
+            grafik: ['65%', '50%', '45%', '35%'],
+            liste: [['Filtre Seti', '88 Ad'], ['Conta Kiti', '210 Ad'], ['V Kayışı', '42 Ad']]
+        },
+        '-05': {
+            stok: '₺2.180.000', hareket: '112 Ürün', dogruluk: '%98.4',
+            grafik: ['45%', '70%', '55%', '30%'],
+            liste: [['Soğutma Sıvısı', '340 L'], ['Termostat', '18 Ad'], ['Fan Motoru', '6 Ad']]
+        },
+        '-06': {
+            stok: '₺2.520.000', hareket: '135 Ürün', dogruluk: '%99.0',
+            grafik: ['72%', '38%', '62%', '28%'],
+            liste: [['Kompresör Yağı', '180 L'], ['Hava Filtresi', '95 Ad'], ['Basınç Şalteri', '22 Ad']]
+        },
+        '-07': {
+            stok: '₺2.390.000', hareket: '124 Ürün', dogruluk: '%98.8',
+            grafik: ['50%', '65%', '48%', '42%'],
+            liste: [['Konveyör Bant', '85 Mt'], ['Redüktör', '9 Ad'], ['Sensör Kablo', '120 Mt']]
+        },
+        '-08': {
+            stok: '₺2.610.000', hareket: '148 Ürün', dogruluk: '%99.3',
+            grafik: ['78%', '42%', '58%', '33%'],
+            liste: [['PLC Modülü', '4 Ad'], ['Sinyal Lambası', '36 Ad'], ['Endüstriyel Fiş', '200 Ad']]
+        },
+        '-09': {
+            stok: '₺2.340.000', hareket: '119 Ürün', dogruluk: '%98.6',
+            grafik: ['58%', '55%', '52%', '38%'],
+            liste: [['Yağlama Nipeli', '150 Ad'], ['Pnomatik Valf', '28 Ad'], ['Hortum Rakoru', '90 Ad']]
+        },
+        '-10': {
+            stok: '₺2.470.000', hareket: '131 Ürün', dogruluk: '%99.1',
+            grafik: ['68%', '48%', '54%', '40%'],
+            liste: [['LED Armatür', '64 Ad'], ['Kablo Kanalı', '95 Mt'], ['Topraklama Çubuğu', '14 Ad']]
+        },
+        '-11': {
+            stok: '₺2.290.000', hareket: '115 Ürün', dogruluk: '%98.5',
+            grafik: ['52%', '62%', '44%', '36%'],
+            liste: [['Isı Yalıtım', '420 M²'], ['Silikon Mastik', '85 Ad'], ['Çelik Dubel', '600 Ad']]
+        },
+        '-12': {
+            stok: '₺2.800.000', hareket: '160 Ürün', dogruluk: '%99.8',
+            grafik: ['90%', '30%', '50%', '60%'],
+            liste: [['Antifriz', '600 L'], ['Kar Lastiği', '24 Ad'], ['Isıtıcı Rezistans', '15 Ad']]
+        }
+    };
+
+    const parcalar = secilenAy.split('-');
+    const aySuffix = parcalar.length === 2 ? '-' + parcalar[1] : '';
+    const data = ayVerileri[aySuffix];
+    if (!data) return;
+
+    // Rakamları güncelle
+    stokVal.innerText = data.stok;
+    hareketVal.innerText = data.hareket;
+    dogrulukVal.innerText = data.dogruluk;
+
+    // Grafikleri güncelle (Yükseklik değişimleri artık aktif!)
+    if(bMek) bMek.style.height = data.grafik[0];
+    if(bElek) bElek.style.height = data.grafik[1];
+    if(bSivi) bSivi.style.height = data.grafik[2];
+    if(bDig) bDig.style.height = data.grafik[3];
+
+    // Listeyi güncelle
+    productList.innerHTML = data.liste.map((item, index) => `
+    <li style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px dashed #e2e8f0; height: 35px; align-items: center;">
+        <span style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-right: 10px;">${item[0]}</span> 
+        <strong style="white-space: nowrap;">${item[1]}</strong>
+    </li>
+`).join('');
+}
+
+function openSayimModal() {
+    document.getElementById('sayimModal').style.display = 'flex';
+}
+
+function closeSayimModal() {
+    document.getElementById('sayimModal').style.display = 'none';
+}
+
+function sendSayimEmri() {
+    const personel = document.getElementById('sayimPersonel').value;
+    if(!personel) {
+        alert("Lütfen görev atanacak bir personel seçin.");
+        return;
+    }
+    
+    // Burası backend bağlandığında bir API isteğine dönüşecek (POST request)
+    console.log("Sayım emri backend'e gönderiliyor..."); 
+    
+    alert("Sayım emri sisteme kaydedildi ve ilgili personelin terminaline yönlendirildi.");
+    closeSayimModal();
+}
+function toggleHistoryMode() {
+    const filters = document.getElementById('historyFilters');
+    const btn = document.getElementById('toggleHistoryBtn');
+    const list = document.getElementById('activityList');
+    
+    if (filters.style.display === 'none' || filters.style.display === '') {
+        filters.style.display = 'flex';
+        // Filtre açılınca listeyi biraz daha daraltalım ama kaydırma (scroll) hep aktif kalsın
+        list.style.maxHeight = '250px';
+        btn.innerHTML = '<i class="fa-solid fa-chevron-up"></i> Filtreleri Gizle';
+    } else {
+        filters.style.display = 'none';
+        list.style.maxHeight = '350px';
+        btn.innerHTML = '<i class="fa-solid fa-calendar-days"></i> Tüm Hareket Geçmişini Görüntüle';
+    }
+}
+
+function applyDateFilter() {
+    const year = document.getElementById('filterYear').value;
+    const month = String(document.getElementById('filterMonth').value).padStart(2, '0');
+    const day = String(document.getElementById('filterDay').value).padStart(2, '0');
+    const iso = year + '-' + month + '-' + day;
+
+    const activityList = document.getElementById('activityList');
+    if (!activityList) return;
+
+    const items = activityList.querySelectorAll('.activity-item');
+    activityList.style.opacity = '0.5';
+
+    setTimeout(function () {
+        let gorunen = 0;
+        items.forEach(function (el) {
+            const d = el.getAttribute('data-activity-date');
+            const esles = d === iso;
+            el.style.display = esles ? '' : 'none';
+            if (esles) gorunen++;
+        });
+        if (gorunen === 0) {
+            items.forEach(function (el) { el.style.display = ''; });
+        }
+        activityList.style.opacity = '1';
+    }, 300);
+}  
+
+// Atıl Stok Modalını Açma
+function openAtılStokModal() {
+    document.getElementById('atılStokModal').style.display = 'flex';
+}
+
+// Atıl Stok Aksiyon İşleme
+function processDeadStockAction(selectElement, productName) {
+    const action = selectElement.value;
+    if(!action) return;
+
+    const actionText = selectElement.options[selectElement.selectedIndex].text;
+    
+    if(confirm(`${productName} için "${actionText}" aksiyonunu onaylıyor musunuz?`)) {
+        alert("Talep oluşturuldu. Onay süreci için ilgili birimlere bildirim gönderildi.");
+        // Gerçek uygulamada burada satır silinebilir veya pasife çekilebilir.
+        selectElement.parentElement.style.opacity = "0.5";
+        selectElement.disabled = true;
+    } else {
+        selectElement.value = ""; // Seçimi sıfırla
+    }
+}
+
+    // Sayfa her açıldığında giden mesajları ortak hafızadan (localStorage) çek
+    document.addEventListener('DOMContentLoaded', function() {
+        updateOutgoingList(); 
+    });
+
+    function updateOutgoingList() {
+        const listContainer = document.getElementById('notif-outgoing-list');
+        if (!listContainer) return;
+
+        // Tarayıcının ortak hafızasından mesajları alınıyor
+        const gidenMesajlar = JSON.parse(localStorage.getItem('guardia_giden_mesajlar') || '[]');
+
+        listContainer.innerHTML = ""; 
+
+        if (gidenMesajlar.length === 0) {
+            listContainer.innerHTML = '<div class="notif-item"><span>Henüz gönderilmiş bir not bulunmuyor.</span></div>';
+        } else {
+            gidenMesajlar.forEach(msg => {
+                listContainer.innerHTML += `
+                    <div class="notif-item">
+                        <strong>SİZDEN -> ${msg.hedef}</strong>
+                        <span>${msg.icerik}</span>
+                        <small style="display:block; color: #94a3b8; font-size: 0.75rem; margin-top: 5px;">
+                            <i class="fa-regular fa-clock"></i> ${msg.saat}
+                        </small>
+                    </div>`;
+            });
+        }
+    }
+</script>
+</body>
+</html>

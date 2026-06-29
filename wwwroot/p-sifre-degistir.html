@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="tr">
+
+<head>
+    <script>
+        if (!localStorage.getItem('token')) {
+            window.location.href = 'p-login.html';
+        }
+    </script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Şifre Güncelle | Guardia</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="css/personel-style.css">
+
+    <style>
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            transition: 0.3s;
+        }
+
+        .container {
+            width: 95%;
+            max-width: 420px;
+            padding: 30px;
+            background: var(--card);
+            backdrop-filter: blur(20px);
+            border-radius: 25px;
+            border: 1px solid var(--border);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+        }
+
+        /* BAŞLIK VE GERİ BUTONU DÜZENİ */
+        .header-area {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 25px;
+            padding-top: 5px;
+        }
+
+        .back-btn {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: var(--card);
+            border: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            color: var(--accent);
+            transition: 0.2s;
+            flex-shrink: 0;
+        }
+
+            .back-btn:active {
+                transform: scale(0.9);
+            }
+
+        h2 {
+            margin: 0;
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: var(--text);
+            letter-spacing: -0.2px;
+        }
+
+        /* BİLGİ MESAJI */
+        .info-msg {
+            font-size: 0.8rem;
+            color: var(--sub);
+            margin-bottom: 20px;
+            line-height: 1.4;
+        }
+
+        input {
+            width: 100%;
+            padding: 15px;
+            border-radius: 15px;
+            border: 1px solid var(--border);
+            background: var(--bg);
+            color: var(--text);
+            margin-bottom: 15px;
+            outline: none;
+            font-family: 'Poppins', sans-serif;
+            box-sizing: border-box;
+            font-size: 0.9rem;
+            transition: 0.3s;
+        }
+
+            input:focus {
+                border-color: var(--accent);
+                background: var(--card);
+            }
+
+        .save-btn {
+            width: 100%;
+            padding: 18px;
+            background: linear-gradient(135deg, var(--accent) 0%, #0ea5e9 100%);
+            color: #0f172a;
+            border: none;
+            border-radius: 22px;
+            font-family: 'Poppins';
+            font-weight: 700;
+            font-size: 1rem;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-top: 10px;
+            box-shadow: 0 10px 25px rgba(56, 189, 248, 0.2);
+        }
+
+            .save-btn:hover {
+                filter: brightness(1.1);
+                transform: translateY(-2px);
+            }
+    </style>
+
+</head>
+
+<body>
+
+    <div class="container">
+        <div class="header-area">
+            <div class="back-btn" onclick="history.back()">
+                <i class="fa-solid fa-chevron-left"></i>
+            </div>
+            <h2>Şifre Değiştir</h2>
+        </div>
+
+        <p class="info-msg">
+            <i class="fa-solid fa-circle-info" style="color:var(--accent); margin-right: 5px;"></i>
+            Güvenliğiniz için yeni şifreniz son 3 şifrenizden farklı olmalıdır.
+        </p>
+
+        <input type="password" id="currentPass" placeholder="Mevcut Şifre">
+        <input type="password" id="newPass" placeholder="Yeni Şifre">
+        <input type="password" id="confirmPass" placeholder="Yeni Şifre (Tekrar)">
+
+        <button class="save-btn" onclick="sifreKontrolEt()">Şifreyi Güncelle</button>
+    </div>
+
+    <script>
+        function apiFetch(url, options = {}) {
+            const token = localStorage.getItem('token');
+
+            // Başlıkları koruyarak Authorization JWT token'ını mühürlüyoruz
+            options.headers = {
+                ...options.headers,
+                'Authorization': 'Bearer ' + token
+            };
+
+            return fetch(url, options).then(res => {
+                if (!res.ok) {
+                    throw new Error(`HTTP Hatası! Durum: ${res.status}`);
+                }
+                return res;
+            });
+        }
+
+        if (localStorage.getItem('temaTercihi') === 'light') {
+            document.body.classList.add('light-mode');
+        }
+
+        async function sifreKontrolEt() {
+            const aktifSicil = localStorage.getItem("aktifKullanici");
+            if (!aktifSicil) {
+                alert("Oturum süresi dolmuş. Lütfen tekrar giriş yapın.");
+                return;
+            }
+
+            const mevcut = document.getElementById('currentPass').value;
+            const yeni = document.getElementById('newPass').value;
+            const tekrar = document.getElementById('confirmPass').value;
+
+            if (!mevcut || !yeni || !tekrar) {
+                alert("Tüm alanları doldurunuz.");
+                return;
+            }
+
+            if (yeni !== tekrar) {
+                alert("Yeni şifreler eşleşmiyor.");
+                return;
+            }
+
+            try {
+           
+                const response = await apiFetch('https://localhost:7183/api/sifre/guncelle', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        SicilNo: aktifSicil,
+                        MevcutSifre: mevcut,
+                        YeniSifre: yeni,
+                        YeniSifreTekrar: tekrar
+                    })
+                });
+
+         
+                const sonuc = await response.json();
+                alert(sonuc.mesaj || "Şifreniz başarıyla güncellendi.");
+                history.back();
+
+            } catch (error) {
+                
+                alert("Şifre güncellenemedi. Mevcut şifreniz hatalı olabilir veya sunucuya ulaşılamıyor.");
+                console.error("Şifre Güncelleme Hatası:", error);
+            }
+        }
+    </script>
+</body>
+
+</html>

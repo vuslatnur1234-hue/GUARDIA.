@@ -1,0 +1,3391 @@
+<!DOCTYPE html>
+<html lang="tr">
+
+<head>
+    <script>
+        if (!localStorage.getItem('token')) {
+            window.location.href = 'admin-login.html';
+        }
+    </script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Guardia | İK Yönetim Paneli</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/css/ik-sidebar.css">
+    <link rel="stylesheet" href="/css/dept-common.css">
+    <style>
+        :root {
+            --sidebar: #0f172a;
+            --text-main: #1e293b;
+            --text-sub: #64748b;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+        }
+
+        .top-user-info {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            background: white;
+            padding: 10px 20px;
+            border-radius: 50px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+            position: relative;
+        }
+
+        .notif-dropdown {
+            position: absolute;
+            top: 60px;
+            right: 0;
+            width: 300px;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+            display: none;
+            z-index: 2000;
+            padding: 15px;
+            border: 1px solid #e2e8f0;
+        }
+
+            .notif-dropdown.active {
+                display: block;
+                animation: fadeIn 0.3s ease;
+            }
+
+        .notif-item {
+            padding: 10px;
+            border-bottom: 1px solid #f1f5f9;
+            font-size: 0.85rem;
+            color: var(--text-main);
+        }
+
+        .stats-container {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .stats-container {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            /* Yan yana 4 kart */
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .card {
+            background: white;
+            padding: 22px;
+            border-radius: 22px;
+            border: 2px solid transparent;
+            /* Zarif çerçeve için başlangıç */
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.04);
+            transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+            /* Daha şık zıplama efekti */
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            cursor: pointer;
+        }
+
+            /* Üzerine gelince (Hover) - Apple tarzı derinlik */
+            .card:hover {
+                transform: translateY(-8px);
+                /* Biraz daha yukarı zıplar */
+                border-color: #38bdf8;
+                box-shadow: 0 12px 25px rgba(56, 189, 248, 0.12);
+            }
+
+        .card-icon {
+            width: 52px;
+            height: 52px;
+            border-radius: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.4rem;
+        }
+
+        /* Bilgi Yazıları */
+        .card-info h4 {
+            margin: 0;
+            font-size: 0.75rem;
+            color: #64748b;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            font-weight: 600;
+        }
+
+        .card-info p {
+            margin: 4px 0 0 0;
+            font-size: 1.6rem;
+            font-weight: 800;
+            color: #1e293b;
+        }
+
+        .modal,
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            z-index: 9999;
+            /* En üstte durması için */
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(15, 23, 42, 0.6);
+            /* Daha koyu, odaklayıcı arka plan */
+            backdrop-I: blur(6px);
+            /* Arkayı hafifçe bulandırır (Premium efekt) */
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* Modal İçerik Kutusu */
+        .modal-content {
+            background: white;
+            /* GENİŞLİK: Ekranın %75'ini kaplasın, en fazla 850px olsun */
+            width: 60% !important;
+            max-width: 850px !important;
+            /* YÜKSEKLİK: Ekranın %85'inden %70'ine indirdik (Daha kibar durur) */
+            height: 70vh !important;
+            border-radius: 24px !important;
+            padding: 25px 30px !important;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            animation: modalSlideUp 0.4s ease;
+        }
+
+        /* Modal Açılış Animasyonu */
+        @keyframes modalSlideUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px) scale(0.98);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+
+        .status {
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+
+            .status.online {
+                background: #dcfce7;
+                color: #166534;
+            }
+
+            .status.offline {
+                background: #fee2e2;
+                color: #991b1b;
+            }
+
+        #tab-content {
+            min-height: 400px;
+            transition: opacity 0.2s ease-in-out;
+            padding-top: 15px;
+        }
+
+        /* Sekme Butonları (Yan yana şık dizilim) */
+        .tab-btn {
+            padding: 10px 22px;
+            border: none;
+            background: #f1f5f9;
+            font-weight: 600;
+            color: #64748b;
+            cursor: pointer;
+            border-radius: 10px;
+            transition: all 0.3s ease;
+        }
+
+            .tab-btn.active {
+                background: #3b82f6 !important;
+                color: white !important;
+                box-shadow: 0 4px 12px rgba(59, 130, 246, 0.2);
+            }
+
+            .tab-btn:hover:not(.active) {
+                background: #e2e8f0;
+            }
+
+        /* Departman Satırları (Genel Stil) */
+        .dept-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 14px 20px;
+            border-radius: 12px;
+            margin-bottom: 10px;
+            transition: all 0.2s ease;
+            background: white;
+            border: 1px solid #f1f5f9;
+        }
+
+            .dept-row:hover {
+                transform: translateX(8px);
+                box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+            }
+
+            /* Departman İkonları */
+            .dept-row i {
+                font-size: 1.1rem;
+                width: 35px;
+                text-align: center;
+            }
+
+            /* Kişi Sayısı Kutucuğu */
+            .dept-row strong {
+                background: white;
+                padding: 4px 14px;
+                border-radius: 8px;
+                font-size: 0.85rem;
+                color: #1e293b;
+                box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+            }
+
+        /* Sekme Panelleri */
+        .tab-pane {
+            display: none;
+        }
+
+            .tab-pane.active {
+                display: block;
+                animation: fadeIn 0.3s ease;
+                /* Yumuşak açılış efekti */
+            }
+
+        /* İdari Birimler (Mavi) */
+        .admin-group {
+            border-left: 5px solid #38bdf8 !important;
+            background: #f8faff !important;
+        }
+
+            .admin-group i {
+                color: #38bdf8;
+            }
+
+        /* Teknik Birimler (Yeşil) */
+        .tech-group {
+            border-left: 5px solid #10b981 !important;
+            background: #f0fdf4 !important;
+        }
+
+            .tech-group i {
+                color: #10b981;
+            }
+
+        /* Saha/Fabrika Birimleri (Sarı/Turuncu) */
+        .saha-group {
+            border-left: 5px solid #f59e0b !important;
+            background: #fffbeb !important;
+        }
+
+            .saha-group i {
+                color: #f59e0b;
+            }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(5px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .active-list-container {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            padding: 10px;
+        }
+
+        .list-card {
+            display: flex !important;
+            align-items: center !important;
+            background: white !important;
+            padding: 15px 25px !important;
+            border-radius: 16px !important;
+            border: 1px solid #f1f5f9 !important;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02) !important;
+            transition: all 0.3s ease !important;
+        }
+
+        .list-icon {
+            width: 48px !important;
+            height: 48px !important;
+            border-radius: 12px !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            font-size: 1.2rem !important;
+            margin-right: 20px !important;
+            flex-shrink: 0 !important;
+            /* Kutunun ezilmesini engeller */
+        }
+
+        .list-card:hover {
+            transform: translateX(10px) !important;
+            border-color: #3b82f6 !important;
+            box-shadow: 0 5px 15px rgba(59, 130, 246, 0.08) !important;
+        }
+
+        .list-main-info {
+            width: 220px !important;
+            /* 280'den 220'ye çektik ki yer açılsın */
+            flex: 0 0 220px !important;
+        }
+
+        .list-icon.theme-blue {
+            background: #eff6ff !important;
+            color: #3b82f6 !important;
+        }
+
+        .list-icon.theme-purple {
+            background: #faf5ff !important;
+            color: #a855f7 !important;
+        }
+
+        .list-icon.theme-red {
+            background: #fef2f2 !important;
+            color: #ef4444 !important;
+        }
+
+        .list-icon.theme-green {
+            background: #f0fdf4 !important;
+            color: #22c55e !important;
+        }
+
+        .list-main-info h5 {
+            margin: 0;
+            font-size: 1rem;
+            color: #1e293b;
+            font-weight: 700;
+        }
+
+        /* Sayıların ve Progress Bar'ın Hizalaması */
+        .list-stats {
+            width: 100px !important;
+            flex: 0 0 100px !important;
+            text-align: center;
+            border-left: 1px solid #f1f5f9;
+            border-right: 1px solid #f1f5f9;
+            padding: 0 20px;
+        }
+
+        .list-progress {
+            flex-grow: 1 !important;
+            padding: 0 30px !important;
+        }
+
+        .list-status-tag {
+            width: 130px !important;
+            flex: 0 0 130px !important;
+            display: flex !important;
+            justify-content: flex-end !important;
+        }
+
+        /* Tag Pill (Etiket) Zarifleştirme */
+        .tag-pill {
+            padding: 6px 12px;
+            border-radius: 50px;
+            font-size: 0.7rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            white-space: nowrap !important;
+            min-width: 100px !important;
+            text-align: center;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        ::-webkit-scrollbar {
+            display: none;
+            /* Tüm sayfada scrollbar gizli */
+        }
+
+        body {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+            background-color: #f8fafc;
+            overflow: hidden;
+            /* Sayfa kaymasını engeller */
+            height: 100vh;
+            font-family: 'Inter', sans-serif;
+        }
+
+        .dashboard-bottom-section {
+            display: flex;
+            gap: 25px;
+            margin-top: 25px;
+            width: 100%;
+            align-items: stretch;
+            max-height: calc(100vh - 350px);
+        }
+
+        .panel-container {
+            background: white;
+            border-radius: 22px;
+            padding: 20px 22px 25px 22px;
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+        }
+
+        .main-ops {
+            flex: 1.8;
+        }
+
+        /* Personel Takip Alanı */
+        .side-hr {
+            flex: 1;
+        }
+
+        /* İK Aktivite Alanı */
+
+        /* PANEL BAŞLIK VE BUTON GRUBU HİZALAMA */
+        .panel-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding: 0 18px !important;
+        }
+
+            .panel-header h3 {
+                font-size: 1.1rem;
+                color: #1e293b;
+                font-weight: 700;
+                margin: 0 !important;
+            }
+
+            /* Butonun duruşunu garantiye alalım */
+            .panel-header button {
+                margin: 0 !important;
+            }
+
+        .custom-list-row {
+            display: flex !important;
+            flex-direction: row !important;
+            /* Her şeyin yan yana gelmesini sağlar */
+            align-items: center !important;
+            justify-content: flex-start !important;
+            background: #ffffff !important;
+            border: 1px solid #f1f5f9 !important;
+            border-radius: 14px !important;
+            padding: 12px 18px !important;
+            margin-bottom: 12px !important;
+            width: auto !important;
+            gap: 15px !important;
+            /* Elemanların arasını açar */
+        }
+
+        /* İKONT KUTUSU */
+        .row-icon-box {
+            width: 42px !important;
+            height: 42px !important;
+            flex-shrink: 0 !important;
+            /* Kutunun daralmasını engeller */
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            border-radius: 12px !important;
+            font-size: 1.1rem !important;
+        }
+
+        /* YAZI ALANI */
+        .row-info {
+            flex-grow: 1 !important;
+            /* Yazı alanının ortadaki boşluğu kaplamasını sağlar */
+            display: flex !important;
+            flex-direction: column !important;
+            /* İsim ve alt yazı alt alta kalsın */
+            text-align: left !important;
+        }
+
+            .row-info h5 {
+                margin: 0 !important;
+                font-size: 0.95rem !important;
+                color: #1e293b !important;
+            }
+
+            .row-info p {
+                margin: 2px 0 0 0 !important;
+                font-size: 0.8rem !important;
+                color: #64748b !important;
+            }
+
+        /* SAĞDAKİ ETİKET (BADGE) */
+        .row-badge {
+            flex-shrink: 0 !important;
+            padding: 6px 12px !important;
+            border-radius: 8px !important;
+            font-size: 0.7rem !important;
+            font-weight: 800 !important;
+            min-width: 85px !important;
+            text-align: center !important;
+        }
+
+        /* RENK TEMALARI (YAZI VE İKON RENKLERİ) */
+        .theme-purple {
+            background: #faf5ff !important;
+            color: #a855f7 !important;
+        }
+
+        .theme-blue {
+            background: #eff6ff !important;
+            color: #3b82f6 !important;
+        }
+
+        .theme-green {
+            background: #dcfce7 !important;
+            color: #15803d !important;
+        }
+
+        .theme-orange {
+            background: #ffedd5 !important;
+            color: #9a3412 !important;
+        }
+
+        .theme-red {
+            background: #fef2f2 !important;
+            color: #ef4444 !important;
+        }
+
+        /* MODAL İÇİNDEKİ DARALTMA AYARI */
+        #ikListContainer .custom-list-row,
+        #modalListArea .custom-list-row {
+            margin-left: 45px !important;
+            margin-right: 45px !important;
+        }
+
+        /* Modallarda ikon kutularının arka planını şeffaf yapıp sadece ikon rengini bırakır */
+        #ikModal .row-icon-box {
+            background: transparent !important;
+        }
+
+        .see-all-btn,
+        .ik-filter-btn {
+            background: #f1f5f9;
+            border: 1px solid transparent;
+            padding: 8px 16px;
+            border-radius: 10px;
+            color: #64748b;
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+            .ik-filter-btn:hover {
+                background: #ffffff;
+                border-color: #3b82f6;
+                color: #3b82f6;
+            }
+
+            .ik-filter-btn.all {
+                background: #64748b !important;
+                color: white !important;
+            }
+
+        /* SADECE İK AKTİVİTE PANELİ İÇİN ÖZEL DOKUNUŞ */
+        .side-hr .custom-list-row {
+            background: #ffffff !important;
+            /* Arka planı bembeyaz yapıyoruz */
+            border: 1px solid #f1f5f9 !important;
+        }
+
+        .side-hr .row-icon-box.theme-purple {
+            background: #faf5ff !important;
+            color: #a855f7 !important;
+        }
+
+        .side-hr .row-icon-box.theme-blue {
+            background: #eff6ff !important;
+            color: #3b82f6 !important;
+        }
+
+        .side-hr .row-icon-box.theme-orange {
+            background: #fff7ed !important;
+            color: #f97316 !important;
+        }
+
+        .side-hr .row-icon-box.theme-green {
+            background: #f0fdf4 !important;
+            color: #15803d !important;
+        }
+
+        /* Yazıların Hepsi Koyu Kalsın, Okunabilirliği Artar */
+        .side-hr .row-info h5 {
+            color: #1e293b !important;
+        }
+
+        .side-hr .row-info p {
+            color: #64748b !important;
+        }
+
+        /* 1. SATIR YAPISI (İkonlar Gizli, Temiz Beyaz) */
+        .custom-list-row {
+            display: flex !important;
+            align-items: center !important;
+            background: #ffffff !important;
+            border: 1px solid #f1f5f9 !important;
+            border-radius: 16px !important;
+            padding: 14px 20px !important;
+            margin-bottom: 12px !important;
+            gap: 15px !important;
+            transition: all 0.3s ease;
+        }
+
+        /* İkon Kutularını Tamamen Kapat (Senin isteğin üzerine) */
+        .row-icon-box {
+            display: none !important;
+        }
+
+        /* Yazıları Sola Yasla */
+        .row-info {
+            flex-grow: 1 !important;
+            display: flex !important;
+            flex-direction: column !important;
+            text-align: left !important;
+        }
+
+            .row-info h5 {
+                margin: 0;
+                font-size: 0.95rem;
+                color: #1e293b;
+                font-weight: 700;
+            }
+
+            .row-info p {
+                margin: 2px 0 0 0;
+                font-size: 0.8rem;
+                color: #64748b;
+            }
+
+        /* 2. SAĞDAKİ YUVARLAK ETİKETLER (İşte İstediğin Şey!) */
+        .row-badge {
+            flex-shrink: 0 !important;
+            padding: 6px 16px !important;
+            border-radius: 50px !important;
+            /* Tam Yuvarlak */
+            font-size: 0.7rem !important;
+            font-weight: 800 !important;
+            text-transform: uppercase;
+            min-width: 100px !important;
+            text-align: center !important;
+        }
+
+        /* 3. RENK TEMALARI (SADECE ETİKETLERE UYGULANIR) */
+        /* Arka planlar çok açık, yazılar koyu ve net */
+
+        /* MOR - BUGÜN / KİŞİSEL */
+        .theme-purple .row-badge {
+            background: #faf5ff !important;
+            color: #a855f7 !important;
+        }
+
+        /* MAVİ - MESAİ / TEKNİK */
+        .theme-blue .row-badge {
+            background: #eff6ff !important;
+            color: #3b82f6 !important;
+        }
+
+        /* YEŞİL - ZAMANINDA / EĞİTİM */
+        .theme-green .row-badge {
+            background: #dcfce7 !important;
+            color: #15803d !important;
+        }
+
+        /* TURUNCU - ERKEN / DUYURU */
+        .theme-orange .row-badge {
+            background: #ffedd5 !important;
+            color: #9a3412 !important;
+        }
+
+        /* KIRMIZI - GECİKME / KRİTİK */
+        .theme-red .row-badge {
+            background: #fef2f2 !important;
+            color: #ef4444 !important;
+        }
+
+        /* 4. MODAL İÇİ DÜZELTME*/
+        /* MODAL LİSTE ALANLARI (İK VE PERSONEL ORTAK) */
+        #ikListContainer,
+        #modalListArea {
+            max-height: 400px !important;
+            /* Bir tık kısalttık ki butonlar rahatlasın */
+            overflow-y: auto !important;
+            padding: 10px 40px 80px 40px !important;
+            /* Yanlardan kıstık, alttan 80px boşluk verdik */
+            background: #ffffff !important;
+            display: block !important;
+        }
+
+            /* SATIRLARIN TAŞMASINI ENGELLE */
+            #ikListContainer .custom-list-row,
+            #modalListArea .custom-list-row {
+                margin-left: 0 !important;
+                margin-right: 0 !important;
+                width: 100% !important;
+                /* Kutunun içine hapseder */
+                box-sizing: border-box !important;
+                /* Taşmayı kesin önleyen sihirli satır */
+                margin-bottom: 15px !important;
+            }
+
+        /* HOVER DURUMUNDA TAŞMA ÖNLEYİCİ */
+        .custom-list-row:hover {
+            transform: translateY(-3px) !important;
+            /* Sadece yukarı zıplar, sağa sola taşmaz */
+            border-color: #3b82f6 !important;
+            box-shadow: 0 8px 20px rgba(59, 130, 246, 0.1) !important;
+        }
+
+        /* Scrollbar'ı gizle (Daha temiz görüntü) */
+        #ikListContainer::-webkit-scrollbar,
+        #modalListArea::-webkit-scrollbar {
+            display: none;
+        }
+
+        /* Ortak Stiller (Pasif Hal) */
+        .ik-filter-btn {
+            background: #f1f5f9 !important;
+            color: #64748b !important;
+            border: none !important;
+            transition: all 0.2s ease !important;
+        }
+
+            /* 1. TÜMÜ (Lacivert Kalır) */
+            .ik-filter-btn.all.active {
+                background: #0f172a !important;
+                color: white !important;
+                box-shadow: 0 4px 10px rgba(15, 23, 42, 0.15);
+            }
+
+            /* 2. KİŞİSEL (Mor) */
+            .ik-filter-btn.purple.active {
+                background: #faf5ff !important;
+                color: #a855f7 !important;
+                border: 1px solid #e9d5ff !important;
+                box-shadow: 0 4px 10px rgba(168, 85, 247, 0.1);
+            }
+
+            /* 3. EĞİTİMLER (Yeşil) */
+            .ik-filter-btn.green.active {
+                background: #dcfce7 !important;
+                color: #15803d !important;
+                border: 1px solid #bbf7d0 !important;
+                box-shadow: 0 4px 10px rgba(21, 128, 61, 0.1);
+            }
+
+            /* 4. TEKNİK (Mavi) */
+            .ik-filter-btn.blue.active {
+                background: #eff6ff !important;
+                color: #3b82f6 !important;
+                border: 1px solid #bfdbfe !important;
+                box-shadow: 0 4px 10px rgba(59, 130, 246, 0.1);
+            }
+
+            /* 5. DUYURULAR (Turuncu) */
+            .ik-filter-btn.orange.active {
+                background: #ffedd5 !important;
+                color: #9a3412 !important;
+                border: 1px solid #fed7aa !important;
+                box-shadow: 0 4px 10px rgba(154, 52, 18, 0.1);
+            }
+
+        .custom-list-row {
+            width: 100% !important;
+            /* Kutunun dışına taşmayı engeller */
+            margin-bottom: 12px !important;
+            transition: all 0.3s ease !important;
+        }
+
+            .custom-list-row:hover {
+                transform: translateY(-3px) !important;
+                border-color: #3b82f6 !important;
+                box-shadow: 0 8px 20px rgba(59, 130, 246, 0.1) !important;
+            }
+
+        /* Personel Modalı Özel Filtre Butonları */
+        .ik-filter-btn.red {
+            border: 1px solid #ef4444;
+            color: #ef4444;
+        }
+
+            .ik-filter-btn.red.active {
+                background: #ef4444 !important;
+                color: white !important;
+            }
+
+        .ik-filter-btn.blue {
+            border: 1px solid #3b82f6;
+            color: #3b82f6;
+        }
+
+            .ik-filter-btn.blue.active {
+                background: #3b82f6 !important;
+                color: white !important;
+            }
+
+        .ik-filter-btn.all.active {
+            background: #64748b !important;
+            color: white !important;
+        }
+
+        /* 1. ANA KAPSAYICIYI DARALTALIM */
+        .modal-content {
+            padding: 30px 60px !important;
+            box-sizing: border-box !important;
+        }
+
+        /* 2. LİSTE ALANINDAKİ GENİŞLİĞİ VE BOŞLUĞU AYARLAMA */
+        #modalListArea {
+            max-height: 420px !important;
+            overflow-y: auto !important;
+            width: 100% !important;
+            padding: 15px 5px 80px 5px !important;
+            /* Yanlardaki 5px kutuyu rahatlatır */
+            margin: 0 auto !important;
+        }
+
+            /* 3. KARTLARIN TAŞMAMASI İÇİN SON DOKUNUŞ */
+            #modalListArea .custom-list-row {
+                width: 100% !important;
+                margin-left: 0 !important;
+                margin-right: 0 !important;
+                box-sizing: border-box !important;
+                /* Bu satır taşmayı kesin önler */
+            }
+
+
+        .custom-list-row:hover {
+            transform: translateY(-3px) scale(1.01) !important;
+            /* Hafif yukarı zıplama ve büyüme */
+            background: #ffffff !important;
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.06) !important;
+            border-color: #3b82f6 !important;
+        }
+
+        #modalListArea::-webkit-scrollbar {
+            display: none;
+        }
+
+        /* Sadece 'active' sınıfı olan buton lacivert olsun */
+        .ik-filter-btn {
+            background: #f1f5f9 !important;
+            color: #64748b !important;
+            border: none !important;
+        }
+
+            .ik-filter-btn.active {
+                background: #0f172a !important;
+                /* Kurumsal Lacivert */
+                color: white !important;
+            }
+
+        /* 1. Pasif haldeki tüm butonları standart yapma */
+        .ik-filter-btn {
+            background: #f1f5f9 !important;
+            color: #64748b !important;
+            border: none !important;
+            font-weight: 600 !important;
+        }
+
+            /* 2. Teknik Butonu (Mavi ve Şık) */
+            .ik-filter-btn.blue.active {
+                background: #eff6ff !important;
+                /* Hafif mavi arka plan */
+                color: #3b82f6 !important;
+                /* Parlak mavi yazı */
+                border: 1.5px solid #bfdbfe !important;
+            }
+
+            /* 3. Kişisel Butonu (Mor) */
+            .ik-filter-btn.purple.active {
+                background: #faf5ff !important;
+                color: #a855f7 !important;
+                border: 1.5px solid #e9d5ff !important;
+            }
+
+            /* 4. Eğitimler Butonu (Yeşil) */
+            .ik-filter-btn.green.active {
+                background: #dcfce7 !important;
+                color: #15803d !important;
+                border: 1.5px solid #bbf7d0 !important;
+            }
+
+            /* 5. Duyurular Butonu (Turuncu) */
+            .ik-filter-btn.orange.active {
+                background: #ffedd5 !important;
+                color: #9a3412 !important;
+                border: 1.5px solid #fed7aa !important;
+            }
+
+            /* 6. Tümü Butonu (Lacivert) */
+            .ik-filter-btn.all.active {
+                background: #0f172a !important;
+                color: white !important;
+            }
+
+        /* 1. KAYDIRMA ÇUBUĞU KAYNAKLI TİTREMEYİ ÖNLE */
+        .modal-content,
+        #modalListArea,
+        #ikListContainer {
+            /* Kaydırma çubuğu çıksa da çıkmasa da yerini hep ayırır */
+            scrollbar-gutter: stable;
+        }
+
+        /* 2. İÇERİK DEĞİŞİRKEN KUTUNUN BOYUNU SABİTLE */
+        #tab-content,
+        #ikListContainer,
+        #modalListArea {
+            /* Minimum bir yükseklik veriyoruz ki liste boşalsa bile kutu küçülüp titremesin */
+            min-height: 400px !important;
+            display: block !important;
+            overflow-x: hidden !important;
+            /* Yatayda oynamayı yasaklar */
+        }
+
+        /* 3. BUTONLARA BASINCA OLUŞAN ANLIK SINIR (BORDER) DEĞİŞİMİNİ SABİTLE */
+        .ik-filter-btn {
+            border: 1.5px solid transparent !important;
+            box-sizing: border-box !important;
+        }
+    </style>
+</head>
+
+
+
+<body class="ik-layout">
+
+    <div id="liveTrackingModal" class="modal"
+        style="display: none; position: fixed; z-index: 9999; left: 0; top: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.6); backdrop-filter: blur(5px); align-items: center; justify-content: center;">
+
+        <div class="modal-content"
+            style="background: white; width: 90%; max-width: 1000px; height: 85vh; border-radius: 25px; display: flex; flex-direction: column; overflow: hidden; box-shadow: 0 20px 40px rgba(0,0,0,0.15); border: 1px solid #f1f5f9;">
+
+            <div style="background: white; padding: 25px 30px; flex-shrink: 0; border-bottom: 1px solid #f1f5f9;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                    <div>
+                        <h2 style="margin: 0; color: #0f172a; font-size: 1.6rem;">Personel Giriş-Çıkış</h2>
+                        <p style="margin: 5px 0 0 0; color: #64748b; font-size: 0.9rem;">Personel araması yapabilir veya
+                            departman bazlı filtreleyebilirsiniz.</p>
+                    </div>
+                    <button onclick="closeLiveTracking()"
+                        style="background: #f1f5f9; border: none; color: #64748b; width: 40px; height: 40px; border-radius: 12px; cursor: pointer;">
+                        <i class="fa-solid fa-xmark"></i>
+                    </button>
+                </div>
+
+                <div style="display: flex; gap: 10px; align-items: center; margin-top: 15px;">
+                    <button type="button" class="ik-filter-btn all active"
+                        onclick="filterPayroll('tumu', this)">Tümü</button>
+                    <button type="button" class="ik-filter-btn red"
+                        onclick="filterPayroll('gecikme', this)">Gecikme</button>
+                    <button type="button" class="ik-filter-btn blue"
+                        onclick="filterPayroll('mesai', this)">Mesai</button>
+
+                    <div style="position: relative; flex: 1; margin-left: 10px;">
+                        <i class="fa-solid fa-magnifying-glass"
+                            style="position: absolute; left: 12px; top: 12px; color: #94a3b8; font-size: 0.8rem;"></i>
+                        <input type="text" id="personelAramaInput" onkeyup="runCombinedFilter()" placeholder="Ara..."
+                            style="width: 100%; padding: 8px 12px 8px 35px; border-radius: 10px; border: 1px solid #e2e8f0; background: #f8fafc; font-size: 0.85rem; outline: none;">
+                    </div>
+
+                    <select id="departmanFiltre" onchange="runCombinedFilter()"
+                        style="flex: 1; padding: 12px; border-radius: 12px; border: 1px solid #e2e8f0; background: #f8fafc; color: #1e293b; cursor: pointer; outline: none; font-weight: 500;">
+                        <option value="">Tüm Departmanlar</option>
+                        <option value="İnsan Kaynakları">İnsan Kaynakları</option>
+                        <option value="Hukuk ve Uyumluluk">Hukuk ve Uyumluluk</option>
+                        <option value="İdari İşler">İdari İşler</option>
+                        <option value="Satın Alma">Satın Alma</option>
+                        <option value="Finans ve Muhasebe">Finans ve Muhasebe</option>
+                        <option value="Bilgi İşlem">Bilgi İşlem</option>
+                        <option value="İş Sağlığı ve Güvenliği">İş Sağlığı ve Güvenliği</option>
+                        <option value="Bakım ve Enerji">Bakım ve Enerji</option>
+                        <option value="Kalite Kontrol">Kalite Kontrol</option>
+                        <option value="Mavi Yaka Üretim">Mavi Yaka Üretim</option>
+                        <option value="Gri Yaka / Formen">Gri Yaka / Formen</option>
+                        <option value="Lojistik ve Sevkiyat">Lojistik ve Sevkiyat</option>
+                        <option value="Endüstriyel Temizlik">Endüstriyel Temizlik</option>
+                        <option value="Güvenlik">Güvenlik</option>
+                    </select>
+                </div>
+                <div id="modalListArea" style="padding: 25px; overflow-y: auto; flex-grow: 1; background: #ffffff;">
+                    <div class="custom-list-row theme-green" data-name="Selin Yurt" data-dept="İnsan Kaynakları">
+                        <div class="row-info">
+                            <h5>Selin Yurt</h5>
+                            <p>İnsan Kaynakları • 08:30 Giriş</p>
+                        </div>
+                        <span class="row-badge">ZAMANINDA</span>
+                    </div>
+
+                    <div class="custom-list-row theme-red" data-name="Av. Mert Kaya" data-dept="Hukuk ve Uyumluluk">
+                        <div class="row-info">
+                            <h5>Av. Mert Kaya</h5>
+                            <p>Hukuk ve Uyumluluk • 09:45 Giriş</p>
+                        </div>
+                        <span class="row-badge">GECİKME</span>
+                    </div>
+
+                    <div class="custom-list-row theme-blue" data-name="Hüseyin Demir" data-dept="Mavi Yaka Üretim">
+                        <div class="row-info">
+                            <h5>Hüseyin Demir</h5>
+                            <p>Mavi Yaka Üretim • 19:15 Çıkış</p>
+                        </div>
+                        <span class="row-badge">MESAİ</span>
+                    </div>
+
+                    <div class="custom-list-row theme-orange" data-name="Kemal Aras" data-dept="Lojistik ve Sevkiyat">
+                        <div class="row-info">
+                            <h5>Kemal Aras</h5>
+                            <p>Lojistik ve Sevkiyat • 16:30 Çıkış</p>
+                        </div>
+                        <span class="row-badge">ERKEN</span>
+                    </div>
+
+                    <div class="custom-list-row theme-green" data-name="Ahmet Yılmaz" data-dept="Bilgi İşlem">
+                        <div class="row-info">
+                            <h5>Ahmet Yılmaz</h5>
+                            <p>Bilgi İşlem • 08:50 Giriş</p>
+                        </div>
+                        <span class="row-badge">ZAMANINDA</span>
+                    </div>
+
+                    <div class="custom-list-row theme-red" data-name="Zeynep Işık" data-dept="Kalite Kontrol">
+                        <div class="row-info">
+                            <h5>Zeynep Işık</h5>
+                            <p>Kalite Kontrol • 09:20 Giriş</p>
+                        </div>
+                        <span class="row-badge">GECİKME</span>
+                    </div>
+
+                    <div class="custom-list-row theme-blue" data-name="Ömer Çelik" data-dept="Güvenlik">
+                        <div class="row-info">
+                            <h5>Ömer Çelik</h5>
+                            <p>Güvenlik • 20:00 Çıkış</p>
+                        </div>
+                        <span class="row-badge">MESAİ</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function personelAra() {
+            let input = document.getElementById('personelAramaInput').value.toLowerCase();
+            let deptFilter = document.getElementById('departmanFiltre').value.toLowerCase();
+            let rows = document.getElementsByClassName('personel-row');
+
+            for (let i = 0; i < rows.length; i++) {
+                let name = rows[i].getAttribute('data-name').toLowerCase();
+                let sicil = rows[i].getAttribute('data-sicil').toLowerCase();
+                let dept = rows[i].getAttribute('data-dept').toLowerCase();
+
+                // Hem arama metni hem de departman filtresi eşleşiyor mu kontrol et
+                if ((name.includes(input) || sicil.includes(input)) && (deptFilter === "" || dept === deptFilter)) {
+                    rows[i].style.display = "flex";
+                } else {
+                    rows[i].style.display = "none";
+                }
+            }
+        }
+
+    </script>
+
+    <div class="ik-sidebar">
+        <h2>🛡️ Guardia İK</h2>
+        <ul class="ik-nav-links">
+            <li class="active"><i class="fa-solid fa-chart-line"></i> Genel Bakış</li>
+            <li><a href="ik-personel-listesi.html"
+                    style="text-decoration:none;color:inherit;display:flex;align-items:center;gap:12px;"><i
+                        class="fa-solid fa-users"></i> Personel Listesi</a></li>
+            <li><a href="ik-izin-talepleri.html"
+                    style="text-decoration:none;color:inherit;display:flex;align-items:center;gap:12px;"><i
+                        class="fa-solid fa-calendar-check"></i> İzin Talepleri</a></li>
+            <li><a href="ik-bordro.html"
+                    style="text-decoration:none;color:inherit;display:flex;align-items:center;gap:12px;"><i
+                        class="fa-solid fa-file-invoice-dollar"></i> Bordro Yönetimi</a></li>
+            <li><a href="ik-duyuru-yayinla.html"
+                    style="text-decoration:none;color:inherit;display:flex;align-items:center;gap:12px;"><i
+                        class="fa-solid fa-bullhorn"></i> Duyuru Yayınla</a></li>
+        </ul>
+        <div class="ik-user-tag" style="position: relative; display: flex; align-items: center;">
+            <div class="ik-user-avatar" id="sidebarAvatar"><img src="img/erkek_1.jpg.png" alt=""></div>
+            <div class="ik-user-info" ><span id="sidebarAdSoyad">Selin Aksoy</span><small id="sidebarDepartman">İK Yöneticisi</small></div>
+
+            <a href="javascript:void(0)"
+                onclick="if(confirm('Oturumu kapatmak istediğinize emin misiniz?')) { window.location.href='admin-login.html'; }"
+                style="position: absolute; right: 15px; color: white; opacity: 0.8; text-decoration: none; cursor: pointer;">
+                <i class="fa-solid fa-right-from-bracket" style="font-size: 1.1rem;"></i>
+            </a>
+        </div>
+    </div>
+
+    <div class="ik-content">
+        <div class="dept-header">
+            <div class="page-title-hero">
+                <h1>İnsan Kaynakları Operasyon Merkezi</h1>
+            </div>
+
+            <div class="notif-container">
+                <input type="checkbox" id="notif-toggle" aria-hidden="true" style="display:none;">
+                <label for="notif-toggle" class="notif-trigger">
+                    <i class="fa-solid fa-bell"></i>
+                    <span class="notif-badge">2</span>
+                </label>
+
+                <div class="notif-dropdown">
+                    <h4>Mesaj Merkezi</h4>
+
+                    <div id="notif-incoming-list" class="notif-list">
+                        <div class="notif-item"
+                            onclick="openReplyModal('HUKUK', '5 adet yeni iş sözleşmesi onaylandı.')"
+                            style="cursor: pointer;">
+                            <span class="notif-status"></span>
+                            <strong>HUKUK</strong>
+                            <span>5 adet yeni iş sözleşmesi onaylandı.</span>
+                            <small style="display:block; color: #94a3b8; font-size: 0.75rem; margin-top: 5px;">
+                                <i class="fa-regular fa-clock"></i> 10:45
+                            </small>
+                        </div>
+
+                        <div class="notif-item"
+                            onclick="openReplyModal('BİLGİ İŞLEM', 'Sunucu bakım çalışması tamamlandı.')"
+                            style="cursor: pointer;">
+                            <span class="notif-status"></span>
+                            <strong>BİLGİ İŞLEM</strong>
+                            <span>Sunucu bakım çalışması tamamlandı.</span>
+                            <small style="display:block; color: #94a3b8; font-size: 0.75rem; margin-top: 5px;">
+                                <i class="fa-regular fa-clock"></i> 09:12
+                            </small>
+                        </div>
+                    </div>
+
+                    <div id="notif-outgoing-list" class="notif-list" style="display:none;">
+                        <div class="notif-item">
+                            <strong>SİZDEN -> İDARİ İŞLER</strong>
+                            <span>Yeni personel kartları basımı hakkında.</span>
+                            <small style="display:block; color: #94a3b8; font-size: 0.75rem; margin-top: 5px;">
+                                <i class="fa-regular fa-clock"></i> 11:20
+                            </small>
+                        </div>
+                    </div>
+
+                    <div class="notif-footer">
+                        <button type="button" class="notif-action-btn active" onclick="showIncoming()">
+                            <i class="fa-solid fa-bell"></i> Gelenler
+                        </button>
+                        <button type="button" class="notif-action-btn" onclick="showOutgoing()">
+                            <i class="fa-solid fa-paper-plane"></i> Gidenler
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+
+
+        <div class="stats-container">
+            <div class="card" onclick="openPersonelModal()">
+                <div class="card-icon" style="background: #eff6ff; color: #3b82f6;">
+                    <i class="fa-solid fa-users"></i>
+                </div>
+                <div class="card-info">
+                    <h4>Toplam Personel</h4>
+                    <p>1,248</p>
+                </div>
+            </div>
+
+            <div class="card" onclick="openActiveModal()">
+                <div class="card-icon" style="background: #ecfdf5; color: #10b981;">
+                    <i class="fa-solid fa-chart-line"></i>
+                </div>
+                <div class="card-info">
+                    <h4>Fabrikada Aktif</h4>
+                    <p>856</p>
+                </div>
+            </div>
+
+            <div class="card" onclick="openSatisfactionModal()" style="cursor: pointer;">
+                <div class="card-icon" style="background: #fffbeb; color: #f59e0b;">
+                    <i class="fa-solid fa-face-smile-beam"></i>
+                </div>
+                <div class="card-info">
+                    <h4>Memnuniyet</h4>
+                    <p>%78</p>
+                </div>
+            </div>
+
+
+            <div id="satisfactionModal" class="modal">
+                <div class="modal-content"
+                    style="max-width: 700px; background: #ffffff; border-radius: 24px; padding: 40px;">
+
+                    <div
+                        style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 35px;">
+                        <div style="display: flex; align-items: center; gap: 15px;">
+                            <div
+                                style="background: #fffbeb; width: 55px; height: 55px; border-radius: 16px; display: flex; align-items: center; justify-content: center;">
+                                <i class="fa-solid fa-face-smile-beam" style="color: #f59e0b; font-size: 1.8rem;"></i>
+                            </div>
+                            <h2 style="margin:0; color: #0f172a; font-size: 1.8rem; letter-spacing: -0.5px;">Çalışan
+                                Memnuniyet Analizi</h2>
+                        </div>
+                        <button onclick="closeSatisfactionModal()"
+                            style="background: #f8fafc; border: none; width: 40px; height: 40px; border-radius: 50%; cursor: pointer; color: #64748b; transition: 0.3s;">
+                            <i class="fa-solid fa-xmark"></i>
+                        </button>
+                    </div>
+
+                    <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 25px;">
+
+                        <div
+                            style="background: #fdfcfb; border: 1px solid #f1f5f9; padding: 25px; border-radius: 20px;">
+                            <div
+                                style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 15px;">
+                                <span
+                                    style="background: #f0fdf4; color: #22c55e; padding: 8px 12px; border-radius: 10px; font-size: 0.85rem; font-weight: 600;">
+                                    <i class="fa-solid fa-hand-sparkles"></i> Hijyen
+                                </span>
+                                <strong style="font-size: 1.5rem; color: #0f172a;">%91</strong>
+                            </div>
+                            <div style="height: 6px; background: #f1f5f9; border-radius: 10px; overflow: hidden;">
+                                <div style="width: 91%; height: 100%; background: #22c55e; border-radius: 10px;"></div>
+                            </div>
+                            <p style="margin: 12px 0 0 0; font-size: 0.8rem; color: #64748b;">Saha ve ortak alan
+                                temizliği</p>
+                        </div>
+
+                        <div
+                            style="background: #fdfcfb; border: 1px solid #f1f5f9; padding: 25px; border-radius: 20px; transition: transform 0.3s;">
+                            <div
+                                style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 15px;">
+                                <span
+                                    style="background: #fffbeb; color: #f59e0b; padding: 8px 12px; border-radius: 10px; font-size: 0.85rem; font-weight: 600;">
+                                    <i class="fa-solid fa-utensils"></i> Yemekhane
+                                </span>
+                                <strong style="font-size: 1.5rem; color: #0f172a;">%82</strong>
+                            </div>
+                            <div style="height: 6px; background: #f1f5f9; border-radius: 10px; overflow: hidden;">
+                                <div style="width: 82%; height: 100%; background: #f59e0b; border-radius: 10px;"></div>
+                            </div>
+                            <p style="margin: 12px 0 0 0; font-size: 0.8rem; color: #64748b;">Menü çeşitliliği ve lezzet
+                                skoru</p>
+                        </div>
+                        <div
+                            style="background: #fdfcfb; border: 1px solid #f1f5f9; padding: 25px; border-radius: 20px;">
+                            <div
+                                style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 15px;">
+                                <span
+                                    style="background: #f5f3ff; color: #8b5cf6; padding: 8px 12px; border-radius: 10px; font-size: 0.85rem; font-weight: 600;">
+                                    <i class="fa-solid fa-comments"></i> İletişim
+                                </span>
+                                <strong style="font-size: 1.5rem; color: #0f172a;">%74</strong>
+                            </div>
+                            <div style="height: 6px; background: #f1f5f9; border-radius: 10px; overflow: hidden;">
+                                <div style="width: 74%; height: 100%; background: #8b5cf6; border-radius: 10px;"></div>
+                            </div>
+                            <p style="margin: 12px 0 0 0; font-size: 0.8rem; color: #64748b;">Şeffaf yönetim ve geri
+                                bildirim</p>
+                        </div>
+
+                        <div
+                            style="background: #fdfcfb; border: 1px solid #f1f5f9; padding: 25px; border-radius: 20px;">
+                            <div
+                                style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 15px;">
+                                <span
+                                    style="background: #eff6ff; color: #3b82f6; padding: 8px 12px; border-radius: 10px; font-size: 0.85rem; font-weight: 600;">
+                                    <i class="fa-solid fa-gift"></i> Sosyal Haklar
+                                </span>
+                                <strong style="font-size: 1.5rem; color: #0f172a;">%65</strong>
+                            </div>
+                            <div style="height: 6px; background: #f1f5f9; border-radius: 10px; overflow: hidden;">
+                                <div style="width: 65%; height: 100%; background: #3b82f6; border-radius: 10px;"></div>
+                            </div>
+                            <p style="margin: 12px 0 0 0; font-size: 0.8rem; color: #64748b;">Yan haklar ve motivasyon
+                                paketleri</p>
+                        </div>
+                    </div>
+                    <div
+                        style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #f1f5f9; display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px;">
+
+                        <div
+                            style="background: #f8fafc; padding: 12px; border-radius: 12px; border: 1px solid #f1f5f9; text-align: center;">
+
+                            <small
+                                style="color: #94a3b8; display: block; margin-bottom: 2px; font-weight: 500;">Katılım</small>
+
+                            <strong style="font-size: 1.1rem; color: #0f172a;">%94</strong>
+                        </div>
+                        <div
+                            style="background: #f8fafc; padding: 12px; border-radius: 12px; border: 1px solid #f1f5f9; text-align: center;">
+
+                            <small style="color: #94a3b8; display: block; margin-bottom: 2px; font-weight: 500;">Yanıt
+                                Sayısı</small>
+
+                            <strong style="font-size: 1.1rem; color: #0f172a;">1,150</strong>
+                        </div>
+                        <div
+                            style="background: #f8fafc; padding: 12px; border-radius: 12px; border: 1px solid #f1f5f9; text-align: center;">
+
+                            <small style="color: #94a3b8; display: block; margin-bottom: 2px; font-weight: 500;">Aylık
+                                Trend</small>
+
+                            <strong style="font-size: 1.1rem; color: #22c55e;"><i
+                                    class="fa-solid fa-arrow-trend-up"></i> +2.4%</strong>
+
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+
+
+            <div class="card" onclick="openTurnoverModal()" style="cursor: pointer;">
+                <div class="card-icon" style="background: #fef2f2; color: #ef4444;">
+                    <i class="fa-solid fa-arrow-right-from-bracket"></i>
+                </div>
+                <div class="card-info">
+                    <h4>Turnover</h4>
+                    <p>%2.4</p>
+                </div>
+            </div>
+
+            <div id="turnoverModal" class="modal">
+                <div class="modal-content"
+                    style="max-width: 750px; background: #ffffff; border-radius: 24px; padding: 40px;">
+
+                    <div
+                        style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px;">
+                        <div style="display: flex; align-items: center; gap: 15px;">
+                            <div
+                                style="background: #fef2f2; width: 50px; height: 50px; border-radius: 14px; display: flex; align-items: center; justify-content: center;">
+                                <i class="fa-solid fa-user-minus" style="color: #ef4444; font-size: 1.6rem;"></i>
+                            </div>
+                            <h2 style="margin:0; color: #0f172a; font-size: 1.7rem; letter-spacing: -0.5px;">İşten
+                                Ayrılma (Turnover) Analizi</h2>
+                        </div>
+                        <button onclick="closeTurnoverModal()"
+                            style="background: #f8fafc; border: none; width: 35px; height: 35px; border-radius: 50%; cursor: pointer; color: #94a3b8;">
+                            <i class="fa-solid fa-xmark"></i>
+                        </button>
+                    </div>
+
+                    <div style="display: grid; grid-template-columns: 1.2fr 1.3fr; gap: 30px;">
+
+                        <div style="display: flex; flex-direction: column; gap: 15px;">
+
+                            <div
+                                style="background: #fcfcfd; padding: 12px; border-radius: 12px; border: 1px solid #f1f5f9;">
+                                <div
+                                    style="display: flex; justify-content: space-between; margin-bottom: 5px; font-size: 0.85rem;">
+                                    <span style="font-weight: 600; color: #991b1b;"><i class="fa-solid fa-gavel"></i>
+                                        İşten Çıkarılma</span>
+                                    <strong style="color: #ef4444;">15%</strong>
+                                </div>
+                                <div style="height: 5px; background: #e2e8f0; border-radius: 10px;">
+                                    <div style="width: 15%; height: 100%; background: #ef4444; border-radius: 10px;">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div
+                                style="background: #fcfcfd; padding: 12px; border-radius: 12px; border: 1px solid #f1f5f9;">
+                                <div
+                                    style="display: flex; justify-content: space-between; margin-bottom: 5px; font-size: 0.85rem;">
+                                    <span style="font-weight: 600; color: #d97706"><i class="fa-solid fa-briefcase"></i>
+                                        Başka İş Teklifi</span>
+                                    <strong style="color: #f59e0b;">42%</strong>
+                                </div>
+                                <div style="height: 5px; background: #e2e8f0; border-radius: 10px;">
+                                    <div style="width: 42%; height: 100%; background: #f59e0b; border-radius: 10px;">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div
+                                style="background: #fcfcfd; padding: 12px; border-radius: 12px; border: 1px solid #f1f5f9;">
+                                <div
+                                    style="display: flex; justify-content: space-between; margin-bottom: 5px; font-size: 0.85rem;">
+                                    <span style="font-weight: 600; color: #1e3a8a;"><i
+                                            class="fa-solid fa-map-location-dot"></i> Şehir Değişikliği</span>
+                                    <strong style="color: #3b82f6;">15%</strong>
+                                </div>
+                                <div style="height: 5px; background: #e2e8f0; border-radius: 10px;">
+                                    <div style="width: 15%; height: 100%; background: #3b82f6; border-radius: 10px;">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div
+                                style="background: #fcfcfd; padding: 12px; border-radius: 12px; border: 1px solid #f1f5f9;">
+                                <div
+                                    style="display: flex; justify-content: space-between; margin-bottom: 5px; font-size: 0.85rem;">
+                                    <span style="font-weight: 600; color: #475569;"><i
+                                            class="fa-solid fa-user-graduate"></i> Emeklilik & Sağlık</span>
+                                    <strong style="color: #94a3b8;">28%</strong>
+                                </div>
+                                <div style="height: 5px; background: #e2e8f0; border-radius: 10px;">
+                                    <div style="width: 28%; height: 100%; background: #94a3b8; border-radius: 10px;">
+                                    </div>
+                                </div>
+                            </div>
+
+                        </div>
+
+
+                        <div style="background: #f8fafc; border-radius: 20px; padding: 25px;">
+                            <h4
+                                style="margin: 0 0 15px 0; font-size: 0.9rem; color: #64748b; text-transform: uppercase;">
+                                Kritik Veriler</h4>
+                            <div style="display: flex; flex-direction: column; gap: 15px;">
+                                <div style="display: flex; align-items: center; gap: 12px;">
+                                    <i class="fa-solid fa-clock-rotate-left" style="color: #6366f1;"></i>
+                                    <div>
+                                        <span style="display:block; font-size: 0.8rem; color: #94a3b8;">Ortalama
+                                            Kıdem</span>
+                                        <strong style="font-size: 1rem; color: #1e293b;">3.2 Yıl</strong>
+                                    </div>
+                                </div>
+                                <div style="display: flex; align-items: center; gap: 12px;">
+                                    <i class="fa-solid fa-triangle-exclamation" style="color: #f59e0b;"></i>
+                                    <div>
+                                        <span style="display:block; font-size: 0.8rem; color: #94a3b8;">Riskli
+                                            Departman</span>
+                                        <strong style="font-size: 1rem; color: #1e293b;">Lojistik (%8.2)</strong>
+                                    </div>
+                                </div>
+                                <hr style="border:0; border-top: 1px solid #e2e8f0;">
+                                <div
+                                    style="background: white; padding: 10px; border-radius: 10px; border: 1px solid #e2e8f0;">
+                                    <p style="font-size: 0.7rem; color: #64748b; margin:0; line-height: 1.4;">
+                                        <strong>İK Notu:</strong> Genç yetenek (0-2 yıl) ayrılma oranı %12 azaldı. Ücret
+                                        iyileştirmesi olumlu yansıdı.
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div
+                        style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #f1f5f9; display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px;">
+                        <div
+                            style="background: #fdf2f2; padding: 12px; border-radius: 12px; border: 1px solid #fee2e2; text-align: center;">
+                            <small style="color: #b91c1c; display: block; margin-bottom: 2px;">Ayrılan Sayısı</small>
+                            <strong style="font-size: 1.1rem; color: #991b1b;">14 Personel</strong>
+                        </div>
+                        <div
+                            style="background: #f8fafc; padding: 12px; border-radius: 12px; border: 1px solid #f1f5f9; text-align: center;">
+                            <small style="color: #94a3b8; display: block; margin-bottom: 2px;">Yıllık Oran</small>
+                            <strong style="font-size: 1.1rem; color: #0f172a;">%2.1</strong>
+                        </div>
+                        <div
+                            style="background: #f8fafc; padding: 12px; border-radius: 12px; border: 1px solid #f1f5f9; text-align: center;">
+                            <small style="color: #94a3b8; display: block; margin-bottom: 2px;">Sektör Ort.</small>
+                            <strong style="font-size: 1.1rem; color: #0f172a;">%4.5</strong>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <div id="activePersonnelModal" class="modal">
+            <div class="modal-content"
+                style="max-width: 900px; max-height: 90vh; overflow-y: auto; padding: 30px; border-radius: 24px; background: #f8fafc;">
+
+                <div
+                    style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; padding: 20px; border-radius: 16px;">
+                    <div style="display: flex; align-items: center; gap: 15px;">
+                        <div
+                            style="background: #ecfdf5; width: 50px; height: 50px; border-radius: 12px; display: flex; align-items: center; justify-content: center;">
+                            <i class="fa-solid fa-chart-line" style="color: #10b981; font-size: 1.5rem;"></i>
+                        </div>
+                        <div>
+                            <h2 style="margin:0; color: #0f172a; font-size: 1.4rem; font-weight: 700;">Fabrikada Aktif
+                                Dağılım</h2>
+
+                        </div>
+                    </div>
+                    <button onclick="closeActiveModal()"
+                        style="background:#f1f5f9; border:none; width: 40px; height: 40px; border-radius: 50%; cursor:pointer; color: #64748b; transition: 0.3s;">
+                        <i class="fa-solid fa-xmark"></i>
+                    </button>
+                </div>
+
+                <div class="active-list-container" style="display: flex; flex-direction: column; gap: 12px;">
+
+                    <div class="list-card">
+                        <div class="list-icon theme-blue">
+                            <i class="fa-solid fa-industry"></i>
+                        </div>
+
+                        <div class="list-main-info">
+                            <h5>A-Blok Pres & Metal</h5>
+                            <small>Vardiya Amiri: Kenan Y. | Operatörler & Mavi Yaka</small>
+                        </div>
+
+                        <div class="list-stats"
+                            style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-width:110px;">
+                            <strong style="white-space:nowrap;">185 / 200</strong>
+                            <span style="white-space:nowrap;font-size:0.7rem;">Personel</span>
+                        </div>
+
+                        <div class="list-progress">
+                            <div
+                                style="font-size:0.7rem;color:#64748b;margin-bottom:4px;display:flex;justify-content:space-between;">
+                                <span>Hat Doluluk Oranı</span>
+                                <span>%92</span>
+                            </div>
+                            <div class="progress-container" style="margin:0;height:6px;">
+                                <div class="progress-bar blue" style="width:92%;"></div>
+                            </div>
+                        </div>
+
+                        <div class="list-status-tag">
+                            <span class="tag-pill theme-blue">Aktif</span>
+                        </div>
+                    </div>
+
+
+                    <div class="list-card">
+                        <div class="list-icon theme-blue">
+                            <i class="fa-solid fa-tools"></i>
+                        </div>
+
+                        <div class="list-main-info">
+                            <h5>A-Blok Kaynak & Montaj</h5>
+                            <small>Robotik Kaynak ve Manuel İşçilik</small>
+                        </div>
+
+                        <div class="list-stats"
+                            style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-width:110px;">
+                            <strong style="white-space:nowrap;">240 / 250</strong>
+                            <span style="white-space:nowrap;font-size:0.7rem;">Personel</span>
+                        </div>
+
+                        <div class="list-progress">
+                            <div
+                                style="font-size:0.7rem;color:#64748b;margin-bottom:4px;display:flex;justify-content:space-between;">
+                                <span>Montaj Kapasitesi</span>
+                                <span>%96</span>
+                            </div>
+                            <div class="progress-container" style="margin:0;height:6px;">
+                                <div class="progress-bar blue" style="width:96%;"></div>
+                            </div>
+                        </div>
+
+                        <div class="list-status-tag">
+                            <span class="tag-pill theme-blue">Tam Kapasite</span>
+                        </div>
+                    </div>
+
+
+                    <div class="list-card">
+                        <div class="list-icon theme-blue">
+                            <i class="fa-solid fa-robot"></i>
+                        </div>
+
+                        <div class="list-main-info">
+                            <h5>B-Blok CNC & Otomasyon Merkezi</h5>
+                            <small>Teknik Operatörler & Yazılım Destek</small>
+                        </div>
+
+                        <div class="list-stats"
+                            style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-width:110px;">
+                            <strong style="white-space:nowrap;">112 / 120</strong>
+                            <span style="white-space:nowrap;font-size:0.7rem;">Personel</span>
+                        </div>
+
+                        <div class="list-progress">
+                            <div
+                                style="font-size:0.7rem;color:#64748b;margin-bottom:4px;display:flex;justify-content:space-between;">
+                                <span>Otonom Verimlilik</span>
+                                <span>%93</span>
+                            </div>
+                            <div class="progress-container" style="margin:0;height:6px;">
+                                <div class="progress-bar blue" style="width:93%;"></div>
+                            </div>
+                        </div>
+
+                        <div class="list-status-tag">
+                            <span class="tag-pill theme-blue">Normal</span>
+                        </div>
+                    </div>
+
+
+                    <div class="list-card">
+                        <div class="list-icon theme-blue">
+                            <i class="fa-solid fa-bolt-lightning"></i>
+                        </div>
+
+                        <div class="list-main-info">
+                            <h5>B-Blok Lazer Kesim & Büküm</h5>
+                            <small>Hassas İşleme ve Şekillendirme Hattı</small>
+                        </div>
+
+                        <div class="list-stats"
+                            style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-width:110px;">
+                            <strong style="white-space:nowrap;">85 / 90</strong>
+                            <span style="white-space:nowrap;font-size:0.7rem;">Personel</span>
+                        </div>
+
+                        <div class="list-progress">
+                            <div
+                                style="font-size:0.7rem;color:#64748b;margin-bottom:4px;display:flex;justify-content:space-between;">
+                                <span>Kesim Kapasitesi</span>
+                                <span>%94</span>
+                            </div>
+                            <div class="progress-container" style="margin:0;height:6px;">
+                                <div class="progress-bar blue" style="width:94%;"></div>
+                            </div>
+                        </div>
+
+                        <div class="list-status-tag">
+                            <span class="tag-pill theme-blue">Aktif</span>
+                        </div>
+                    </div>
+
+
+                    <div class="list-card">
+                        <div class="list-icon theme-blue">
+                            <i class="fa-solid fa-brush"></i>
+                        </div>
+
+                        <div class="list-main-info">
+                            <h5>C-Blok Endüstriyel Boyahane</h5>
+                            <small>Statik Toz Boya & Yüzey İşlem</small>
+                        </div>
+
+                        <div class="list-stats"
+                            style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-width:110px;">
+                            <strong style="white-space:nowrap;">65 / 70</strong>
+                            <span style="white-space:nowrap;font-size:0.7rem;">Personel</span>
+                        </div>
+
+                        <div class="list-progress">
+                            <div
+                                style="font-size:0.7rem;color:#64748b;margin-bottom:4px;display:flex;justify-content:space-between;">
+                                <span>Kabin Doluluk</span>
+                                <span>%88</span>
+                            </div>
+                            <div class="progress-container" style="margin:0;height:6px;">
+                                <div class="progress-bar blue" style="width:88%;"></div>
+                            </div>
+                        </div>
+
+                        <div class="list-status-tag">
+                            <span class="tag-pill theme-blue">Aktif</span>
+                        </div>
+                    </div>
+
+
+                    <div class="list-card">
+                        <div class="list-icon theme-blue">
+                            <i class="fa-solid fa-box-open"></i>
+                        </div>
+
+                        <div class="list-main-info">
+                            <h5>C-Blok Final Kontrol & Paketleme</h5>
+                            <small>Sevkiyat Öncesi Son Hazırlık</small>
+                        </div>
+
+                        <div class="list-stats"
+                            style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-width:110px;">
+                            <strong style="white-space:nowrap;">140 / 150</strong>
+                            <span style="white-space:nowrap;font-size:0.7rem;">Personel</span>
+                        </div>
+
+                        <div class="list-progress">
+                            <div
+                                style="font-size:0.7rem;color:#64748b;margin-bottom:4px;display:flex;justify-content:space-between;">
+                                <span>Paketleme Hızı</span>
+                                <span>%91</span>
+                            </div>
+                            <div class="progress-container" style="margin:0;height:6px;">
+                                <div class="progress-bar blue" style="width:91%;"></div>
+                            </div>
+                        </div>
+
+                        <div class="list-status-tag">
+                            <span class="tag-pill theme-blue">Yüksek</span>
+                        </div>
+                    </div>
+
+
+                    <div class="list-card">
+                        <div class="list-icon theme-purple">
+                            <i class="fa-solid fa-clipboard-check"></i>
+                        </div>
+
+                        <div class="list-main-info">
+                            <h5>Saha Kalite Kontrol</h5>
+                            <small>Üretim Standartları ve Hata Analiz Denetimi</small>
+                        </div>
+
+                        <div class="list-stats"
+                            style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-width:110px;">
+                            <strong style="white-space:nowrap;">12 / 15</strong>
+                            <span style="white-space:nowrap;font-size:0.7rem;">Personel</span>
+                        </div>
+
+                        <div class="list-progress">
+                            <div
+                                style="font-size:0.7rem;color:#64748b;margin-bottom:4px;display:flex;justify-content:space-between;">
+                                <span>Denetim Tamamlanma</span>
+                                <span>%85</span>
+                            </div>
+                            <div class="progress-container" style="margin:0;height:6px;">
+                                <div class="progress-bar purple" style="width:85%;"></div>
+                            </div>
+                        </div>
+
+                        <div class="list-status-tag">
+                            <span class="tag-pill theme-purple">Titiz Analiz</span>
+                        </div>
+                    </div>
+
+                    <div class="list-card">
+                        <div class="list-icon theme-red"><i class="fa-solid fa-wrench"></i></div>
+
+                        <div class="list-main-info">
+                            <h5>Teknik Bakım & Onarım</h5>
+                            <small>Mekanik ve Elektrik Müdahale Ekibi</small>
+                        </div>
+
+                        <div class="list-stats"
+                            style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-width:110px;">
+                            <strong style="white-space:nowrap;">14 / 18</strong>
+                            <span style="white-space:nowrap;font-size:0.7rem;">Personel</span>
+                        </div>
+
+                        <div class="list-progress">
+                            <div
+                                style="font-size:0.7rem;color:#64748b;margin-bottom:4px;display:flex;justify-content:space-between;">
+                                <span>Ekip Hazırlık</span>
+                                <span>%63</span>
+                            </div>
+                            <div class="progress-container" style="margin:0;height:6px;">
+                                <div class="progress-bar red" style="width:63%;"></div>
+                            </div>
+                        </div>
+
+                        <div class="list-status-tag">
+                            <span class="tag-pill theme-red">Müdahale Var</span>
+                        </div>
+                    </div>
+
+
+                    <div class="list-card">
+                        <div class="list-icon theme-red"><i class="fa-solid fa-bolt"></i></div>
+
+                        <div class="list-main-info">
+                            <h5>Enerji Yönetim Birimi</h5>
+                            <small>Kazan Dairesi, Trafo ve Jeneratör Hattı</small>
+                        </div>
+
+                        <div class="list-stats"
+                            style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-width:110px;">
+                            <strong style="white-space:nowrap;">4 / 4</strong>
+                            <span style="white-space:nowrap;font-size:0.7rem;">Personel</span>
+                        </div>
+
+                        <div class="list-progress">
+                            <div
+                                style="font-size:0.7rem;color:#64748b;margin-bottom:4px;display:flex;justify-content:space-between;">
+                                <span>Sistem Yükü</span>
+                                <span>%78</span>
+                            </div>
+                            <div class="progress-container" style="margin:0;height:6px;">
+                                <div class="progress-bar red" style="width:78%;"></div>
+                            </div>
+                        </div>
+
+                        <div class="list-status-tag">
+                            <span class="tag-pill theme-red">Stabil</span>
+                        </div>
+                    </div>
+
+
+                    <div class="list-card">
+                        <div class="list-icon theme-red"><i class="fa-solid fa-user-shield"></i></div>
+
+                        <div class="list-main-info">
+                            <h5>İş Sağlığı ve Güvenliği (İSG)</h5>
+                            <small>Saha Denetim ve Risk Analiz Ekibi</small>
+                        </div>
+
+                        <div class="list-stats"
+                            style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-width:110px;">
+                            <strong style="white-space:nowrap;">20 / 26</strong>
+                            <span style="white-space:nowrap;font-size:0.7rem;">Personel</span>
+                        </div>
+
+                        <div class="list-progress">
+                            <div
+                                style="font-size:0.7rem;color:#64748b;margin-bottom:4px;display:flex;justify-content:space-between;">
+                                <span>Saha Devriye</span>
+                                <span>%76</span>
+                            </div>
+                            <div class="progress-container" style="margin:0;height:6px;">
+                                <div class="progress-bar red" style="width:76%;"></div>
+                            </div>
+                        </div>
+
+                        <div class="list-status-tag">
+                            <span class="tag-pill theme-red">Güvenli</span>
+                        </div>
+                    </div>
+
+
+                    <div class="list-card">
+                        <div class="list-icon theme-red"><i class="fa-solid fa-house-medical"></i></div>
+
+                        <div class="list-main-info">
+                            <h5>Revir / Sağlık Birimi</h5>
+                            <small>İşyeri Hekimi ve Nöbetçi Personel</small>
+                        </div>
+
+                        <div class="list-stats"
+                            style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-width:110px;">
+                            <strong style="white-space:nowrap;">4 / 10</strong>
+                            <span style="white-space:nowrap;font-size:0.7rem;">Personel</span>
+                        </div>
+
+                        <div class="list-progress">
+                            <div
+                                style="font-size:0.7rem;color:#64748b;margin-bottom:4px;display:flex;justify-content:space-between;">
+                                <span>Kapasite Durumu</span>
+                                <span>%40</span>
+                            </div>
+                            <div class="progress-container" style="margin:0;height:6px;">
+                                <div class="progress-bar red" style="width:40%;"></div>
+                            </div>
+                        </div>
+
+                        <div class="list-status-tag">
+                            <span class="tag-pill theme-red">Hazır</span>
+                        </div>
+                    </div>
+
+
+                    <div class="list-card">
+                        <div class="list-icon theme-green"><i class="fa-solid fa-utensils"></i></div>
+
+                        <div class="list-main-info">
+                            <h5>Yemekhane & Sosyal Tesisler</h5>
+                            <small>Personel Dinlenme ve Mola Alanı</small>
+                        </div>
+
+                        <div class="list-stats"
+                            style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-width:110px;">
+                            <strong style="white-space:nowrap;">85 / 150</strong>
+                            <span style="white-space:nowrap;font-size:0.7rem;">Personel</span>
+                        </div>
+
+                        <div class="list-progress">
+                            <div
+                                style="font-size:0.7rem;color:#64748b;margin-bottom:4px;display:flex;justify-content:space-between;">
+                                <span>Kapasite Doluluğu</span>
+                                <span>%56</span>
+                            </div>
+                            <div class="progress-container" style="margin:0;height:6px;">
+                                <div class="progress-bar green" style="width:56%;"></div>
+                            </div>
+                        </div>
+
+                        <div class="list-status-tag">
+                            <span class="tag-pill theme-green">Mola Saati</span>
+                        </div>
+                    </div>
+
+
+                    <div class="list-card">
+                        <div class="list-icon theme-green"><i class="fa-solid fa-broom"></i></div>
+
+                        <div class="list-main-info">
+                            <h5>Endüstriyel Temizlik & Atık</h5>
+                            <small>Saha Hijyeni ve Atık Ayrıştırma</small>
+                        </div>
+
+                        <div class="list-stats"
+                            style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-width:110px;">
+                            <strong style="white-space:nowrap;">10 / 14</strong>
+                            <span style="white-space:nowrap;font-size:0.7rem;">Personel</span>
+                        </div>
+
+                        <div class="list-progress">
+                            <div
+                                style="font-size:0.7rem;color:#64748b;margin-bottom:4px;display:flex;justify-content:space-between;">
+                                <span>Hijyen Skoru</span>
+                                <span>%71</span>
+                            </div>
+                            <div class="progress-container" style="margin:0;height:6px;">
+                                <div class="progress-bar green" style="width:71%;"></div>
+                            </div>
+                        </div>
+
+                        <div class="list-status-tag">
+                            <span class="tag-pill theme-green">Aktif</span>
+                        </div>
+                    </div>
+
+
+                    <div class="list-card">
+                        <div class="list-icon theme-green"><i class="fa-solid fa-leaf"></i></div>
+
+                        <div class="list-main-info">
+                            <h5>Peyzaj & Dış Alan Temizlik</h5>
+                            <small>Bahçe Bakımı ve Çevre Düzeni</small>
+                        </div>
+
+                        <div class="list-stats"
+                            style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-width:110px;">
+                            <strong style="white-space:nowrap;">6 / 8</strong>
+                            <span style="white-space:nowrap;font-size:0.7rem;">Personel</span>
+                        </div>
+
+                        <div class="list-progress">
+                            <div
+                                style="font-size:0.7rem;color:#64748b;margin-bottom:4px;display:flex;justify-content:space-between;">
+                                <span>Saha Düzeni</span>
+                                <span>%75</span>
+                            </div>
+                            <div class="progress-container" style="margin:0;height:6px;">
+                                <div class="progress-bar green" style="width:75%;"></div>
+                            </div>
+                        </div>
+
+                        <div class="list-status-tag">
+                            <span class="tag-pill theme-green">Tamamlandı</span>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+
+
+        <div class="dashboard-bottom-section">
+            <div class="panel-container main-ops">
+                <div class="panel-header">
+                    <h3>Personel Giriş-Çıkış Takibi</h3>
+                    <button type="button" onclick="openOpsArchiveModal()"
+                        style="margin: 0 !important; padding: 8px 16px !important; background: #f1f5f9; border: none; border-radius: 10px; color: #64748b; font-size: 0.85rem; font-weight: 600; cursor: pointer; white-space: nowrap;">
+                        Tümünü Gör
+                    </button>
+                </div>
+                <div class="panel-scroll-content">
+                    <div class="custom-list-row">
+                        <div class="row-info">
+                            <h5>Selin Yurt</h5>
+                            <p>İnsan Kaynakları • 08:30 Giriş</p>
+                        </div>
+                        <span class="row-badge theme-green">ZAMANINDA</span>
+                    </div>
+                    <div class="custom-list-row">
+                        <div class="row-info">
+                            <h5>Av. Mert Kaya</h5>
+                            <p>Hukuk ve Uyumluluk • 09:45 Giriş</p>
+                        </div>
+                        <span class="row-badge theme-red">GECİKME</span>
+                    </div>
+                    <div class="custom-list-row">
+                        <div class="row-info">
+                            <h5>Hüseyin Demir</h5>
+                            <p>Mavi Yaka Üretim • 19:15 Çıkış</p>
+                        </div>
+                        <span class="row-badge theme-blue">MESAİ</span>
+                    </div>
+                    <div class="custom-list-row">
+                        <div class="row-info">
+                            <h5>Kemal Aras</h5>
+                            <p>Lojistik ve Sevkiyat • 16:30 Çıkış</p>
+                        </div>
+                        <span class="row-badge theme-orange">ERKEN</span>
+                    </div>
+
+                </div>
+            </div>
+
+            <div class="panel-container side-hr">
+                <div class="panel-header">
+                    <h3>İK Aktivite & Etkinlik</h3>
+                    <button type="button" onclick="openIkModal()"
+                        style="margin: 0 !important; padding: 8px 16px !important; background: #f1f5f9; border: none; border-radius: 10px; color: #64748b; font-size: 0.85rem; font-weight: 600; cursor: pointer; white-space: nowrap;">
+                        Tümünü Gör
+                    </button>
+                </div>
+                <div class="panel-scroll-content">
+                    <div class="custom-list-row">
+                        <div class="row-icon-box theme-purple"><i class="fas fa-birthday-cake"></i></div>
+                        <div class="row-info">
+                            <h5>Canan Özkan</h5>
+                            <p>Bugün Doğum Günü!</p>
+                        </div>
+                        <span class="row-badge theme-purple">BUGÜN</span>
+                    </div>
+                    <div class="custom-list-row">
+                        <div class="row-icon-box theme-blue"><i class="fas fa-users"></i></div>
+                        <div class="row-info">
+                            <h5>Teknik Toplantı</h5>
+                            <p>14:00 - Oda B</p>
+                        </div>
+                        <span class="row-badge theme-blue">TEKNİK</span>
+                    </div>
+                    <div class="custom-list-row">
+                        <div class="row-icon-box theme-orange"><i class="fas fa-bullhorn"></i></div>
+                        <div class="row-info">
+                            <h5>Yeni Duyuru</h5>
+                            <p>Yemek Menüsü Güncellendi</p>
+                        </div>
+                        <span class="row-badge theme-orange">DUYURU</span>
+                    </div>
+                    <div class="custom-list-row">
+                        <div class="row-icon-box theme-green"><i class="fas fa-graduation-cap"></i></div>
+                        <div class="row-info">
+                            <h5>İSG Eğitimi</h5>
+                            <p>Tüm Personel Katılımı</p>
+                        </div>
+                        <span class="row-badge theme-green">EĞİTİM</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <input type="checkbox" id="note-box-toggle" aria-hidden="true">
+        <label for="note-box-toggle" class="quick-note-btn" aria-label="Birimler arası not"><i
+                class="fa-solid fa-paper-plane"></i></label>
+        <div class="msg-box">
+            <div class="msg-box-head">
+                <span>Birimler Arası Not</span>
+                <label for="note-box-toggle" class="note-close-btn" aria-label="Kapat"><i
+                        class="fa-solid fa-xmark"></i></label>
+            </div>
+            <form action="#note-sent" method="get">
+
+                <ul class="target-list">
+                    <li><input type="checkbox" name="target" id="t1" value="Satın Alma"><label for="t1">Satın
+                            Alma</label></li>
+                    <li><input type="checkbox" name="target" id="t2" value="Hukuk"><label for="t2">Hukuk</label></li>
+                    <li><input type="checkbox" name="target" id="t3" value="Bilgi İşlem"><label for="t3">Bilgi
+                            İşlem</label></li>
+                    <li><input type="checkbox" name="target" id="t4" value="İdari İşler"><label for="t4">İdari
+                            İşler</label></li>
+                </ul>
+                <textarea name="note" rows="4" maxlength="1000" placeholder="Notunuzu yazın..."></textarea>
+                <button type="submit" class="btn-send">Notu Gönder</button>
+            </form>
+        </div>
+        <div id="note-sent">Notunuz seçilen birimlere iletildi.</div>
+        <div id="replyModal" class="reply-modal">
+            <div class="reply-content">
+                <div class="reply-header">
+                    <i class="fa-solid fa-reply"></i>
+                    <h3 id="replyTarget">HUKUK Birimine Cevap Yaz</h3>
+                </div>
+
+                <div id="replyOriginalMessage" class="original-msg-preview">
+                    "5 adet yeni iş sözleşmesi onaylandı."
+                </div>
+
+                <textarea id="replyText" class="reply-textarea" placeholder="Cevabınızı buraya yazın..."></textarea>
+
+                <div class="reply-actions">
+                    <button class="btn-reply-cancel" onclick="closeReplyModal()">Vazgeç</button>
+                    <button class="btn-reply-send" onclick="sendReply()">Cevapla</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="personelModal" class="modal">
+            <div class="modal-content"
+                style="max-width: 700px; height: auto; max-height: 90vh; overflow-y: auto; padding: 30px; border-radius: 20px;">
+
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px;">
+                    <h2 style="margin:0; color: #0f172a; font-size: 1.5rem; font-weight: 700;">
+                        <i class="fa-solid fa-users-gear" style="color: #3b82f6; margin-right: 10px;"></i> Departman
+                        Bazlı Dağılım
+                    </h2>
+                    <button onclick="closePersonelModal()"
+                        style="background:#f1f5f9; border:none; width: 40px; height: 40px; border-radius: 50%; cursor:pointer; color: #64748b; transition: 0.3s;">
+
+                        <i class="fa-solid fa-xmark"></i>
+
+                    </button>
+                </div>
+
+
+                <div style="display: flex; gap: 10px; margin-bottom: 25px;">
+                    <button class="tab-btn active" onclick="showTab('idari')"
+                        style="background: #3b82f6; color: white; border: none; padding: 10px 20px; border-radius: 10px; cursor: pointer; font-weight: 600; font-size: 0.9rem; transition: 0.3s;">
+                        İdari Birimler
+                    </button>
+                    <button class="tab-btn" onclick="showTab('teknik')"
+                        style="background: #f1f5f9; color: #64748b; border: none; padding: 10px 20px; border-radius: 10px; cursor: pointer; font-weight: 600; font-size: 0.9rem; transition: 0.3s;">
+                        Teknik ve IT
+                    </button>
+                    <button class="tab-btn" onclick="showTab('saha')"
+                        style="background: #f1f5f9; color: #64748b; border: none; padding: 10px 20px; border-radius: 10px; cursor: pointer; font-weight: 600; font-size: 0.9rem; transition: 0.3s;">
+                        Fabrika / Saha
+                    </button>
+                </div>
+                <div id="tab-content">
+                    <div id="idari" class="tab-pane active">
+                        <div class="dept-row admin-group"><span><i class="fa-solid fa-user-tie"></i> İnsan
+                                Kaynakları</span><strong>12 Kişi</strong></div>
+                        <div class="dept-row admin-group"><span><i class="fa-solid fa-scale-balanced"></i> Hukuk ve
+                                Uyumluluk</span><strong>4 Kişi</strong></div>
+                        <div class="dept-row admin-group"><span><i class="fa-solid fa-briefcase"></i> İdari
+                                İşler</span><strong>15 Kişi</strong></div>
+                        <div class="dept-row admin-group"><span><i class="fa-solid fa-cart-shopping"></i> Satın
+                                Alma</span><strong>8 Kişi</strong></div>
+                        <div class="dept-row admin-group"><span><i class="fa-solid fa-file-invoice-dollar"></i> Finans
+                                Muhasebe</span><strong>10 Kişi</strong></div>
+                    </div>
+
+                    <div id="teknik" class="tab-pane" style="display:none;">
+                        <div class="dept-row tech-group"><span><i class="fa-solid fa-laptop-code"></i> Bilgi İşlem
+                                (IT)</span><strong>6 Kişi</strong></div>
+                        <div class="dept-row tech-group"><span><i class="fa-solid fa-hard-hat"></i> İş Sağlığı
+                                Güvenliği</span><strong>10 Kişi</strong></div>
+                        <div class="dept-row tech-group"><span><i class="fa-solid fa-bolt"></i> Bakım ve
+                                Enerji</span><strong>20 Kişi</strong></div>
+                        <div class="dept-row tech-group"><span><i class="fa-solid fa-microscope"></i> Kalite
+                                Kontrol</span><strong>18 Kişi</strong></div>
+                    </div>
+
+                    <div id="saha" class="tab-pane" style="display:none;">
+                        <div class="dept-row saha-group"><span><i class="fa-solid fa-industry"></i> Mavi Yaka
+                                Üretim</span><strong>850 Kişi</strong></div>
+                        <div class="dept-row saha-group"><span><i class="fa-solid fa-user-gear"></i> Gri Yaka
+                                Formen</span><strong>45 Kişi</strong></div>
+                        <div class="dept-row saha-group"><span><i class="fa-solid fa-truck-fast"></i> Lojistik ve
+                                Sevkiyat</span><strong>85 Kişi</strong></div>
+                        <div class="dept-row saha-group"><span><i class="fa-solid fa-broom"></i> Endüstriyel
+                                Temizlik</span><strong>14 Kişi</strong></div>
+                        <div class="dept-row saha-group"><span><i class="fa-solid fa-user-shield"></i> Güvenlik
+                                Koruması</span><strong>16 Kişi</strong></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="opsArchiveModal" class="modal-overlay" style="display:none;">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3><i class="fas fa-users"></i> Personel Giriş-Çıkış Arşivi</h3>
+                    <button onclick="closeOpsArchiveModal()" class="close-btn">&times;</button>
+                </div>
+                <div class="modal-search-bar" style="padding: 15px;">
+                    <input type="text" placeholder="Personel ismi veya departman ara..." id="personelSearch"
+                        style="width:100%; padding:10px; border-radius:8px; border:1px solid #ddd;">
+                </div>
+                <div id="personelListContainer" style="padding:15px; max-height:400px; overflow-y:auto;">
+                    <p style="color:#666; text-align:center;">Arşiv kayıtları yükleniyor...</p>
+                </div>
+            </div>
+        </div>
+        <div id="ikModal" class="modal-overlay"
+            style="display:none; position: fixed; z-index: 9999; left: 0; top: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.6); backdrop-filter: blur(8px); align-items: center; justify-content: center;">
+
+            <div class="modal-content"
+                style="background: white; width: 90%; max-width: 900px; height: 80vh; border-radius: 30px; display: flex; flex-direction: column; overflow: hidden; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25); border: 1px solid #f1f5f9;">
+
+                <div class="ik-modal-header"
+                    style="padding: 30px 35px; border-bottom: none; display: flex; justify-content: space-between; align-items: center; background: #fff;">
+                    <div class="ik-modal-title-wrap" style="display: flex; align-items: center; gap: 15px;">
+                        <div class="ik-modal-icon"
+                            style="width: 45px; height: 45px; background: #ffffff; color: #4c5869; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; border: none;">
+                            <i class="fas fa-calendar-alt"></i>
+                        </div>
+                        <div>
+                            <h2 class="ik-modal-title"
+                                style="margin: 0; color: #0f172a; font-size: 1.6rem; font-weight: 700;">Aktivite &
+                                Etkinlikler</h2>
+                            <p style="margin: 0; color: #64748b; font-size: 0.9rem;">Şirket içi güncel duyuru ve eğitim
+                                takvimi.</p>
+                        </div>
+                    </div>
+                    <button type="button" onclick="closeIkModal()"
+                        style="background: #f1f5f9; border: none; color: #64748b; width: 40px; height: 40px; border-radius: 12px; cursor: pointer; display: flex; align-items: center; justify-content: center;">
+                        <i class="fa-solid fa-xmark"></i>
+                    </button>
+                </div>
+
+                <div class="ik-filter-menu" style="padding: 20px 35px; background: white; display: flex; gap: 10px;">
+                    <button type="button" class="ik-filter-btn all active"
+                        onclick="filterIk('tumu', this)">Tümü</button>
+
+                    <button type="button" class="ik-filter-btn purple" onclick="filterIk('mor', this)">Kişisel</button>
+
+                    <button type="button" class="ik-filter-btn green"
+                        onclick="filterIk('yesil', this)">Eğitimler</button>
+
+                    <button type="button" class="ik-filter-btn blue" onclick="filterIk('mavi', this)">Teknik</button>
+
+                    <button type="button" class="ik-filter-btn orange"
+                        onclick="filterIk('turuncu', this)">Duyurular</button>
+                </div>
+
+                <div id="ikListContainer" style="padding: 25px 0; overflow-y: auto; flex-grow: 1; background: #ffffff;">
+
+                    <div class="custom-list-row ik-filter-item filter-mor theme-purple">
+                        <div class="row-icon-box theme-purple"><i class="fas fa-birthday-cake"></i></div>
+                        <div class="row-info">
+                            <h5>Canan Özkan'ın Doğum Günü</h5>
+                            <p>Tüm Gün • Kişisel Etkinlik</p>
+                        </div>
+                        <span class="row-badge theme-purple">BUGÜN</span>
+                    </div>
+
+                    <div class="custom-list-row ik-filter-item filter-mavi theme-blue">
+                        <div class="row-icon-box theme-blue"><i class="fas fa-microchip"></i></div>
+                        <div class="row-info">
+                            <h5>Yeni ERP Sistemi Tanıtımı</h5>
+                            <p>11:00 - Konferans Salonu • IT Departmanı</p>
+                        </div>
+                        <span class="row-badge theme-blue">20 MART</span>
+                    </div>
+
+                    <div class="custom-list-row ik-filter-item filter-turuncu theme-orange">
+                        <div class="row-icon-box theme-orange"><i class="fas fa-shuttle-van"></i></div>
+                        <div class="row-info">
+                            <h5>Servis Güzergahı Değişikliği</h5>
+                            <p>B-Blok Personeli İçin Güncel Liste • Duyuru</p>
+                        </div>
+                        <span class="row-badge theme-orange">KRİTİK</span>
+                    </div>
+
+                    <div class="custom-list-row ik-filter-item filter-yesil theme-green">
+                        <div class="row-icon-box theme-green"><i class="fas fa-fire-extinguisher"></i></div>
+                        <div class="row-info">
+                            <h5>Yangın Güvenliği Tatbikatı</h5>
+                            <p>15:30 - Fabrika Bahçesi • İSG Eğitimi</p>
+                        </div>
+                        <span class="row-badge theme-green">ZORUNLU</span>
+                    </div>
+
+                    <div class="custom-list-row ik-filter-item filter-mor theme-purple">
+                        <div class="row-icon-box theme-purple"><i class="fas fa-coffee"></i></div>
+                        <div class="row-info">
+                            <h5>Mavi Yaka Motivasyon Kahvaltısı</h5>
+                            <p>09:00 - Yemekhane • Sosyal Etkinlik</p>
+                        </div>
+                        <span class="row-badge theme-purple">YARIN</span>
+                    </div>
+
+                    <div class="custom-list-row ik-filter-item filter-mavi theme-blue">
+                        <div class="row-info">
+                            <h5>Sunucu Bakım Çalışması</h5>
+                            <p>00:00 - 02:00 Arası Erişim Kısıtlıdır</p>
+                        </div>
+                        <span class="row-badge theme-blue">PLANLI</span>
+                    </div>
+
+                    <div class="custom-list-row ik-filter-item filter-yesil theme-green">
+                        <div class="row-icon-box theme-green"><i class="fas fa-user-graduate"></i></div>
+                        <div class="row-info">
+                            <h5>Liderlik Akademisi Sertifika Töreni</h5>
+                            <p>16:00 - İK Ofis Alanı • Kariyer Gelişimi</p>
+                        </div>
+                        <span class="row-badge theme-green">ETKİNLİK</span>
+                    </div>
+
+                    <div class="custom-list-row ik-filter-item filter-turuncu theme-orange">
+                        <div class="row-icon-box theme-orange"><i class="fas fa-bullhorn"></i></div>
+                        <div class="row-info">
+                            <h5>Yemek Menüsü Güncellendi</h5>
+                            <p>Haftalık Menü Portala Yüklendi</p>
+                        </div>
+                        <span class="row-badge theme-orange">DUYURU</span>
+                    </div>
+
+                    <div class="custom-list-row ik-filter-item filter-mavi theme-blue">
+                        <div class="row-icon-box theme-blue"><i class="fas fa-laptop-code"></i></div>
+                        <div class="row-info">
+                            <h5>Siber Güvenlik Semineri</h5>
+                            <p>14:00 - Online Zoom Katılımı</p>
+                        </div>
+                        <span class="row-badge theme-blue">22 MART</span>
+                    </div>
+
+                    <div class="custom-list-row ik-filter-item filter-yesil theme-green">
+                        <div class="row-icon-box theme-green"><i class="fas fa-stethoscope"></i></div>
+                        <div class="row-info">
+                            <h5>Periyodik Sağlık Taraması</h5>
+                            <p>G-Blok Personeli İçin Revir Takvimi</p>
+                        </div>
+                        <span class="row-badge theme-green">DEVAM EDİYOR</span>
+                    </div>
+
+                </div>
+
+                <script>
+
+                    
+                    function apiFetch(url, options = {}) {
+                        const token = localStorage.getItem('token');
+
+                        
+                        let sayfaBirim = "HUKUK";
+                        if (window.location.href.includes("ik-") || window.location.href.includes("ik-index")) {
+                            sayfaBirim = "INSAN_KAYNAKLARI"; 
+                        }
+
+                        options.headers = {
+                            ...options.headers,
+                            'Authorization': 'Bearer ' + token,
+                            'X-Aktif-Birim': sayfaBirim, 
+                            'Content-Type': 'application/json'
+                        };
+
+                        return fetch(url, options).then(res => {
+                            if (!res.ok) {
+                                throw new Error(`HTTP Hatası! Durum: ${res.status}`);
+                            }
+                            return res;
+                        });
+                    }
+
+                    let gidenMesajlar = [];
+                    function filterTable() {
+                        let input = document.getElementById("personelSearch").value.toUpperCase();
+                        let depValue = document.getElementById("depFilter").value.toUpperCase();
+                        let table = document.getElementById("modalTable");
+                        let tr = table.getElementsByTagName("tr");
+
+                        for (let i = 1; i < tr.length; i++) {
+                            let tdSicil = tr[i].getElementsByTagName("td")[0];
+                            let tdName = tr[i].getElementsByTagName("td")[1];
+                            let tdDep = tr[i].getElementsByTagName("td")[2];
+
+                            if (tdName && tdSicil && tdDep) {
+                                let nameTxt = tdName.textContent || tdName.innerText;
+                                let sicilTxt = tdSicil.textContent || tdSicil.innerText;
+                                let depTxt = tdDep.textContent || tdDep.innerText;
+
+                                let matchesSearch = nameTxt.toUpperCase().indexOf(input) > -1 || sicilTxt.toUpperCase().indexOf(input) > -1;
+                                let matchesDep = depTxt.toUpperCase().indexOf(depValue) > -1 || depValue === "";
+
+                                tr[i].style.display = (matchesSearch && matchesDep) ? "" : "none";
+                            }
+                        }
+                    }
+
+
+                    /* 1. MODAL VE BİLDİRİM FONKSİYONLARI */
+                   
+
+
+                    function updateOutgoingList() {
+                        const listContainer = document.getElementById('notif-outgoing-list');
+                        if (!listContainer) return;
+
+                        
+                        const gidenlerHafiza = JSON.parse(localStorage.getItem('guardia_giden_mesajlar') || '[]');
+
+                        listContainer.innerHTML = "";
+
+                        if (gidenlerHafiza.length === 0) {
+                            listContainer.innerHTML = '<div class="notif-item"><span>Henüz gönderilmiş bir not bulunmuyor.</span></div>';
+                        } else {
+                            gidenlerHafiza.forEach(msg => {
+                                listContainer.innerHTML += `
+                <div class="notif-item">
+                    <strong>SİZDEN -> ${msg.hedef}</strong>
+                    <span>${msg.icerik}</span>
+                    <small style="display:block; color: #94a3b8; font-size: 0.75rem; margin-top: 5px;">
+                        <i class="fa-regular fa-clock"></i> ${msg.saat}
+                    </small>
+                </div>
+            `;
+                            });
+                        }
+                    }
+
+                   
+
+                    
+
+                    function closeReplyModal() {
+                        document.getElementById('replyModal').style.display = 'none';
+                        document.getElementById('replyText').value = '';
+                    }
+
+                    /* 2. BİLDİRİM TOAST SİSTEMİ */
+                    function showToast(msg, type = 'success') {
+                        const oldToast = document.querySelector('.toast-notification');
+                        if (oldToast) oldToast.remove();
+
+                        const toast = document.createElement('div');
+                        toast.className = 'toast-notification';
+                        toast.innerText = msg;
+                        const bgColor = type === 'success' ? '#10b981' : '#ef4444';
+
+                        toast.style.cssText = `
+        position: fixed; bottom: 30px; right: 90px; 
+        background: ${bgColor}; color: white; padding: 12px 24px; 
+        font-size: 14px; border-radius: 10px; z-index: 999999; 
+        font-weight: 600; box-shadow: 0 10px 25px rgba(0,0,0,0.2); 
+        opacity: 0; transition: all 0.4s ease; transform: translateY(20px);
+    `;
+
+                        document.body.appendChild(toast);
+                        setTimeout(() => {
+                            toast.style.opacity = '1';
+                            toast.style.transform = 'translateY(0)';
+                        }, 100);
+
+                        setTimeout(() => {
+                            toast.style.opacity = '0';
+                            toast.style.transform = 'translateY(20px)';
+                            setTimeout(() => toast.remove(), 400);
+                        }, 2000); // 2 saniye sonra kaybolur
+                    }
+
+                    /* 1. GELEN MESAJLARI CANLI LİSTELER VE SAYAÇ BALONUNU GÜNCELLER */
+                    async function showIncoming() {
+                        const incoming = document.getElementById('notif-incoming-list');
+                        const outgoing = document.getElementById('notif-outgoing-list');
+                        const btnIn = document.querySelector('.notif-action-btn[onclick="showIncoming()"]');
+                        const btnOut = document.querySelector('.notif-action-btn[onclick="showOutgoing()"]');
+
+                        if (incoming && outgoing) {
+                            incoming.style.display = 'block';
+                            outgoing.style.display = 'none';
+                            if (btnIn) btnIn.classList.add('active');
+                            if (btnOut) btnOut.classList.remove('active');
+                        }
+
+                        try {
+                          
+                            const response = await apiFetch('/api/IkIstatistikKontrolcusu/mesajlar');
+                            const veriler = await response.json();
+
+                            incoming.innerHTML = "";
+                            if (veriler.length === 0) {
+                                incoming.innerHTML = '<div class="notif-item"><span>Gelen kutunuz temiz. 📬</span></div>';
+                            } else {
+                                incoming.innerHTML = veriler.map(msg => {
+                                    const temizMesaj = msg.mesaj.replace(/'/g, "\\'").replace(/"/g, '\\"');
+                                    const durumRengi = msg.okunduMu ? '#cbd5e1' : '#3b82f6';
+
+                                 
+                                    return `
+                    <div class="notif-item" onclick="openReplyModal('${msg.birim}', '${temizMesaj}', this, ${msg.id})" style="cursor: pointer;">
+                        <span class="notif-status" style="background: ${durumRengi}; display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 5px;"></span>
+                        <strong>${msg.birim}</strong>
+                        <span>${msg.mesaj}</span>
+                        <small style="display:block; color: #94a3b8; font-size: 0.75rem; margin-top: 5px;">
+                            <i class="fa-regular fa-clock"></i> ${msg.saat}
+                        </small>
+                    </div>`;
+                                }).join('');
+                            }
+
+                          
+                            guncelleCanSayaci(veriler);
+
+                        } catch (err) {
+                            console.error("Gelen mesajlar veritabanından alınamadı:", err);
+                        }
+                    }
+
+                    /*  2. ÇAN SİMGESİ SAYACINI GÜNCELLEYEN YARDIMCI MOTOR */
+                    function guncelleCanSayaci(veriler) {
+                        const okunmamislar = veriler.filter(m => !m.okunduMu).length;
+                        const badge = document.querySelector('.notif-container .notif-badge');
+
+                        if (badge) {
+                            badge.innerText = okunmamislar;
+                       
+                            badge.style.display = okunmamislar > 0 ? 'flex' : 'none';
+                        }
+                    }
+
+                    /*  3. GİDEN MESAJLARI LİSTELER */
+                    async function showOutgoing() {
+                        const incoming = document.getElementById('notif-incoming-list');
+                        const outgoing = document.getElementById('notif-outgoing-list');
+                        const btnIn = document.querySelector('.notif-action-btn[onclick="showIncoming()"]');
+                        const btnOut = document.querySelector('.notif-action-btn[onclick="showOutgoing()"]');
+
+                        if (incoming && outgoing) {
+                            incoming.style.display = 'none';
+                            outgoing.style.display = 'block';
+                            if (btnOut) btnOut.classList.add('active');
+                            if (btnIn) btnIn.classList.remove('active');
+                        }
+
+                        try {
+                            const response = await apiFetch('/api/IkIstatistikKontrolcusu/giden-mesajlar');
+                            const veriler = await response.json();
+
+                            if (veriler.length === 0) {
+                                outgoing.innerHTML = '<div class="notif-item"><span>Henüz bir departmana not göndermediniz.</span></div>';
+                            } else {
+                                outgoing.innerHTML = veriler.map(msg => `
+                <div class="notif-item">
+                    <strong>SİZDEN -> ${msg.birim}</strong>
+                    <span>${msg.mesaj}</span>
+                    <small style="display:block; color: #94a3b8; font-size: 0.75rem; margin-top: 5px;">
+                        <i class="fa-regular fa-clock"></i> ${msg.saat}
+                    </small>
+                </div>
+            `).join('');
+                            }
+                        } catch (err) {
+                            console.error("Giden mesajlar veritabanından alınamadı:", err);
+                        }
+                    }
+
+                    /*  4. MESAJA TIKLANDIĞINDA MODALI AÇAR VE "OKUNDU" OLARAK İŞARETLER */
+                    let aktifIletisimBirimi = "";
+                    function openReplyModal(sender, originalMessage, element, mesajId) {
+                        aktifIletisimBirimi = sender.replace("SİZDEN ->", "").trim();
+
+                        document.getElementById('replyTarget').innerText = aktifIletisimBirimi + " Birimine Cevap Yaz";
+                        document.getElementById('replyOriginalMessage').innerText = '"' + originalMessage + '"';
+                        document.getElementById('replyModal').style.display = 'flex';
+
+                   
+                        if (element) {
+                            const statusDot = element.querySelector('.notif-status');
+
+                        
+                            if (statusDot && (statusDot.style.background === 'rgb(59, 130, 246)' || statusDot.style.background === '#3b82f6' || statusDot.style.background.includes('3b82f6'))) {
+
+                         
+                                statusDot.style.background = '#cbd5e1';
+
+                          
+                                const badge = document.querySelector('.notif-container .notif-badge');
+                                if (badge && parseInt(badge.innerText) > 0) {
+                                    const yeniSayi = parseInt(badge.innerText) - 1;
+                                    badge.innerText = yeniSayi;
+                                    if (yeniSayi === 0) badge.style.display = 'none';
+                                }
+
+                         
+                                if (mesajId) {
+                                    apiFetch(`/api/IkIstatistikKontrolcusu/mesaj-okundu/${mesajId}`, {
+                                        method: 'POST'
+                                    }).catch(e => console.error("Mesaj okundu işareti veritabanına iletilemedi:", e));
+                                }
+                            }
+                        }
+                    }
+
+                    function closeReplyModal() {
+                        document.getElementById('replyModal').style.display = 'none';
+                        document.getElementById('replyText').value = '';
+                        aktifIletisimBirimi = "";
+                    }
+
+                    async function sendReply() {
+                        const replyInput = document.getElementById('replyText');
+                        if (!replyInput) return;
+
+                        const text = replyInput.value.trim();
+                        if (text === "") {
+                            showToast("Lütfen boş bir mesaj göndermeyin.", "error");
+                            return;
+                        }
+
+                    
+                        const gonderilecekCevapPaketi = {
+                            Birim: aktifIletisimBirimi,
+                            Mesaj: text
+                        };
+
+                        try {
+                        
+                            const response = await apiFetch('/api/IkIstatistikKontrolcusu/mesaj-gonder', {
+                                method: 'POST',
+                                body: JSON.stringify(gonderilecekCevapPaketi)
+                            });
+
+                            if (response.ok) {
+                                showToast(`${aktifIletisimBirimi} birimine cevabınız başarıyla iletildi!`, "success");
+                                closeReplyModal();
+                                await showIncoming();
+                            } else {
+                                showToast("Cevap iletilirken sunucu hatası oluştu.", "error");
+                            }
+                        } catch (err) {
+                            console.error("Cevap gönderme hatası:", err);
+                            showToast("Bağlantı hatası! Cevap gönderilemedi.", "error");
+                        }
+                    }
+
+                    document.addEventListener('DOMContentLoaded', function () {
+                        const noteToggle = document.getElementById('note-box-toggle');
+                        const notifToggle = document.getElementById('notif-toggle');
+                        const msgBox = document.querySelector('.msg-box');
+                        const quickNoteBtn = document.querySelector('.quick-note-btn');
+                        const notifContainer = document.querySelector('.notif-container');
+                        const notifTrigger = document.querySelector('.notif-trigger');
+                        const noteForm = document.querySelector('.msg-box form');
+
+                        if (quickNoteBtn) {
+                            quickNoteBtn.addEventListener('click', function (e) {
+                                e.preventDefault(); e.stopPropagation();
+                                noteToggle.checked = !noteToggle.checked;
+                            });
+                        }
+
+                        if (notifTrigger) {
+                            notifTrigger.addEventListener('click', function (e) { e.stopPropagation(); });
+                        }
+
+                        [msgBox, notifContainer].forEach(box => {
+                            if (box) { box.addEventListener('click', function (e) { e.stopPropagation(); }); }
+                        });
+
+                        document.addEventListener('click', function () {
+                            if (noteToggle) noteToggle.checked = false;
+                            if (notifToggle) notifToggle.checked = false;
+                        });
+
+                     
+                        if (noteForm) {
+                            noteForm.addEventListener('submit', async function (e) {
+                                e.preventDefault();
+
+                                const targets = noteForm.querySelectorAll('input[name="target"]:checked');
+                                const noteTextarea = noteForm.querySelector('textarea[name="note"]');
+
+                                if (targets.length === 0) {
+                                    showToast("Lütfen en az bir birim seçin!", "error");
+                                    return;
+                                }
+                                if (noteTextarea.value.trim() === "") {
+                                    showToast("Lütfen mesajınızı yazın.", "error");
+                                    return;
+                                }
+
+                                const birimKatar = Array.from(targets).map(t => t.value).join(",");
+
+                             
+                                const suAnkiSaat = new Date().toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' });
+
+                                const gonderilecekPaket = {
+                                    Birim: birimKatar,
+                                    Mesaj: noteTextarea.value.trim(),
+                                    Saat: suAnkiSaat 
+                                };
+
+                                try {
+                                   
+                                    const response = await apiFetch('/api/IkIstatistikKontrolcusu/mesaj-gonder', {
+                                        method: 'POST',
+                                        body: JSON.stringify(gonderilecekPaket)
+                                    });
+
+                                    if (response.ok) {
+                                        noteToggle.checked = false;
+                                        showToast("Notunuz seçilen birimlere iletildi!", "success");
+                                        noteForm.reset();
+                                        if (typeof showIncoming === "function") await showIncoming();
+                                    } else {
+                                        showToast("Not iletilirken bir sunucu hatası oluştu.", "error");
+                                    }
+                                } catch (err) {
+                                    console.error("Mesaj fırlatma hatası:", err);
+                                    showToast("Bağlantı hatası! Mesaj gönderilemedi.", "error");
+                                }
+                            });
+                        }
+                    });
+                    function openPersonelModal() {
+                        document.getElementById('personelModal').style.display = 'flex';
+                    }
+                    function closePersonelModal() {
+                        document.getElementById('personelModal').style.display = 'none';
+                    }
+                   
+                    function openActiveModal() {
+                        const modal = document.getElementById('activePersonnelModal');
+                        modal.style.display = 'flex';
+
+                        apiFetch('/api/IkIstatistikKontrolcusu/saha-aktiflik')
+                            .then(res => res.json())
+                            .then(data => {
+                                const container = modal.querySelector('.active-list-container');
+                                if (!container) return;
+
+                              
+                                const ikonMap = {
+                                    'blue': 'fa-industry',
+                                    'green': 'fa-leaf',
+                                    'orange': 'fa-fire',
+                                    'red': 'fa-triangle-exclamation',
+                                    'purple': 'fa-robot'
+                                };
+
+                                container.innerHTML = data.map(item => {
+                                    const ikon = ikonMap[item.tema] || 'fa-industry';
+                                    const tema = item.tema || 'blue';
+                                    return `
+                <div class="list-card">
+                    <div class="list-icon theme-${tema}">
+                        <i class="fa-solid ${ikon}"></i>
+                    </div>
+                    <div class="list-main-info">
+                        <h5>${item.birimAdi}</h5>
+                        <small>${item.altBilgi}</small>
+                    </div>
+                    <div class="list-stats" style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-width:110px;">
+                        <strong style="white-space:nowrap;">${item.mevcutPersonel} / ${item.toplamKapasite}</strong>
+                        <span style="white-space:nowrap;font-size:0.7rem;">Personel</span>
+                    </div>
+                    <div class="list-progress">
+                        <div style="font-size:0.7rem;color:#64748b;margin-bottom:4px;display:flex;justify-content:space-between;">
+                            <span>${item.metrikAdi}</span>
+                            <span>%${item.metrikYuzde}</span>
+                        </div>
+                        <div class="progress-container" style="margin:0;height:6px;">
+                            <div class="progress-bar ${tema}" style="width:${item.metrikYuzde}%;"></div>
+                        </div>
+                    </div>
+                    <div class="list-status-tag">
+                        <span class="tag-pill theme-${tema}">${item.durumEtiketi}</span>
+                    </div>
+                </div>`;
+                                }).join('');
+                            })
+                            .catch(err => console.error('Saha aktiflik verisi yüklenemedi:', err));
+                    }
+                    function closeActiveModal() { document.getElementById('activePersonnelModal').style.display = 'none'; }
+
+                    function showSection(sectionId) {
+               
+                        document.getElementById('birim-listesi').style.display = 'none';
+                        document.getElementById('memnuniyet-alani').style.display = 'none';
+
+                   
+                        document.getElementById(sectionId).style.display = 'block';
+                    }
+                  
+
+                    function openSatisfactionModal() {
+                        const modal = document.getElementById('satisfactionModal');
+                        if (!modal) return;
+                        modal.style.display = 'flex';
+
+                        apiFetch('/api/IkIstatistikKontrolcusu/memnuniyet-detay')
+                            .then(res => res.json())
+                            .then(data => {
+                                const content = modal.querySelector('.modal-content');
+                                if (!content) return;
+
+                         
+                                const strongs = content.querySelectorAll('strong');
+                                strongs.forEach(strong => {
+                                    const text = strong.innerText.trim();
+
+                                    if (text.includes('91') || text.includes('Hijyen') || strong.closest('div')?.querySelector('i.fa-hand-sparkles')) {
+                                        strong.innerText = '%' + data.hijyen;
+                           
+                                        const bar = strong.closest('div[style*="background: #fdfcfb"]')?.querySelector('div[style*="height: 100%"]');
+                                        if (bar) bar.style.width = data.hijyen + '%';
+                                    }
+                                });
+
+                      
+                                const kartlar = content.querySelectorAll('div[style*="background: #fdfcfb"]');
+                                const mapping = [
+                                    { alan: 'hijyen', bar: '#22c55e' },
+                                    { alan: 'yemekhane', bar: '#f59e0b' },
+                                    { alan: 'iletisim', bar: '#8b5cf6' },
+                                    { alan: 'sosyalHaklar', bar: '#3b82f6' }
+                                ];
+
+                                kartlar.forEach((kart, i) => {
+                                    if (!mapping[i]) return;
+                                    const strong = kart.querySelector('strong');
+                                    const progressBar = kart.querySelector('div[style*="height: 100%"]');
+                                    const deger = data[mapping[i].alan];
+                                    if (strong) strong.innerText = '%' + deger;
+                                    if (progressBar) progressBar.style.width = deger + '%';
+                                });
+
+                      
+                                const altKutular = content.querySelectorAll('div[style*="background: #f8fafc"]');
+                                if (altKutular[0]) altKutular[0].querySelector('strong').innerText = '%' + data.katilim;
+                                if (altKutular[1]) altKutular[1].querySelector('strong').innerText = data.yanitSayisi.toLocaleString('tr-TR');
+                                if (altKutular[2]) altKutular[2].querySelector('strong').innerHTML = `<i class="fa-solid fa-arrow-trend-up"></i> +${data.aylikTrend}%`;
+                            })
+                            .catch(err => console.error('Memnuniyet verisi yüklenemedi:', err));
+                    }
+
+                    function closeSatisfactionModal() {
+                      
+                        document.getElementById('satisfactionModal').style.display = 'none';
+                    }
+
+                
+                    window.onclick = function (event) {
+                        const satModal = document.getElementById('satisfactionModal');
+                        const activeModal = document.getElementById('activePersonnelModal');
+                        const personModal = document.getElementById('personelModal');
+                        const turnModal = document.getElementById('turnoverModal');
+
+                        if (event.target == satModal) satModal.style.display = "none";
+                        if (event.target == activeModal) activeModal.style.display = "none";
+                        if (event.target == personModal) personModal.style.display = "none";
+                        if (event.target == turnModal) turnModal.style.display = "none";
+                    }
+
+                    function openTurnoverModal() {
+                        const modal = document.getElementById('turnoverModal');
+                        modal.style.display = 'flex';
+
+                        apiFetch('/api/IkIstatistikKontrolcusu/turnover-detay')
+                            .then(res => res.json())
+                            .then(data => {
+                                const content = modal.querySelector('.modal-content');
+                                if (!content) return;
+
+                         
+                                const nedenKartlari = content.querySelectorAll('div[style*="background: #fcfcfd"]');
+                                const nedenData = [
+                                    { yuzde: data.istenCikarilma, renk: '#ef4444' },
+                                    { yuzde: data.baskaIsTeklifi, renk: '#f59e0b' },
+                                    { yuzde: data.sehirDegisikligi, renk: '#3b82f6' },
+                                    { yuzde: data.emeklilikSaglik, renk: '#94a3b8' }
+                                ];
+
+                                nedenKartlari.forEach((kart, i) => {
+                                    if (!nedenData[i]) return;
+                                    const strong = kart.querySelector('strong');
+                                    const bar = kart.querySelector('div[style*="height: 100%"]');
+                                    if (strong) strong.innerText = '%' + nedenData[i].yuzde;
+                                    if (bar) bar.style.width = nedenData[i].yuzde + '%';
+                                });
+
+                        
+                                const kritikStrongs = content.querySelectorAll('div[style*="background: #f8fafc"] strong');
+                                if (kritikStrongs[0]) kritikStrongs[0].innerText = data.yillikOran + ' Yıl';
+                                if (kritikStrongs[1]) kritikStrongs[1].innerText = data.riskliDepartman + ' (%' + data.riskOrani + ')';
+
+                         
+                                const altKutular = content.querySelectorAll('div[style*="background: #f8fafc"]');
+                      
+                                const altGrid = content.querySelector('div[style*="grid-template-columns: repeat(3"]') ||
+                                    content.querySelector('div[style*="repeat(3, 1fr)"]');
+                                if (altGrid) {
+                                    const altDivler = altGrid.querySelectorAll(':scope > div');
+                                    if (altDivler[0]) altDivler[0].querySelector('strong').innerText = data.toplamAyrilan + ' Personel';
+                                    if (altDivler[1]) altDivler[1].querySelector('strong').innerText = '%' + data.yillikOran;
+                                    if (altDivler[2]) altDivler[2].querySelector('strong').innerText = '%' + data.sektorOrtalamasi;
+                                }
+                            })
+                            .catch(err => console.error('Turnover verisi yüklenemedi:', err));
+                    }
+                    function closeTurnoverModal() {
+                        document.getElementById('turnoverModal').style.display = 'none';
+                    }
+
+                    function closeLiveTracking() {
+                        const modal = document.getElementById('liveTrackingModal');
+                        if (modal) modal.style.display = 'none';
+                    }
+
+                    function closeIkModal() {
+                        const modal = document.getElementById('ikModal');
+                        if (modal) modal.style.display = 'none';
+                    }
+                    function closeOpsArchiveModal() {
+                        document.getElementById('opsArchiveModal').style.display = 'none';
+                    }
+
+                    function openOpsArchiveModal() {
+                        const modal = document.getElementById('liveTrackingModal');
+                        if (!modal) { console.error("Hata: 'liveTrackingModal' bulunamadı!"); return; }
+                        modal.style.display = 'flex';
+
+                        apiFetch('/api/IkIstatistikKontrolcusu/giris-listesi')
+                            .then(res => res.json())
+                            .then(data => {
+                                const listArea = document.getElementById('modalListArea');
+                                if (!listArea) return;
+
+                                const temaMap = {
+                                    'green': 'theme-green',
+                                    'red': 'theme-red',
+                                    'blue': 'theme-blue',
+                                    'orange': 'theme-orange',
+                                    'purple': 'theme-purple'
+                                };
+
+                                listArea.innerHTML = data.map(item => `
+                <div class="custom-list-row" 
+                     data-name="${item.adSoyad}" 
+                     data-dept="${item.departman}"
+                     style="display: flex;">
+                    <div class="row-info">
+                        <h5>${item.adSoyad}</h5>
+                        <p>${item.departman} • ${item.saat}</p>
+                    </div>
+                    <span class="row-badge ${temaMap[item.tema] || 'theme-blue'}">${item.durum}</span>
+                </div>
+            `).join('');
+
+                             
+                                runCombinedFilter();
+                            })
+                            .catch(err => console.error('Giriş listesi yüklenemedi:', err));
+                    }
+
+                    function openIkModal() {
+                        const modal = document.getElementById('ikModal');
+                        if (modal) {
+                            modal.style.display = 'flex';
+                            fillIkModalList();
+                        } else {
+                            console.error("Hata: 'ikModal' bulunamadı!");
+                        }
+                    }
+
+                  
+
+                   
+
+            
+                    function closeAllModals() {
+                        const modals = document.querySelectorAll('.modal, .modal-overlay');
+                        modals.forEach(m => m.style.display = 'none');
+                    }
+
+
+            
+                    function showTab(tabName) {
+                        const btns = document.querySelectorAll('.tab-btn');
+                        const contentArea = document.getElementById('idari');
+
+                        btns.forEach(b => {
+                            b.classList.remove('active');
+                            b.style.background = '#f1f5f9';
+                            b.style.color = '#64748b';
+                        });
+                        contentArea.style.opacity = "0.5";
+
+             
+                        const tipMap = { 'idari': 'idari', 'teknik': 'teknik', 'saha': 'saha' };
+                        btns.forEach(btn => {
+                            const onclick = btn.getAttribute('onclick') || '';
+                            if (onclick.includes(`'${tabName}'`) || onclick.includes(`"${tabName}"`)) {
+                                btn.classList.add('active');
+                            }
+                        });
+                        apiFetch(`/api/IkIstatistikKontrolcusu/departman-dagilim?tip=${tipMap[tabName]}`)
+                            .then(res => res.json())
+                            .then(data => {
+                                const styleMap = {
+                                    'idari': {
+                                        cls: 'admin-group', ikonMap: {
+                                            'İnsan Kaynakları': 'fa-handshake-angle',
+                                            'Hukuk ve Uyumluluk': 'fa-scale-balanced',
+                                            'İdari İşler': 'fa-briefcase',
+                                            'Satın Alma': 'fa-cart-shopping',
+                                            'Finans Muhasebe': 'fa-file-invoice-dollar'
+                                        }
+                                    },
+                                    'teknik': {
+                                        cls: 'tech-group', ikonMap: {
+                                            'Bilgi İşlem (IT)': 'fa-laptop-code',
+                                            'İş Sağlığı Güvenliği': 'fa-shield-virus',
+                                            'Bakım ve Enerji': 'fa-screwdriver-wrench',
+                                            'Kalite Kontrol': 'fa-microscope'
+                                        }
+                                    },
+                                    'saha': {
+                                        cls: 'saha-group', ikonMap: {
+                                            'Mavi Yaka Üretim': 'fa-user-gear',
+                                            'Gri Yaka Formen': 'fa-user-tie',
+                                            'Lojistik ve Sevkiyat': 'fa-truck-fast',
+                                            'Endüstriyel Temizlik': 'fa-broom',
+                                            'Güvenlik': 'fa-user-shield'
+                                        }
+                                    }
+                                };
+
+                                const { cls, ikonMap } = styleMap[tabName];
+                                const defaultIkon = 'fa-users';
+
+                                contentArea.innerHTML = data.map(item => {
+                          
+                                    const ikonKey = Object.keys(ikonMap).find(k => item.departmanAdi.includes(k.split(' ')[0])) || '';
+                                    const ikon = ikonMap[ikonKey] || defaultIkon;
+                                    return `
+                    <div class="dept-row ${cls}">
+                        <span><i class="fa-solid ${ikon}"></i> ${item.departmanAdi}</span>
+                        <strong>${item.kisiSayisi}</strong>
+                    </div>`;
+                                }).join('');
+
+                                contentArea.style.opacity = "1";
+                            })
+                            .catch(err => {
+                                console.error('Departman verisi yüklenemedi:', err);
+                                contentArea.style.opacity = "1";
+                            });
+                    }
+
+
+                 
+
+                    function fillIkModalList() {
+                        const container = document.getElementById('ikListContainer');
+                        if (!container) return;
+
+                        apiFetch('/api/IkIstatistikKontrolcusu/aktiviteler')
+                            .then(res => res.json())
+                            .then(data => {
+                                const ikonMap = {
+                                    'purple': 'fa-birthday-cake',
+                                    'blue': 'fa-users',
+                                    'orange': 'fa-bullhorn',
+                                    'green': 'fa-graduation-cap',
+                                    'red': 'fa-circle-exclamation'
+                                };
+
+                       
+                                const kategoriMap = {
+                                    'Kişisel': 'mor',
+                                    'Teknik': 'mavi',
+                                    'Duyurular': 'turuncu',
+                                    'Eğitim': 'yesil'
+                                };
+
+                                container.innerHTML = data.map(item => {
+                                    const ikon = ikonMap[item.tema] || 'fa-bell';
+                                    const filterClass = 'filter-' + (kategoriMap[item.kategori] || 'tumu');
+                                    return `
+                <div class="custom-list-row ik-filter-item ${filterClass}" 
+                     style="display: flex; align-items: center; gap: 20px; padding: 15px; border-radius: 16px; border: 1px solid #f1f5f9; margin-bottom: 12px; background: #fff; transition: 0.3s;">
+                    <div style="width: 40px; height: 40px; background: white !important; display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-size: 1.3rem;">
+                        <i class="fas ${ikon}" style="color: var(--color-${item.tema}, #3b82f6) !important;"></i>
+                    </div>
+                    <div style="flex-grow: 1;">
+                        <h4 style="margin: 0; font-size: 1rem; color: #1e293b;">${item.baslik}</h4>
+                        <p style="margin: 0; font-size: 0.8rem; color: #64748b;">${item.aciklama}</p>
+                    </div>
+                    <span class="row-badge theme-${item.tema}" style="min-width: 85px; text-align: center;">${item.etiket}</span>
+                </div>`;
+                                }).join('');
+                            })
+                            .catch(err => console.error('Aktivite listesi yüklenemedi:', err));
+                    }
+
+                  
+
+    
+                    async function filterIk(kategori, btn) {
+                   
+                        const btns = document.querySelectorAll(".ik-filter-menu .ik-filter-btn");
+                        btns.forEach(b => b.classList.remove('active'));
+                        if (btn) btn.classList.add('active');
+
+                 
+                        let dbKategori = '';
+                        if (kategori === 'mor') dbKategori = 'Kişisel';
+                        else if (kategori === 'yesil') dbKategori = 'Eğitim';
+                        else if (kategori === 'mavi') dbKategori = 'Teknik';
+                        else if (kategori === 'turuncu') dbKategori = 'Duyurular';
+
+                        try {
+                            const url = dbKategori
+                                ? `/api/IkIstatistikKontrolcusu/aktiviteler?kategori=${encodeURIComponent(dbKategori)}`
+                                : `/api/IkIstatistikKontrolcusu/aktiviteler`;
+                            const response = await apiFetch(url);
+                            const data = await response.json();
+
+                            const container = document.getElementById('ikListContainer');
+                            if (!container) return;
+
+                            const ikonMap = {
+                                'purple': 'fa-birthday-cake',
+                                'blue': 'fa-users',
+                                'orange': 'fa-bullhorn',
+                                'green': 'fa-graduation-cap'
+                            };
+
+                            container.innerHTML = data.map(item => `
+            <div class="custom-list-row">
+                <div class="row-icon-box theme-${item.tema}">
+                    <i class="fas ${ikonMap[item.tema] || 'fa-bell'}"></i>
+                </div>
+                <div class="row-info">
+                    <h5>${item.baslik}</h5>
+                    <p>${item.aciklama}</p>
+                </div>
+                <span class="row-badge theme-${item.tema}">${item.etiket}</span>
+            </div>
+        `).join('');
+                        } catch (err) {
+                            console.error('Filtreleme hatası:', err);
+                        }
+                    }
+
+                 
+                    async function girisListesiniYukle() {
+                        try {
+                            const res = await apiFetch('/api/IkIstatistikKontrolcusu/giris-listesi');
+                            const data = await res.json();
+                            const panel = document.querySelector('.panel-container.main-ops .panel-scroll-content');
+                            if (!panel) return;
+
+                            const temaMap = {
+                                'green': 'theme-green',
+                                'red': 'theme-red',
+                                'blue': 'theme-blue',
+                                'orange': 'theme-orange',
+                                'purple': 'theme-purple'
+                            };
+
+                            panel.innerHTML = data.map(item => `
+            <div class="custom-list-row">
+                <div class="row-info">
+                    <h5>${item.adSoyad}</h5>
+                    <p>${item.departman} • ${item.saat}</p>
+                </div>
+                <span class="row-badge ${temaMap[item.tema] || 'theme-blue'}">${item.durum}</span>
+            </div>
+        `).join('');
+                        } catch (err) {
+                            console.error('Giriş listesi yüklenemedi:', err);
+                        }
+                    }
+
+                    async function aktiviteleriYukle() {
+                        try {
+                            const res = await apiFetch('/api/IkIstatistikKontrolcusu/aktiviteler');
+                            const data = await res.json();
+
+                            const panel = document.querySelector('.panel-container.side-hr .panel-scroll-content');
+                            if (!panel) return;
+
+                            const ikonMap = {
+                                'purple': 'fa-birthday-cake',
+                                'blue': 'fa-users',
+                                'orange': 'fa-bullhorn',
+                                'green': 'fa-graduation-cap',
+                                'red': 'fa-circle-exclamation'
+                            };
+
+                            const temaMap = {
+                                'purple': 'theme-purple',
+                                'blue': 'theme-blue',
+                                'orange': 'theme-orange',
+                                'green': 'theme-green',
+                                'red': 'theme-red'
+                            };
+
+                            panel.innerHTML = data.slice(0, 5).map(item => `
+            <div class="custom-list-row">
+                <div class="row-info">
+                    <h5>${item.baslik}</h5>
+                    <p>${item.aciklama}</p>
+                </div>
+                <span class="row-badge ${temaMap[item.tema] || 'theme-blue'}">${item.etiket}</span>
+            </div>
+        `).join('');
+                        } catch (err) {
+                            console.error('Aktivite listesi yüklenemedi:', err);
+                        }
+                    }
+           
+
+                    window.addEventListener('click', function (event) {
+                    
+                        if (event.target.classList.contains('modal') || event.target.classList.contains('modal-overlay')) {
+                            event.target.style.display = "none";
+                        }
+                    });
+
+                
+
+                    let currentStatusFilter = 'tumu'; 
+
+                    function filterPayroll(status, btn) {
+                        
+                        const btns = document.querySelectorAll("#liveTrackingModal .ik-filter-btn");
+                        btns.forEach(b => b.classList.remove('active'));
+                        btn.classList.add('active');
+
+                        currentStatusFilter = status;
+                        runCombinedFilter(); 
+                    }
+
+                    function runCombinedFilter() {
+                        const searchText = document.getElementById("personelAramaInput").value.toLowerCase().trim();
+                        const deptValue = document.getElementById("departmanFiltre").value.toLowerCase().trim();
+                        const rows = document.querySelectorAll("#modalListArea .custom-list-row");
+
+                        rows.forEach(row => {
+
+                            const name = row.getAttribute('data-name') ? row.getAttribute('data-name').toLowerCase() : row.querySelector('h5').innerText.toLowerCase();
+                            const dept = row.getAttribute('data-dept') ? row.getAttribute('data-dept').toLowerCase() : row.querySelector('p').innerText.toLowerCase();
+                            const badgeElement = row.querySelector('.row-badge');
+                            const badgeText = badgeElement ? badgeElement.innerText.toLocaleLowerCase('tr-TR') : "";
+
+                    
+                            const matchesSearch = name.includes(searchText);
+                            const matchesDept = (deptValue === "" || dept === deptValue || dept.includes(deptValue));
+
+                        
+                            let matchesStatus = false;
+                            if (currentStatusFilter === 'tumu') {
+                                matchesStatus = true;
+                            } else {
+                                matchesStatus = badgeText.includes(currentStatusFilter.toLowerCase());
+                            }
+
+                           
+                            if (matchesSearch && matchesDept && matchesStatus) {
+                                row.style.setProperty('display', 'flex', 'important');
+                            } else {
+                                row.style.setProperty('display', 'none', 'important');
+                            }
+                        });
+                    }
+
+                    function combinedPayrollFilter() { runCombinedFilter(); }
+                    function personelAra() { runCombinedFilter(); }
+
+                    document.addEventListener('DOMContentLoaded', function () {
+
+                        const adminAdSoyad = localStorage.getItem('adminAdSoyad');
+                        const adminDepartman = localStorage.getItem('adminDepartman');
+
+                        if (adminAdSoyad) {
+                            document.getElementById('sidebarAdSoyad').textContent = adminAdSoyad;
+                        }
+                        if (adminDepartman) {
+                            document.getElementById('sidebarDepartman').textContent = adminDepartman;
+                        }
+
+
+                        updateOutgoingList();
+                        showIncoming();
+                        showTab('idari');
+
+                        const notifTrigger = document.querySelector('.notif-trigger');
+                        if (notifTrigger) {
+                            notifTrigger.addEventListener('click', function (e) {
+                                e.stopPropagation();
+                                const badge = document.querySelector('.notif-container .notif-badge');
+                                if (badge) badge.style.display = 'none';
+                            });
+                        }
+
+                        const allBtn = document.querySelector(".ik-filter-btn.all");
+                        filterIk('tumu', null);
+
+                        girisListesiniYukle();
+                        aktiviteleriYukle();
+
+                        apiFetch('/api/IkIstatistikKontrolcusu/panel')
+                            .then(res => res.json())
+                            .then(data => {
+                                document.querySelectorAll('.card-info').forEach(card => {
+                                    const h4 = card.querySelector('h4');
+                                    const p = card.querySelector('p');
+                                    if (!h4 || !p) return;
+                                    const baslik = h4.innerText.trim();
+                                    if (baslik === 'TOPLAM PERSONEL') p.innerText = data.toplamPersonel.toLocaleString('tr-TR');
+                                    else if (baslik === 'FABRİKADA AKTİF') p.innerText = data.fabrikadaAktif.toLocaleString('tr-TR');
+                                    else if (baslik === 'MEMNUNİYET') p.innerText = '%' + data.memnuniyetYuzdesi;
+                                    else if (baslik === 'TURNOVER') p.innerText = '%' + data.turnoverYuzdesi;
+                                });
+                            })
+                            .catch(err => console.error('Panel istatistikleri yüklenemedi:', err));
+
+                        apiFetch('/api/IkIstatistikKontrolcusu/giris-listesi')
+                            .then(res => res.json())
+                            .then(data => {
+                                const panel = document.querySelector('.panel-container.main-ops .panel-scroll-content');
+                                if (!panel) return;
+                                const temaMap = { 'green': 'theme-green', 'red': 'theme-red', 'blue': 'theme-blue', 'orange': 'theme-orange', 'purple': 'theme-purple' };
+                                panel.innerHTML = data.map(item => `
+                <div class="custom-list-row">
+                    <div class="row-info">
+                        <h5>${item.adSoyad}</h5>
+                        <p>${item.departman} • ${item.saat}</p>
+                    </div>
+                    <span class="row-badge ${temaMap[item.tema] || 'theme-blue'}">${item.durum}</span>
+                </div>
+            `).join('');
+                            })
+                            .catch(err => console.error('Giriş listesi yüklenemedi:', err));
+                    });
+
+                  
+                    
+
+
+
+                      
+                        apiFetch('/api/IkIstatistikKontrolcusu/giris-listesi')
+                            .then(res => res.json())
+                            .then(data => {
+                                const panel = document.querySelector('.panel-container.main-ops .panel-scroll-content');
+                                if (!panel) return;
+
+                                const temaMap = {
+                                    'green': 'theme-green',
+                                    'red': 'theme-red',
+                                    'blue': 'theme-blue',
+                                    'orange': 'theme-orange',
+                                    'purple': 'theme-purple'
+                                };
+
+                                panel.innerHTML = data.map(item => `
+            <div class="custom-list-row">
+                <div class="row-info">
+                    <h5>${item.adSoyad}</h5>
+                    <p>${item.departman} • ${item.saat}</p>
+                </div>
+                <span class="row-badge ${temaMap[item.tema] || 'theme-blue'}">${item.durum}</span>
+            </div>
+        `).join('');
+                            })
+                            .catch(err => console.error('Giriş listesi yüklenemedi:', err));
+
+
+
+                        
+
+</script>
+</body>
+</html>

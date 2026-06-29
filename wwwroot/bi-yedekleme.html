@@ -1,0 +1,1597 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <script>
+        if (!localStorage.getItem('token')) {
+            window.location.href = 'admin-login.html';
+        }
+    </script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Guardia | Yedekleme Planı</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/ik-sidebar.css">
+    <link rel="stylesheet" href="css/dept-common.css">
+    <style>
+        :root {
+            --sidebar: #0f172a;
+            --text-main: #1e293b;
+            --text-sub: #64748b;
+            --white: #fff;
+        }
+
+        .hero {
+            margin-bottom: 24px;
+        }
+
+            .hero h2 {
+                margin: 0 0 6px 0;
+                font-size: 1.5rem;
+                color: var(--sidebar);
+            }
+
+            .hero p {
+                margin: 0;
+                font-size: 0.9rem;
+                color: var(--text-sub);
+            }
+
+        .data-table-box {
+            background: var(--white);
+            padding: 24px;
+            border-radius: 20px;
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th {
+            text-align: left;
+            padding: 14px;
+            border-bottom: 2px solid #f1f5f9;
+            color: #64748b;
+            font-size: 0.9rem;
+        }
+
+        td {
+            padding: 14px;
+            border-bottom: 1px solid #f1f5f9;
+            font-size: 0.9rem;
+        }
+
+        .ok {
+            color: #166534;
+            font-weight: 600;
+        }
+
+        /* BİLGİ İŞLEM YENİ NESİL FERAH KARTLAR */
+        .stats-container {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 25px;
+            margin-bottom: 30px;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 25px;
+            border-radius: 24px; /* Daha yuvarlak, daha modern */
+            border: none; /* Hiçbir kenarlık yok */
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            /* Çok hafif, modern bir gölge */
+            box-shadow: 0 10px 25px rgba(0,0,0,0.03);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+            /* Hover efekti: Hafifçe yukarı kalksın ve gölgesi artsın */
+            .stat-card:hover {
+                transform: translateY(-5px);
+                box-shadow: 0 15px 30px rgba(0,0,0,0.05);
+            }
+
+            /* İkon Kutusu: Arka planı yumuşak, ikonun kendisi canlı */
+            .stat-card .icon-box {
+                width: 55px;
+                height: 55px;
+                border-radius: 16px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 1.6rem;
+            }
+
+            /* Renk Tanımlamaları (Soft Backrounds) */
+            /* Mavi (Bulut) */
+            .stat-card.blue .icon-box {
+                background: #eff6ff;
+                color: #3b82f6;
+            }
+            /* Yeşil (Sağlık) */
+            .stat-card.green .icon-box {
+                background: #f0fdf4;
+                color: #10b981;
+            }
+            /* Kırmızı (Kritik) */
+            .stat-card.red .icon-box {
+                background: #fef2f2;
+                color: #ef4444;
+            }
+
+            /* Metin Alanı Ayarları */
+            .stat-card .card-info small {
+                color: #64748b;
+                font-weight: 700;
+                text-transform: uppercase;
+                font-size: 0.65rem;
+                letter-spacing: 0.8px;
+                margin-bottom: 5px;
+                display: block;
+            }
+
+            .stat-card .card-info p {
+                margin: 0;
+                font-size: 1.4rem;
+                font-weight: 800;
+                color: #0f172a;
+            }
+        /*ÖNEMLİ O YER*/
+        /* 2. Ana içerik alanını ekran yüksekliğine mühürle */
+        .ik-content {
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden; /* İçerik taşmasın */
+            padding-bottom: 20px !important; /* Alt kısımdan biraz nefes payı */
+        }
+
+        /* 1. TABLO KUTUSU: Dünkü sayfadaki o sihirli formülü buraya uygulama */
+        .data-table-box {
+            flex: 1;
+            overflow-y: auto;
+            overflow-x: hidden;
+            /* Dünkü sayfada kullandığımız o dinamik yükseklik formülü */
+            max-height: calc(100vh - 380px - 22px);
+            background: white;
+            border-radius: 22px;
+            /* Alt boşluk: son satıra nefes; görünür yükseklik satır yarım kesilmesin diye calc ile kısaltıldı */
+            padding: 0 20px 20px 20px;
+            scroll-padding-bottom: 16px;
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
+            position: relative;
+            margin-bottom: 20px;
+            scrollbar-width: none; /* Firefox için çubuğu gizle */
+        }
+
+            /* Kaydırma çubuğunu Chrome/Safari için tamamen gizle */
+            .data-table-box::-webkit-scrollbar {
+                display: none;
+            }
+
+        /* 2. BAŞLIKLAR: Sızdırmazlık buradaki 'background' ve 'z-index' içinde */
+        thead th {
+            position: sticky !important;
+            top: 0;
+            /* ÖNEMLİ: Arka plan transparan kalmasın diye bembeyaz yapma */
+            background-color: #ffffff !important;
+            /* Satırların başlığın üstüne çıkmaması için 10. kata alma */
+            z-index: 10 !important;
+            padding: 18px 15px !important;
+            color: #94a3b8;
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            /* Başlık sabitlendiğinde altını net ayırmak için çizgi çekme */
+            border-bottom: 2px solid #f1f5f9 !important;
+        }
+
+        /* 3. TABLO YAPISI: border-collapse sticky'i bozmasın diye 'separate' yapma */
+        table {
+            width: 100%;
+            border-collapse: separate !important;
+            border-spacing: 0;
+        }
+
+        /* Satırların (td) kendi arka planı olsun ki kayarken başlığın arkasına geçince 'yok' olsunlar */
+        td {
+            background-color: #ffffff;
+            border-bottom: 1px solid #f1f5f9;
+            padding: 15px !important;
+        }
+        /*ÖNEMLİ BİTİŞ*/
+
+        /* Yedekleme takvim şeması modal */
+        #backupCalendarModal {
+            display: none;
+            position: fixed;
+            inset: 0;
+            z-index: 2000;
+            align-items: center;
+            justify-content: center;
+            background: rgba(15, 23, 42, 0.65);
+            backdrop-filter: blur(4px);
+            padding: 20px;
+            box-sizing: border-box;
+        }
+
+            #backupCalendarModal.is-open {
+                display: flex;
+            }
+
+        .backup-cal-card {
+            background: #fff;
+            border-radius: 22px;
+            width: min(600px, 94vw);
+            height: min(580px, 88vh);
+            max-height: 88vh;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 24px 48px -12px rgba(15, 23, 42, 0.18), 0 0 0 1px rgba(15, 23, 42, 0.04);
+            border: 1px solid #e2e8f0;
+        }
+
+        .backup-cal-head {
+            position: relative;
+            flex-shrink: 0;
+            padding: 1.2rem 3.35rem 1.25rem 1.625rem;
+            border-bottom: 1px solid #eef2f7;
+            display: flex;
+            justify-content: flex-start;
+            align-items: center;
+            background: linear-gradient(180deg, #fafbfc 0%, #fff 100%);
+        }
+
+        .backup-cal-head-text {
+            text-align: left;
+            max-width: calc(100% - 2.85rem);
+            padding: 0.2rem 0 0.15rem 0;
+        }
+
+        .backup-cal-head h3 {
+            margin: 0;
+            font-size: 1.22rem;
+            font-weight: 700;
+            color: #0f172a;
+            letter-spacing: -0.03em;
+            line-height: 1.25;
+        }
+
+        .backup-cal-head .backup-cal-head-sub {
+            margin: 0.4rem 0 0;
+            font-size: 0.78rem;
+            color: #64748b;
+            font-weight: 500;
+            line-height: 1.45;
+            letter-spacing: 0.02em;
+        }
+
+        .backup-cal-close {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            width: 2.5rem;
+            height: 2.5rem;
+            border: none;
+            border-radius: 10px;
+            background: #f1f5f9;
+            color: #64748b;
+            cursor: pointer;
+            font-size: 1.2rem;
+            line-height: 1;
+            flex-shrink: 0;
+            transition: background 0.15s ease, color 0.15s ease;
+        }
+
+            .backup-cal-close:hover {
+                background: #e2e8f0;
+                color: #0f172a;
+            }
+
+        .backup-cal-tabs {
+            display: flex;
+            gap: 0;
+            flex-shrink: 0;
+            padding: 0 1rem;
+            border-bottom: 1px solid #e8ecf1;
+            background: #fff;
+        }
+
+        .backup-cal-tab {
+            padding: 0.9rem 0.65rem;
+            border: none;
+            background: transparent;
+            color: #94a3b8;
+            font-weight: 600;
+            font-size: 0.8125rem;
+            cursor: pointer;
+            border-radius: 0;
+            border-bottom: 3px solid transparent;
+            margin-bottom: -1px;
+            flex: 1;
+            min-width: 0;
+            line-height: 1.25;
+            letter-spacing: 0.01em;
+            transition: color 0.15s ease, border-color 0.15s ease;
+        }
+
+            .backup-cal-tab.active {
+                color: #1d4ed8;
+                background: transparent;
+                border-bottom-color: #2563eb;
+            }
+
+        .backup-cal-body {
+            position: relative;
+            flex: 1;
+            min-height: 0;
+            overflow: hidden;
+            background: #f1f5f9;
+        }
+
+        .backup-cal-panel {
+            display: none;
+            position: absolute;
+            inset: 0;
+            overflow-y: auto;
+            overflow-x: hidden;
+            padding: 1.25rem 1.5rem 1.35rem;
+            box-sizing: border-box;
+            scrollbar-width: none;
+            -ms-overflow-style: none;
+        }
+
+            .backup-cal-panel::-webkit-scrollbar {
+                display: none;
+            }
+
+            .backup-cal-panel.active {
+                display: block;
+            }
+        /* Bölüm hiyerarşisi: etiket (üst) → içerik → yardımcı metin */
+        .backup-cal-label {
+            margin: 0 0 0.75rem;
+            font-size: 0.6875rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.07em;
+            color: #94a3b8;
+            line-height: 1.3;
+        }
+
+        .backup-cal-grid-block {
+            margin-bottom: 1.25rem;
+        }
+
+        .backup-check-row {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            padding: 14px 16px;
+            border-radius: 14px;
+            background: #f8fafc;
+            margin-bottom: 10px;
+            border: 1px solid #f1f5f9;
+        }
+
+            .backup-check-row:last-child {
+                margin-bottom: 0;
+            }
+
+        .backup-led {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            flex-shrink: 0;
+            box-shadow: 0 0 10px currentColor;
+        }
+
+            .backup-led.ok {
+                background: #22c55e;
+                color: #22c55e;
+            }
+
+            .backup-led.warn {
+                background: #eab308;
+                color: #eab308;
+            }
+
+            .backup-led.bad {
+                background: #ef4444;
+                color: #ef4444;
+            }
+
+        .backup-check-text {
+            flex: 1;
+            min-width: 0;
+        }
+
+            .backup-check-text strong {
+                display: block;
+                font-size: 0.9rem;
+                color: #0f172a;
+                margin-bottom: 4px;
+            }
+
+            .backup-check-text small {
+                font-size: 0.78rem;
+                color: #64748b;
+            }
+
+        .backup-check-tag {
+            font-size: 0.7rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            white-space: nowrap;
+        }
+
+            .backup-check-tag.ok {
+                color: #15803d;
+            }
+
+            .backup-check-tag.warn {
+                color: #b45309;
+            }
+
+            .backup-check-tag.bad {
+                color: #dc2626;
+            }
+
+        .backup-cal-legend {
+            margin-top: 0;
+            padding: 0.875rem 1rem;
+            border-radius: 12px;
+            background: #fff;
+            border: 1px solid #e8ecf1;
+            font-size: 0.6875rem;
+            font-weight: 600;
+            color: #64748b;
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 0.75rem 1.25rem;
+            justify-content: center;
+        }
+
+            .backup-cal-legend span {
+                display: inline-flex;
+                align-items: center;
+                gap: 0.45rem;
+            }
+
+            .backup-cal-legend .dot {
+                width: 1.125rem;
+                height: 3px;
+                border-radius: 2px;
+                flex-shrink: 0;
+            }
+
+        .backup-upcoming-wrap {
+            margin-bottom: 0.5rem;
+            border-radius: 14px;
+            border: 1px solid #e2e8f0;
+            background: #fff;
+            overflow: hidden;
+            box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);
+            transition: box-shadow 0.2s ease, border-color 0.2s ease;
+        }
+
+            .backup-upcoming-wrap:last-child {
+                margin-bottom: 0;
+            }
+
+            .backup-upcoming-wrap:hover {
+                border-color: #cbd5e1;
+                box-shadow: 0 6px 20px rgba(15, 23, 42, 0.07);
+            }
+
+        .backup-upcoming-row {
+            padding: 0.85rem 1rem;
+            border: none;
+            border-radius: 0;
+            background: transparent;
+            margin-bottom: 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+            .backup-upcoming-row b {
+                font-size: 0.875rem;
+                font-weight: 700;
+                color: #0f172a;
+                letter-spacing: -0.01em;
+            }
+
+            .backup-upcoming-row small {
+                display: block;
+                margin-top: 0.2rem;
+                color: #64748b;
+                font-size: 0.75rem;
+                line-height: 1.35;
+            }
+
+        .backup-upcoming-drawer {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.38s ease, padding 0.38s ease;
+            padding: 0 1rem;
+            background: #f8fafc;
+            border-top: 1px solid transparent;
+            font-size: 0.78rem;
+            color: #64748b;
+            line-height: 1.55;
+        }
+
+        .backup-upcoming-wrap:hover .backup-upcoming-drawer,
+        .backup-upcoming-wrap:focus-within .backup-upcoming-drawer {
+            max-height: 140px;
+            padding: 0.65rem 1rem 0.85rem;
+            border-top-color: #e8ecf1;
+            overflow-y: auto;
+            scrollbar-width: none;
+            -ms-overflow-style: none;
+        }
+
+            .backup-upcoming-wrap:hover .backup-upcoming-drawer::-webkit-scrollbar,
+            .backup-upcoming-wrap:focus-within .backup-upcoming-drawer::-webkit-scrollbar {
+                display: none;
+            }
+
+        .backup-upcoming-wrap:focus {
+            outline: 2px solid #93c5fd;
+            outline-offset: 2px;
+        }
+
+        .backup-upcoming-drawer strong {
+            display: block;
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            color: #94a3b8;
+            margin-bottom: 0.35rem;
+        }
+
+        .backup-up-badge {
+            background: #eff6ff;
+            color: #1d4ed8;
+            font-size: 0.7rem;
+            font-weight: 700;
+            padding: 6px 10px;
+            border-radius: 8px;
+        }
+
+        .backup-cal-grid {
+            display: grid;
+            grid-template-columns: repeat(7, minmax(0, 1fr));
+            gap: 0.5rem 0.45rem;
+            margin-bottom: 0;
+        }
+
+        .backup-cal-day {
+            border: none;
+            border-radius: 12px;
+            padding: 0.5rem 0.25rem 0.65rem;
+            text-align: center;
+            cursor: pointer;
+            background: #fff;
+            box-shadow: 0 1px 2px rgba(15, 23, 42, 0.05), 0 0 0 1px rgba(15, 23, 42, 0.04);
+            transition: transform 0.18s ease, box-shadow 0.18s ease;
+            aspect-ratio: 1;
+            min-height: 48px;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 0.2rem;
+            position: relative;
+            overflow: hidden;
+        }
+
+            .backup-cal-day::after {
+                content: '';
+                position: absolute;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                height: 3px;
+                border-radius: 0 0 11px 11px;
+                background: #e2e8f0;
+            }
+
+            .backup-cal-day.status-ok::after {
+                background: linear-gradient(90deg, #4ade80, #22c55e);
+            }
+
+            .backup-cal-day.status-warn::after {
+                background: linear-gradient(90deg, #facc15, #eab308);
+            }
+
+            .backup-cal-day.status-bad::after {
+                background: linear-gradient(90deg, #f87171, #ef4444);
+            }
+
+            .backup-cal-day.status-today::after {
+                background: #cbd5e1;
+            }
+
+            .backup-cal-day:hover:not(.is-today):not(.is-future) {
+                transform: translateY(-1px);
+                box-shadow: 0 4px 12px rgba(15, 23, 42, 0.08), 0 0 0 1px rgba(15, 23, 42, 0.06);
+            }
+
+            .backup-cal-day.selected {
+                box-shadow: 0 0 0 2px #2563eb, 0 4px 16px rgba(37, 99, 235, 0.15);
+            }
+
+            .backup-cal-day.is-today {
+                background: #f1f5f9;
+                cursor: default;
+            }
+
+            .backup-cal-day.is-future {
+                opacity: 0.4;
+                cursor: not-allowed;
+                pointer-events: none;
+            }
+
+            .backup-cal-day .num {
+                font-weight: 700;
+                font-size: clamp(0.95rem, 2.8vw, 1.125rem);
+                color: #0f172a;
+                line-height: 1;
+                font-variant-numeric: tabular-nums;
+            }
+
+            .backup-cal-day .wd {
+                font-size: 0.5625rem;
+                color: #94a3b8;
+                font-weight: 700;
+                letter-spacing: 0.06em;
+                text-transform: uppercase;
+                line-height: 1.2;
+            }
+
+        .backup-cal-detail {
+            display: none;
+            border-radius: 14px;
+            padding: 1.1rem 1.15rem;
+            background: #fff;
+            margin: 1rem 0 1rem;
+            border: 1px solid #e8ecf1;
+            box-shadow: 0 2px 8px rgba(15, 23, 42, 0.04);
+        }
+
+            .backup-cal-detail.visible {
+                display: block;
+            }
+
+            .backup-cal-detail h4 {
+                margin: 0 0 0.75rem;
+                font-size: 1rem;
+                font-weight: 700;
+                color: #0f172a;
+                letter-spacing: -0.02em;
+                line-height: 1.25;
+            }
+
+            .backup-cal-detail .meta-row {
+                display: flex;
+                flex-wrap: wrap;
+                gap: 0.5rem 1.25rem;
+                font-size: 0.8125rem;
+                color: #64748b;
+                margin-bottom: 0.65rem;
+            }
+
+                .backup-cal-detail .meta-row span b {
+                    color: #334155;
+                    font-weight: 600;
+                }
+
+            .backup-cal-detail p.note {
+                margin: 0 0 0.875rem;
+                font-size: 0.8125rem;
+                color: #64748b;
+                line-height: 1.5;
+            }
+
+        .backup-btn-restore {
+            width: 100%;
+            padding: 0.7rem 1rem;
+            border: none;
+            border-radius: 10px;
+            background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+            color: #fff;
+            font-weight: 600;
+            font-size: 0.8125rem;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            box-shadow: 0 2px 8px rgba(37, 99, 235, 0.22);
+        }
+
+            .backup-btn-restore:hover {
+                filter: brightness(1.05);
+            }
+
+            .backup-btn-restore:disabled {
+                background: #e2e8f0;
+                color: #94a3b8;
+                cursor: not-allowed;
+            }
+
+        .backup-strategy-block {
+            background: #fff;
+            border: 1px solid #e8ecf1;
+            border-radius: 14px;
+            padding: 1rem 1.15rem;
+            margin-bottom: 1rem;
+            font-size: 0.875rem;
+            color: #475569;
+            line-height: 1.55;
+        }
+
+            .backup-strategy-block h4 {
+                margin: 0 0 0.5rem;
+                font-size: 0.6875rem;
+                text-transform: uppercase;
+                letter-spacing: 0.07em;
+                color: #64748b;
+                font-weight: 700;
+            }
+
+            .backup-strategy-block ul {
+                margin: 0;
+                padding-left: 1.15rem;
+            }
+
+            .backup-strategy-block li {
+                margin-bottom: 0.35rem;
+            }
+
+        .backup-dr-hero {
+            background: linear-gradient(145deg, #fff 0%, #f0f7ff 100%);
+            border: 1px solid #cfe2ff;
+            border-radius: 14px;
+            padding: 1.15rem 1.2rem;
+            margin-bottom: 1rem;
+        }
+
+            .backup-dr-hero h4 {
+                margin: 0 0 0.5rem;
+                font-size: 1.05rem;
+                font-weight: 700;
+                color: #0f172a;
+                display: flex;
+                align-items: center;
+                gap: 0.5rem;
+                letter-spacing: -0.02em;
+            }
+
+            .backup-dr-hero p {
+                margin: 0;
+                font-size: 0.875rem;
+                color: #475569;
+                line-height: 1.55;
+            }
+
+        .backup-dr-steps {
+            font-size: 0.8125rem;
+            color: #64748b;
+            line-height: 1.65;
+            padding-left: 1.15rem;
+            margin: 0 0 1rem;
+        }
+
+        .backup-dr-actions {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .backup-btn-dr {
+            padding: 0.75rem 1rem;
+            border-radius: 10px;
+            border: 1px solid #e2e8f0;
+            background: #fff;
+            font-weight: 600;
+            font-size: 0.8125rem;
+            cursor: pointer;
+            color: #0f172a;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            transition: background 0.15s ease, border-color 0.15s ease;
+        }
+
+            .backup-btn-dr.primary {
+                background: #dc2626;
+                border-color: #dc2626;
+                color: #fff;
+            }
+
+                .backup-btn-dr.primary:hover {
+                    background: #b91c1c;
+                }
+    </style>
+</head>
+<body class="ik-layout">
+    <div class="ik-sidebar">
+        <h2>🛡️ Guardia Bİ</h2>
+        <ul class="ik-nav-links">
+            <li><a href="bi-index.html" style="text-decoration:none;color:inherit;display:flex;align-items:center;gap:12px;"><i class="fa-solid fa-chart-line"></i> Genel Bakış</a></li>
+            <li><a href="bi-envanter.html" style="text-decoration:none;color:inherit;display:flex;align-items:center;gap:12px;"><i class="fa-solid fa-laptop"></i> Envanter Takibi</a></li>
+            <li><a href="bi-destek.html" style="text-decoration:none;color:inherit;display:flex;align-items:center;gap:12px;"><i class="fa-solid fa-headset"></i> Destek Talepleri</a></li>
+            <li><a href="bi-guvenlik.html" style="text-decoration:none;color:inherit;display:flex;align-items:center;gap:12px;"><i class="fa-solid fa-network-wired" ></i> Ağ & Güvenlik</a></li>
+            <li class="active"><i class="fa-solid fa-database"></i> Yedekleme Planı</li>
+        </ul>
+        <div class="ik-user-tag">
+            <div class="ik-user-avatar"><img src="img/selin_aksoy.jpg" alt=""></div>
+            <div class="ik-user-info"><span>Selin Aksoy</span><small>Bilgi İşlem Uzmanı</small></div>
+        </div>
+    </div>
+
+  <div class="ik-content">
+    <div class="dept-header">
+        <div class="page-title-group">
+            <h1>Veri Yedekleme Günlüğü</h1>
+            <p class="page-desc">Veritabanı ve sunucuların yedekleme döngülerini ve başarı durumlarını takip edin.</p>
+        </div>
+
+        <div class="notif-container">
+            <input type="checkbox" id="notif-toggle" aria-hidden="true" style="display:none;">
+            <label for="notif-toggle" class="notif-trigger">
+                <i class="fa-solid fa-bell"></i>
+                <span class="notif-badge">2</span>
+            </label>
+            <div class="notif-dropdown">
+    <h4>Mesaj Merkezi</h4>
+    
+    <div id="notif-incoming-list" class="notif-list">
+        <div class="notif-item" onclick="openReplyModal('SİSTEM', 'ERP Veri tabanı yedeklemesi başarılı bir şekilde bulut sunucuya aktarıldı.')" style="cursor: pointer;">
+            <span class="notif-status"></span>
+            <strong>SİSTEM</strong>
+            <span>ERP Yedeklemesi tamamlandı.</span>
+            <small style="display:block; color: #94a3b8; font-size: 0.75rem; margin-top: 5px;">
+                <i class="fa-regular fa-clock"></i> 02:30
+            </small>
+        </div>
+        
+        <div class="notif-item" onclick="openReplyModal('SUNUCU YÖNETİMİ', 'Dosya sunucusu (FS01) %95 doluluk oranına ulaştı. Kota artırımı veya temizlik gerekiyor.')" style="cursor: pointer;">
+            <span class="notif-status" style="background: #ef4444;"></span> <strong style="color: #b91c1c;">KRİTİK UYARI</strong>
+            <span>Dosya sunucusu kota sınırında!</span>
+            <small style="display:block; color: #94a3b8; font-size: 0.75rem; margin-top: 5px;">
+                <i class="fa-regular fa-clock"></i> 11:15
+            </small>
+        </div>
+    </div>
+
+    <div id="notif-outgoing-list" class="notif-list" style="display:none;">
+        <div class="notif-item">
+            <strong>SİZDEN -> SİSTEM</strong>
+            <span>Haftalık log temizleme komutu gönderildi.</span>
+            <small style="display:block; color: #94a3b8; font-size: 0.75rem; margin-top: 5px;">
+                <i class="fa-regular fa-clock"></i> 1 saat önce
+            </small>
+        </div>
+    </div>
+
+    <div class="notif-footer">
+        <button type="button" class="notif-action-btn" onclick="showIncoming()">
+            <i class="fa-solid fa-bell"></i> Gelenler
+        </button>
+        <button type="button" class="notif-action-btn" onclick="showOutgoing()">
+            <i class="fa-solid fa-paper-plane"></i> Gidenler
+        </button>
+    </div>
+</div>
+        </div>
+    </div>
+
+
+<div class="stats-container" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 25px; margin-bottom: 30px;">
+    
+    <div class="stat-card" style="background: white; padding: 25px; border-radius: 24px; display: flex; align-items: center; gap: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.03); border: none; transition: transform 0.3s ease;">
+        <div class="icon-box" style="background: #eff6ff; color: #3b82f6; width: 55px; height: 55px; border-radius: 16px; display: flex; align-items: center; justify-content: center; font-size: 1.5rem;">
+            <i class="fa-solid fa-cloud-arrow-up"></i>
+        </div>
+        <div class="card-info">
+            <small style="color: #64748b; font-weight: 700; text-transform: uppercase; font-size: 0.65rem; letter-spacing: 0.8px; display: block; margin-bottom: 4px;">Bulut Depolama</small>
+            <p style="margin: 0; font-size: 1.3rem; font-weight: 800; color: #0f172a;" id="cloudUsageText">1.2 TB / <span style="color: #cbd5e1;">2 TB</span></p>
+        </div>
+    </div>
+
+    <div class="stat-card" style="background: white; padding: 25px; border-radius: 24px; display: flex; align-items: center; gap: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.03); border: none; transition: transform 0.3s ease;">
+        <div class="icon-box" style="background: #f0fdf4; color: #10b981; width: 55px; height: 55px; border-radius: 16px; display: flex; align-items: center; justify-content: center; font-size: 1.5rem;">
+            <i class="fa-solid fa-server"></i>
+        </div>
+        <div class="card-info">
+            <small style="color: #64748b; font-weight: 700; text-transform: uppercase; font-size: 0.65rem; letter-spacing: 0.8px; display: block; margin-bottom: 4px;">Sistem Sağlığı</small>
+            <p style="margin: 0; font-size: 1.3rem; font-weight: 800; color: #10b981;" id="healthScore">%100 Online</p>
+        </div>
+    </div>
+
+    <div class="stat-card" style="background: white; padding: 25px; border-radius: 24px; display: flex; align-items: center; gap: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.03); border: none; transition: transform 0.3s ease;">
+        <div class="icon-box" style="background: #fef2f2; color: #ef4444; width: 55px; height: 55px; border-radius: 16px; display: flex; align-items: center; justify-content: center; font-size: 1.5rem;">
+           <i class="fa-solid fa-circle-exclamation"></i>
+        </div>
+        <div class="card-info">
+            <small style="color: #64748b; font-weight: 700; text-transform: uppercase; font-size: 0.65rem; letter-spacing: 0.8px; display: block; margin-bottom: 4px;">Kritik Durum</small>
+            <p style="margin: 0; font-size: 1.3rem; font-weight: 800; color: #ef4444;" id="criticalCount">1 Sunucu Dolu</p>
+        </div>
+    </div>
+</div>
+
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px;">
+    <div style="display: flex; gap: 15px;">
+        <button onclick="startRestoreTest()" style="background: #f8fafc; border: 1px solid #e2e8f0; color: #1e293b; padding: 10px 18px; border-radius: 10px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 8px;">
+            <i class="fa-solid fa-vial" style="color: #3b82f6;"></i> Geri Dönüş Testi
+        </button>
+        <button type="button" onclick="openBackupCalendar()" style="background: #f8fafc; border: 1px solid #e2e8f0; color: #1e293b; padding: 10px 18px; border-radius: 10px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 8px;">
+            <i class="fa-solid fa-calendar-days" style="color: #94a3b8;"></i> Takvim Şeması
+        </button>
+    </div>
+    
+    <button onclick="triggerEmergencyBackup()" style="background: #0f172a; color: white; border: none; padding: 12px 24px; border-radius: 12px; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 10px; box-shadow: 0 10px 20px rgba(15, 23, 42, 0.2);">
+        <i class="fa-solid fa-bolt-lightning" style="color: white;"></i> Yedeklemeyi Şimdi Başlat
+    </button>
+</div>
+
+<div class="data-table-box" style="flex: 1; max-height: calc(100vh - 430px - 22px);">
+    <table style="table-layout: fixed;">
+        <thead>
+            <tr>
+                <th style="width: 35%;">Kaynak / Sunucu</th>
+                <th style="width: 15%;">Tipi</th>
+                <th style="width: 15%;">Boyut</th>
+                <th style="width: 20%;">Son İşlem</th>
+                <th style="text-align: center; width: 15%;">Durum</th>
+            </tr>
+        </thead>
+        <tbody id="backupTableBody">
+            <tr>
+                <td>
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <i class="fa-solid fa-database" style="color: #3b82f6;"></i>
+                        <div><b>Veritabanı (ERP)</b><br><small style="color:#94a3b8;">SQL Server - Bulut</small></div>
+                    </div>
+                </td>
+                <td>Tam (Full)</td>
+                <td>450 GB</td>
+                <td>09.03.2025 02:00</td>
+                <td style="text-align: center;"><span style="background:#f0fdf4; color:#10b981; padding:5px 12px; border-radius:20px; font-size:0.75rem; font-weight:700;">BAŞARILI</span></td>
+            </tr>
+            <tr>
+                <td>
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <i class="fa-solid fa-folder-tree" style="color: #ef4444;"></i>
+                        <div><b>Dosya Sunucusu (FS01)</b><br><small style="color:#94a3b8;">Yerel Depolama</small></div>
+                    </div>
+                </td>
+                <td>Artımlı (Incr.)</td>
+                <td>780 GB</td>
+                <td>09.03.2025 03:30</td>
+                <td style="text-align: center;"><span style="background:#fef2f2; color:#ef4444; padding:5px 12px; border-radius:20px; font-size:0.75rem; font-weight:700;">KOTA DOLU</span></td>
+            </tr>
+            <tr>
+                <td>
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <i class="fa-solid fa-server" style="color: #6366f1;"></i>
+                        <div><b>CRM Veritabanı (PG-CRM)</b><br><small style="color:#94a3b8;">PostgreSQL - Bulut</small></div>
+                    </div>
+                </td>
+                <td>Tam (Full)</td>
+                <td>120 GB</td>
+                <td>22.03.2026 01:00</td>
+                <td style="text-align: center;"><span style="background:#f0fdf4; color:#10b981; padding:5px 12px; border-radius:20px; font-size:0.75rem; font-weight:700;">BAŞARILI</span></td>
+            </tr>
+            <tr>
+                <td>
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <i class="fa-solid fa-envelope" style="color: #8b5cf6;"></i>
+                        <div><b>Mail Sunucusu (EX01)</b><br><small style="color:#94a3b8;">Microsoft Exchange</small></div>
+                    </div>
+                </td>
+                <td>Artımlı (Incr.)</td>
+                <td>34 GB</td>
+                <td>22.03.2026 04:15</td>
+                <td style="text-align: center;"><span style="background:#f0fdf4; color:#10b981; padding:5px 12px; border-radius:20px; font-size:0.75rem; font-weight:700;">BAŞARILI</span></td>
+            </tr>
+            <tr>
+                <td>
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <i class="fa-solid fa-cloud" style="color: #0ea5e9;"></i>
+                        <div><b>Hyper-V VM Anlık Görüntüleri</b><br><small style="color:#94a3b8;">Cluster-HV-01</small></div>
+                    </div>
+                </td>
+                <td>Tam (Full)</td>
+                <td>2,1 TB</td>
+                <td>21.03.2026 23:45</td>
+                <td style="text-align: center;"><span style="background:#f0fdf4; color:#10b981; padding:5px 12px; border-radius:20px; font-size:0.75rem; font-weight:700;">BAŞARILI</span></td>
+            </tr>
+            <tr>
+                <td>
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <i class="fa-solid fa-cubes" style="color: #f59e0b;"></i>
+                        <div><b>SAP HANA Veritabanı</b><br><small style="color:#94a3b8;">Ana Üretim</small></div>
+                    </div>
+                </td>
+                <td>Artımlı (Incr.)</td>
+                <td>890 GB</td>
+                <td>22.03.2026 05:40</td>
+                <td style="text-align: center;"><span style="background:#eff6ff; color:#2563eb; padding:5px 12px; border-radius:20px; font-size:0.75rem; font-weight:700;">DEVAM EDİYOR</span></td>
+            </tr>
+            <tr>
+                <td>
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <i class="fa-solid fa-shield-halved" style="color: #64748b;"></i>
+                        <div><b>Aktif Dizin (DC01)</b><br><small style="color:#94a3b8;">Sistem Durumu Yedeği</small></div>
+                    </div>
+                </td>
+                <td>Tam (Full)</td>
+                <td>8 GB</td>
+                <td>22.03.2026 00:30</td>
+                <td style="text-align: center;"><span style="background:#f0fdf4; color:#10b981; padding:5px 12px; border-radius:20px; font-size:0.75rem; font-weight:700;">BAŞARILI</span></td>
+            </tr>
+            <tr>
+                <td>
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <i class="fa-solid fa-box-archive" style="color: #14b8a6;"></i>
+                        <div><b>Uzun Süreli Arşiv (S3)</b><br><small style="color:#94a3b8;">Uyumluluk Katmanı</small></div>
+                    </div>
+                </td>
+                <td>Tam (Full)</td>
+                <td>12 TB</td>
+                <td>20.03.2026 18:00</td>
+                <td style="text-align: center;"><span style="background:#f0fdf4; color:#10b981; padding:5px 12px; border-radius:20px; font-size:0.75rem; font-weight:700;">BAŞARILI</span></td>
+            </tr>
+            <tr>
+                <td>
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <i class="fa-solid fa-file-lines" style="color: #eab308;"></i>
+                        <div><b>Uygulama Logları (APP-LOG)</b><br><small style="color:#94a3b8;">Merkezi Log Sunucusu</small></div>
+                    </div>
+                </td>
+                <td>Artımlı (Incr.)</td>
+                <td>45 GB</td>
+                <td>21.03.2026 22:10</td>
+                <td style="text-align: center;"><span style="background:#fffbeb; color:#d97706; padding:5px 12px; border-radius:20px; font-size:0.75rem; font-weight:700;">UYARI</span></td>
+            </tr>
+            <tr>
+                <td>
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <i class="fa-solid fa-triangle-exclamation" style="color: #dc2626;"></i>
+                        <div><b>Yedekleme Aracısı (BK-PRX)</b><br><small style="color:#94a3b8;">Ara Sunucu</small></div>
+                    </div>
+                </td>
+                <td>Tam (Full)</td>
+                <td>2 GB</td>
+                <td>21.03.2026 21:00</td>
+                <td style="text-align: center;"><span style="background:#fef2f2; color:#ef4444; padding:5px 12px; border-radius:20px; font-size:0.75rem; font-weight:700;">HATA</span></td>
+            </tr>
+            <tr>
+                <td>
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <i class="fa-solid fa-hard-drive" style="color: #06b6d4;"></i>
+                        <div><b>NAS Paylaşımları (NAS-02)</b><br><small style="color:#94a3b8;">Dosya Arşivi</small></div>
+                    </div>
+                </td>
+                <td>Artımlı (Incr.)</td>
+                <td>560 GB</td>
+                <td>22.03.2026 02:20</td>
+                <td style="text-align: center;"><span style="background:#f0fdf4; color:#10b981; padding:5px 12px; border-radius:20px; font-size:0.75rem; font-weight:700;">BAŞARILI</span></td>
+            </tr>
+            <tr>
+                <td>
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <i class="fa-brands fa-docker" style="color: #2496ed;"></i>
+                        <div><b>Kubernetes Cluster Yapılandırması</b><br><small style="color:#94a3b8;">K8s-PROD</small></div>
+                    </div>
+                </td>
+                <td>Tam (Full)</td>
+                <td>15 GB</td>
+                <td>22.03.2026 03:05</td>
+                <td style="text-align: center;"><span style="background:#f0fdf4; color:#10b981; padding:5px 12px; border-radius:20px; font-size:0.75rem; font-weight:700;">BAŞARILI</span></td>
+            </tr>
+        </tbody>
+    </table>
+</div>
+  
+        <div id="note-sent">Notunuz seçilen birimlere iletildi.</div>
+
+    <div id="backupCalendarModal" role="dialog" aria-modal="true" aria-labelledby="backupCalTitle">
+        <div class="backup-cal-card" onclick="event.stopPropagation()">
+            <div class="backup-cal-head">
+                <div class="backup-cal-head-text">
+                    <h3 id="backupCalTitle">Yedek takvimi</h3>
+                    <p class="backup-cal-head-sub">Son 14 gün · Gün seçin</p>
+                </div>
+                <button type="button" class="backup-cal-close" onclick="closeBackupCalendar()" aria-label="Kapat">&times;</button>
+            </div>
+            <div class="backup-cal-tabs">
+                <button type="button" class="backup-cal-tab active" onclick="switchBackupCalTab('past', this)">Geçmiş</button>
+                <button type="button" class="backup-cal-tab" onclick="switchBackupCalTab('plan', this)">Plan</button>
+                <button type="button" class="backup-cal-tab" onclick="switchBackupCalTab('dr', this)">Kurtarma</button>
+            </div>
+            <div class="backup-cal-body">
+                <div id="backupCalPanelPast" class="backup-cal-panel active">
+                    <div class="backup-cal-grid-block">
+                        <p class="backup-cal-label">Takvim</p>
+                        <div id="backupPastCalGrid" class="backup-cal-grid" aria-label="Son 14 gün yedek özeti"></div>
+                    </div>
+                    <div id="calDayDetail" class="backup-cal-detail" role="region" aria-live="polite">
+                        <h4 id="calDayDetailTitle">—</h4>
+                        <div class="meta-row" id="calDayDetailMeta"></div>
+                        <p class="note" id="calDayDetailNote"></p>
+                        <button type="button" id="calDayRestoreBtn" class="backup-btn-restore" style="display:none;" onclick="runBackupRestoreFromCalendar()">
+                            <i class="fa-solid fa-clock-rotate-left"></i> Geri yükle
+                        </button>
+                    </div>
+                    <div class="backup-cal-legend">
+                        <span><span class="dot" style="background:linear-gradient(90deg,#4ade80,#22c55e);"></span> Tamam</span>
+                        <span><span class="dot" style="background:linear-gradient(90deg,#facc15,#eab308);"></span> Uyarı</span>
+                        <span><span class="dot" style="background:linear-gradient(90deg,#f87171,#ef4444);"></span> Hata</span>
+                    </div>
+                </div>
+                <div id="backupCalPanelPlan" class="backup-cal-panel">
+                    <div class="backup-strategy-block">
+                        <h4>Özet</h4>
+                        <ul>
+                            <li>Cuma: tam yedek · Hafta içi: artımlı</li>
+                        </ul>
+                    </div>
+                    <p class="backup-cal-label">Yaklaşan pencereler</p>
+                    <div class="backup-upcoming-wrap" tabindex="0">
+                        <div class="backup-upcoming-row">
+                            <div>
+                                <b>23.03.2026 02:00</b>
+                                <small>Veritabanı (ERP) — Tam (Full)</small>
+                            </div>
+                            <span class="backup-up-badge">Kritik</span>
+                        </div>
+                        <div class="backup-upcoming-drawer">
+                            <strong>Pencere özeti</strong>
+                            Bakım penceresi 01:45–04:30. Çıkış öncesi snapshot ve doğrulama kuyruğu.
+                        </div>
+                    </div>
+                    <div class="backup-upcoming-wrap" tabindex="0">
+                        <div class="backup-upcoming-row">
+                            <div>
+                                <b>23.03.2026 03:30</b>
+                                <small>Dosya Sunucusu (FS01) — Artımlı</small>
+                            </div>
+                            <span class="backup-up-badge" style="background:#fef3c7;color:#b45309;">Kota</span>
+                        </div>
+                        <div class="backup-upcoming-drawer">
+                            <strong>Pencere özeti</strong>
+                            Kota eşiğine yakın; önce eski artımlar temizlenir. Tahmini süre 55 dk. Çakışma: ERP tam yedek ile 30 dk örtüşme (izleniyor).
+                        </div>
+                    </div>
+                    <div class="backup-upcoming-wrap" tabindex="0">
+                        <div class="backup-upcoming-row">
+                            <div>
+                                <b>23.03.2026 22:00</b>
+                                <small>SAP HANA — Artımlı</small>
+                            </div>
+                            <span class="backup-up-badge" style="background:#f0fdf4;color:#15803d;">Planlı</span>
+                        </div>
+                        <div class="backup-upcoming-drawer">
+                            <strong>Pencere özeti</strong>
+                            Düşük yük slotu. Delta + log truncate. Onay: otomatik SLA içi.
+                        </div>
+                    </div>
+                    <div class="backup-upcoming-wrap" tabindex="0">
+                        <div class="backup-upcoming-row">
+                            <div>
+                                <b>24.03.2026 (Cuma) 01:00</b>
+                                <small>Kubernetes (K8s-PROD) — Tam yapılandırma + konsolide doğrulama</small>
+                            </div>
+                            <span class="backup-up-badge">Planlı</span>
+                        </div>
+                        <div class="backup-upcoming-drawer">
+                            <strong>Pencere özeti</strong>
+                            Haftalık tam: etcd, PV anlık görüntüleri ve registry. Doğrulama job’ı 04:00’te biter. RTO hedefi bildirilir.
+                        </div>
+                    </div>
+                </div>
+                <div id="backupCalPanelDr" class="backup-cal-panel">
+                    <div class="backup-dr-hero">
+                        <h4><i class="fa-solid fa-shield-heart" style="color:#2563eb;"></i> Geri yükleme</h4>
+                        <p>Yeşil bir güne dönün; simülasyon — canlıda onay gerekir.</p>
+                    </div>
+                    <ol class="backup-dr-steps">
+                        <li>Geçmiş sekmesinde yeşil gün seçin</li>
+                        <li>Boyut / süreyi kontrol edin</li>
+                        <li>Geri yükle</li>
+                    </ol>
+                    <div class="backup-dr-actions">
+                        <button type="button" class="backup-btn-dr primary" onclick="drRestoreLastGoodDay()">
+                            <i class="fa-solid fa-backward-fast"></i> Son iyi gün (23.03.2026)
+                        </button>
+                        <button type="button" class="backup-btn-dr" onclick="goToBackupCalPastTab()">
+                            <i class="fa-solid fa-calendar-day"></i> Takvimden seç
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+<div id="replyModal" class="reply-modal">
+    <div class="reply-content">
+        <div class="reply-header">
+            <i class="fa-solid fa-reply"></i>
+            <h3 id="replyTarget">HUKUK Birimine Cevap Yaz</h3>
+        </div>
+        
+        <div id="replyOriginalMessage" class="original-msg-preview">
+            "5 adet yeni iş sözleşmesi onaylandı."
+        </div>
+        
+        <textarea id="replyText" class="reply-textarea" placeholder="Cevabınızı buraya yazın..."></textarea>
+        
+        <div class="reply-actions">
+            <button class="btn-reply-cancel" onclick="closeReplyModal()">Vazgeç</button>
+            <button class="btn-reply-send" onclick="sendReply()">Cevapla</button>
+        </div>
+    </div>
+    </div>
+    <script>
+         /* 1. MEVCUT CANLI TAKİP MODALLARI */
+function openLiveTracking() { document.getElementById('liveTrackingModal').style.display = 'flex'; }
+function closeLiveTracking() { document.getElementById('liveTrackingModal').style.display = 'none'; }
+
+/* 2. BİLDİRİM LİSTESİ GEÇİŞLERİ (Gelen/Giden) */
+function showIncoming() {
+    const incoming = document.getElementById('notif-incoming-list');
+    const outgoing = document.getElementById('notif-outgoing-list');
+    const btnIn = document.querySelector('.notif-action-btn[onclick="showIncoming()"]');
+    const btnOut = document.querySelector('.notif-action-btn[onclick="showOutgoing()"]');
+    if (incoming && outgoing) {
+        incoming.style.display = 'block';
+        outgoing.style.display = 'none';
+        btnIn.classList.add('active');
+        btnOut.classList.remove('active');
+    }
+}
+
+function showOutgoing() {
+    const incoming = document.getElementById('notif-incoming-list');
+    const outgoing = document.getElementById('notif-outgoing-list');
+    const btnIn = document.querySelector('.notif-action-btn[onclick="showIncoming()"]');
+    const btnOut = document.querySelector('.notif-action-btn[onclick="showOutgoing()"]');
+    if (incoming && outgoing) {
+        incoming.style.display = 'none';
+        outgoing.style.display = 'block';
+        btnOut.classList.add('active');
+        btnIn.classList.remove('active');
+    }
+}
+
+/* 3. YENİ HIZLI CEVAPLAMA SİSTEMİ */
+function openReplyModal(sender, message) {
+    document.getElementById('replyTarget').innerText = sender + " Birimine Cevap Yaz";
+    document.getElementById('replyOriginalMessage').innerText = '"' + message + '"';
+    document.getElementById('replyModal').style.display = 'flex';
+}
+
+function closeReplyModal() {
+    document.getElementById('replyModal').style.display = 'none';
+    document.getElementById('replyText').value = '';
+}
+
+function sendReply() {
+    const text = document.getElementById('replyText').value;
+    const target = document.getElementById('replyTarget').innerText.replace(" Cevap Yaz", "");
+    if(text.trim() !== "") {
+        alert(" cevabınız " + target + " birimine iletildi.");
+        closeReplyModal();
+    } else {
+        alert("Lütfen boş bir mesaj göndermeyin.");
+    }
+}
+
+/* 4. GENEL TIKLAMA VE BAŞLANGIÇ AYARLARI */
+window.onclick = function(event) {
+    let liveModal = document.getElementById('liveTrackingModal');
+    let replyModal = document.getElementById('replyModal');
+    let calModal = document.getElementById('backupCalendarModal');
+
+    if (event.target == liveModal) { liveModal.style.display = "none"; }
+    if (event.target == replyModal) { replyModal.style.display = "none"; }
+    if (calModal && event.target === calModal) { closeBackupCalendar(); }
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    const btnIn = document.querySelector('.notif-action-btn[onclick="showIncoming()"]');
+    if(btnIn) btnIn.classList.add('active');
+});
+function sendReply() {
+    const text = document.getElementById('replyText').value;
+    
+    // trim() metni temizler, eğer sonuç boş değilse gönderir
+    if(text.trim() !== "") {
+        alert("Cevabınız başarıyla iletildi.");
+        closeReplyModal();
+    } else {
+        // Kutu boşsa burası çalışır ve engeller
+        alert("Lütfen boş bir mesaj göndermeyin.");
+    }
+}// Boş alana tıklandığında açık olan her şeyi kapat
+document.addEventListener('click', function(event) {
+    // 1. Checkbox ile açılan menüleri kapat (Bildirimler ve Not Kutusu)
+    const notifToggle = document.getElementById('notif-toggle');
+    const noteToggle = document.getElementById('note-box-toggle');
+    
+    // Bildirimler için: Tıklanan yer bildirim alanı değilse ve menü açıksa kapat
+    const notifContainer = document.querySelector('.notif-container');
+    if (notifToggle.checked && !notifContainer.contains(event.target)) {
+        notifToggle.checked = false;
+    }
+
+    // Not Kutusu için: Tıklanan yer not kutusu veya onu açan buton değilse kapat
+    const msgBox = document.querySelector('.msg-box');
+    const quickNoteBtn = document.querySelector('.quick-note-btn');
+    if (noteToggle.checked && !msgBox.contains(event.target) && !quickNoteBtn.contains(event.target)) {
+        noteToggle.checked = false;
+    }
+
+    // 2. Modal'lar için (Zaten senin kodunda var ama daha temiz hali):
+    const replyModal = document.getElementById('replyModal');
+    if (event.target === replyModal) {
+        closeReplyModal();
+    }
+    const backupCalModal = document.getElementById('backupCalendarModal');
+    if (backupCalModal && event.target === backupCalModal) {
+        closeBackupCalendar();
+    }
+});
+
+// 1. ACİL YEDEKLEME TETİKLEME
+function triggerEmergencyBackup() {
+    const btn = event.currentTarget;
+    const originalText = btn.innerHTML;
+    
+    // Butonu "Çalışıyor" moduna sokalım
+    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Yedekleniyor...';
+    btn.style.opacity = "0.7";
+    btn.style.pointerEvents = "none";
+
+    // Simülasyon: 3 saniye sonra başarı mesajı
+    setTimeout(() => {
+        btn.innerHTML = '<i class="fa-solid fa-check"></i> Yedekleme Tamamlandı!';
+        btn.style.background = "#10b981";
+        
+        // Tabloya hayali bir "Yeni Yedek" satırı ekleyebiliriz veya toast gösterebiliriz
+        alert("tüm kritik sunucuların anlık yedeklemesi başarıyla buluta aktarıldı.");
+        
+        // 2 saniye sonra butonu eski haline döndür
+        setTimeout(() => {
+            btn.innerHTML = originalText;
+            btn.style.background = "#0f172a";
+            btn.style.opacity = "1";
+            btn.style.pointerEvents = "auto";
+        }, 2000);
+    }, 3000);
+}
+
+// 2. GERİ DÖNÜŞ TESTİ (RESTORE TEST)
+function startRestoreTest() {
+    const confirmTest = confirm(" son yedeklerin veri bütünlüğü testi başlatılsın mı? (Bu işlem sunucu yükünü %5 artırabilir)");
+    
+    if(confirmTest) {
+        // Küçük bir yükleme barı veya toast notification simülasyonu
+        let progress = 0;
+        console.log("Test başlatıldı...");
+        
+        // Burada bir alert ile sonucu bağlama
+        setTimeout(() => {
+            alert(" Veri Bütünlüğü Testi Sonucu: %100 Başarılı. Yedeklenen dosyalar geri dönülebilir durumda.");
+        }, 1500);
+    }
+}
+var BACKUP_CAL_ANCHOR = new Date(2026, 2, 24);
+var backupCalSelection = null;
+
+function backupCalIso(d) {
+    return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+}
+
+function backupCalDayMeta(iso) {
+    if (iso === '2026-03-24') {
+        return { status: 'today', size: '—', duration: '—', summary: 'Rapor bu gece tamamlanır. Geri yükleme için geçmiş bir gün seçin.' };
+    }
+    var bad = { '2026-03-16': true, '2026-03-21': true };
+    var warn = { '2026-03-13': true, '2026-03-19': true };
+    if (bad[iso]) {
+        return { status: 'bad', size: '—', duration: '—', summary: 'Kopya eksik veya hatalı. Önceki yeşil güne bakın.' };
+    }
+    if (warn[iso]) {
+        return { status: 'warn', size: '412 GB', duration: '2s 40dk', summary: 'Gecikmeli tamamlandı; izlemeye alındı.' };
+    }
+    if (iso === '2026-03-23') {
+        return { status: 'ok', size: '1,12 TB', duration: '3s 48dk', summary: 'Konsolide yedek tamam. Geri yükleme için uygun.' };
+    }
+    if (iso === '2026-03-18') {
+        return { status: 'ok', size: '100 GB', duration: '48 dk', summary: 'Normal tamamlanma.' };
+    }
+    var sizes = ['580 GB', '620 GB', '640 GB', '590 GB', '605 GB'];
+    var h = 0;
+    for (var i = 0; i < iso.length; i++) h = (h + iso.charCodeAt(i)) % sizes.length;
+    return { status: 'ok', size: sizes[h], duration: '~2s 15dk', summary: 'Artımlı + tam bileşenler tamam.' };
+}
+
+function renderBackupPastCalendar() {
+    var grid = document.getElementById('backupPastCalGrid');
+    if (!grid) return;
+    grid.innerHTML = '';
+    var wd = ['Paz', 'Pzt', 'Sal', 'Çar', 'Per', 'Cum', 'Cmt'];
+    for (var i = 13; i >= 0; i--) {
+        var d = new Date(BACKUP_CAL_ANCHOR);
+        d.setDate(d.getDate() - i);
+        var iso = backupCalIso(d);
+        var meta = backupCalDayMeta(iso);
+        var btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'backup-cal-day';
+        btn.dataset.iso = iso;
+        if (meta.status === 'today') btn.classList.add('is-today');
+        if (meta.status === 'ok') btn.classList.add('status-ok');
+        else if (meta.status === 'warn') btn.classList.add('status-warn');
+        else if (meta.status === 'bad') btn.classList.add('status-bad');
+        else if (meta.status === 'today') btn.classList.add('status-today');
+        var labelWd = wd[d.getDay()];
+        var labelNum = d.getDate();
+        btn.innerHTML = '<span class="wd">' + (meta.status === 'today' ? 'Bugün' : labelWd) + '</span><span class="num">' + labelNum + '</span>';
+        btn.addEventListener('click', function (is) {
+            return function () {
+                selectBackupCalDay(is, this);
+            };
+        }(iso));
+        grid.appendChild(btn);
+    }
+}
+
+function selectBackupCalDay(iso, btnEl) {
+    var detail = document.getElementById('calDayDetail');
+    var title = document.getElementById('calDayDetailTitle');
+    var metaEl = document.getElementById('calDayDetailMeta');
+    var note = document.getElementById('calDayDetailNote');
+    var restoreBtn = document.getElementById('calDayRestoreBtn');
+    if (!detail || !title || !metaEl || !note || !restoreBtn) return;
+
+    /* Aynı güne tekrar tıklanınca detayı kapat */
+    if (backupCalSelection && backupCalSelection.iso === iso) {
+        document.querySelectorAll('.backup-cal-day').forEach(function (b) { b.classList.remove('selected'); });
+        backupCalSelection = null;
+        detail.classList.remove('visible');
+        restoreBtn.style.display = 'none';
+        restoreBtn.disabled = true;
+        return;
+    }
+
+    var meta = backupCalDayMeta(iso);
+    document.querySelectorAll('.backup-cal-day').forEach(function (b) { b.classList.remove('selected'); });
+    if (btnEl) btnEl.classList.add('selected');
+
+    backupCalSelection = { iso: iso, meta: meta, label: iso.split('-').reverse().join('.') };
+
+    detail.classList.add('visible');
+    title.textContent = backupCalSelection.label;
+
+    if (meta.status === 'today') {
+        metaEl.innerHTML = '<span><b>Durum</b> Bugün</span>';
+    } else {
+        metaEl.innerHTML = '<span><b>Boyut</b> ' + meta.size + '</span><span><b>Süre</b> ' + meta.duration + '</span>';
+    }
+    note.textContent = meta.summary;
+
+    if (meta.status === 'ok') {
+        restoreBtn.style.display = 'flex';
+        restoreBtn.disabled = false;
+    } else {
+        restoreBtn.style.display = 'none';
+        restoreBtn.disabled = true;
+    }
+}
+
+function runBackupRestoreFromCalendar() {
+    if (!backupCalSelection || backupCalSelection.meta.status !== 'ok') return;
+    var msg = 'Seçilen güne (' + backupCalSelection.label + ') ait yedek geri yüklensin mi?\n\nBoyut: ' + backupCalSelection.meta.size + '\nSüre (alınırken): ' + backupCalSelection.meta.duration + '\n\nBu simülasyon canlı verinin üzerine yazmayı temsil eder.';
+    if (!confirm(msg)) return;
+    alert('Geri yükleme kuyruğa alındı: ' + backupCalSelection.label + ' — ' + backupCalSelection.meta.size + '. Bakım penceresinde uygulanacak (simülasyon).');
+}
+
+function drRestoreLastGoodDay() {
+    var iso = '2026-03-23';
+    backupCalSelection = { iso: iso, meta: backupCalDayMeta(iso), label: '23.03.2026' };
+    if (!confirm('Dün (23.03.2026) başarılı yedek noktasına dönülsün mü?\n\nBoyut: 1,12 TB — Süre: 3 sa. 48 dk\n\n(Simülasyon)')) return;
+    alert('Geri yükleme başlatıldı: 23.03.2026 konsolide yedek. Canlı sistem bu kopya ile eşitlenecek (simülasyon).');
+}
+
+function goToBackupCalPastTab() {
+    var tabs = document.querySelectorAll('#backupCalendarModal .backup-cal-tab');
+    switchBackupCalTab('past', tabs[0]);
+}
+
+function openBackupCalendar() {
+    var m = document.getElementById('backupCalendarModal');
+    if (!m) return;
+    renderBackupPastCalendar();
+    var detail = document.getElementById('calDayDetail');
+    var restoreBtn = document.getElementById('calDayRestoreBtn');
+    if (detail) detail.classList.remove('visible');
+    if (restoreBtn) { restoreBtn.style.display = 'none'; restoreBtn.disabled = true; }
+    backupCalSelection = null;
+    m.classList.add('is-open');
+    m.style.display = 'flex';
+}
+
+function closeBackupCalendar() {
+    var m = document.getElementById('backupCalendarModal');
+    if (!m) return;
+    m.classList.remove('is-open');
+    m.style.display = 'none';
+}
+
+function switchBackupCalTab(tab, btnEl) {
+    document.querySelectorAll('#backupCalendarModal .backup-cal-tab').forEach(function (t) {
+        t.classList.remove('active');
+    });
+    if (btnEl) btnEl.classList.add('active');
+
+    var past = document.getElementById('backupCalPanelPast');
+    var plan = document.getElementById('backupCalPanelPlan');
+    var dr = document.getElementById('backupCalPanelDr');
+    if (past) past.classList.toggle('active', tab === 'past');
+    if (plan) plan.classList.toggle('active', tab === 'plan');
+    if (dr) dr.classList.toggle('active', tab === 'dr');
+}
+// mevcut kodların sonu
+
+    // Sayfa her açıldığında giden mesajları ortak hafızadan (localStorage) çek
+    document.addEventListener('DOMContentLoaded', function() {
+        updateOutgoingList(); 
+    });
+
+    function updateOutgoingList() {
+        const listContainer = document.getElementById('notif-outgoing-list');
+        if (!listContainer) return;
+
+        // Tarayıcının ortak hafızasından mesajları alma
+        const gidenMesajlar = JSON.parse(localStorage.getItem('guardia_giden_mesajlar') || '[]');
+
+        listContainer.innerHTML = ""; 
+
+        if (gidenMesajlar.length === 0) {
+            listContainer.innerHTML = '<div class="notif-item"><span>Henüz gönderilmiş bir not bulunmuyor.</span></div>';
+        } else {
+            gidenMesajlar.forEach(msg => {
+                listContainer.innerHTML += `
+                    <div class="notif-item">
+                        <strong>SİZDEN -> ${msg.hedef}</strong>
+                        <span>${msg.icerik}</span>
+                        <small style="display:block; color: #94a3b8; font-size: 0.75rem; margin-top: 5px;">
+                            <i class="fa-regular fa-clock"></i> ${msg.saat}
+                        </small>
+                    </div>`;
+            });
+        }
+    }
+</script>
+</body>
+</html>

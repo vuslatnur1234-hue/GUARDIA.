@@ -1,0 +1,1345 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <script>
+        if (!localStorage.getItem('token')) {
+            window.location.href = 'admin-login.html';
+        }
+    </script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Guardia | Hukuk</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/ik-sidebar.css">
+    <link rel="stylesheet" href="css/dept-common.css">
+    <style>
+        :root {
+            --sidebar: #0f172a;
+            --text-main: #1e293b;
+            --text-sub: #64748b;
+            --white: #fff;
+        }
+
+        .hero {
+            margin-bottom: 28px;
+        }
+
+            .hero h2 {
+                margin: 0 0 6px 0;
+                font-size: 1.6rem;
+                color: var(--sidebar);
+            }
+
+            .hero p {
+                margin: 0;
+                font-size: 0.95rem;
+                color: var(--text-sub);
+            }
+
+        .stats-container {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+            margin-bottom: 28px;
+        }
+
+        .card {
+            background: var(--white);
+            padding: 24px;
+            border-radius: 20px;
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
+            transition: all 0.3s ease;
+            border: 1px solid transparent;
+        }
+
+            .card:hover {
+                transform: translateY(-4px);
+                box-shadow: 0 20px 25px -5px rgba(0,0,0,0.08);
+                border-color: var(--accent);
+            }
+
+            .card h4 {
+                margin: 0;
+                color: #64748b;
+                font-size: 0.8rem;
+                text-transform: uppercase;
+                letter-spacing: 0.5px;
+            }
+
+            .card p {
+                margin: 10px 0 0 0;
+                font-size: 1.75rem;
+                font-weight: 700;
+                color: var(--text-main);
+            }
+
+        .data-table-box {
+            background: var(--white);
+            padding: 25px;
+            border-radius: 20px;
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
+            margin-bottom: 100px;
+        }
+
+            .data-table-box h3 {
+                margin: 0 0 20px 0;
+                font-size: 1.1rem;
+                color: var(--sidebar);
+            }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th {
+            text-align: left;
+            padding: 14px;
+            border-bottom: 2px solid #f1f5f9;
+            color: #64748b;
+            font-size: 0.9rem;
+        }
+
+        td {
+            padding: 14px;
+            border-bottom: 1px solid #f1f5f9;
+            font-size: 0.9rem;
+        }
+
+
+        /* 1. ÜST BANNER (KAZANMA ORANI) */
+        .win-banner {
+            background: white;
+            border-radius: 20px;
+            padding: 20px 35px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border: 1px solid #e2e8f0;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.02);
+            margin-bottom: 25px;
+        }
+
+            .win-banner h2 {
+                margin: 0;
+                font-size: 1rem;
+                color: #64748b;
+                text-transform: uppercase;
+                letter-spacing: 1px;
+            }
+
+            .win-banner .rate {
+                font-size: 2.2rem;
+                font-weight: 800;
+                color: #0f172a;
+            }
+
+        /* 2. ORTA BÖLÜM (RİSK & NOTLAR) */
+        .mid-section {
+            display: grid;
+            grid-template-columns: 1fr 1.5fr;
+            gap: 25px;
+            margin-bottom: 25px;
+        }
+
+        .glass-box {
+            background: white;
+            border-radius: 22px;
+            padding: 25px;
+            border: 1px solid #e2e8f0;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.03);
+        }
+
+        /* NOT LİSTESİ VE ONAYLAMA SİSTEMİ */
+        .task-row {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            padding: 14px;
+            background: #f8fafc;
+            border-radius: 12px;
+            margin-bottom: 10px;
+            transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            border: 1px solid transparent;
+        }
+
+            .task-row:hover {
+                border-color: #cbd5e1;
+                background: #f1f5f9;
+            }
+
+        .check-box {
+            width: 20px;
+            height: 20px;
+            border-radius: 6px;
+            border: 2px solid #cbd5e1;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* 3. ALT PANEL (YILLIK TREND) */
+        .bottom-panel {
+            background: white;
+            border-radius: 22px;
+            padding: 25px;
+            border: 1px solid #e2e8f0;
+            flex: 1; /* Kalan boşluğu doldurur */
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .trend-bars {
+            display: flex;
+            align-items: flex-end;
+            gap: 12px;
+            height: 100px;
+            margin-top: 20px;
+        }
+
+        .bar-item {
+            flex: 1;
+            background: #e2e8f0;
+            border-radius: 4px;
+            position: relative;
+            transition: 0.3s;
+        }
+
+            .bar-item.active {
+                background: #0f172a;
+            }
+            /* Şimdiki Ay Lacivert */
+
+            .bar-item:hover::after {
+                content: attr(data-val);
+                position: absolute;
+                top: -25px;
+                left: 50%;
+                transform: translateX(-50%);
+                font-size: 0.7rem;
+                font-weight: 800;
+                color: #0f172a;
+            }
+
+        /* BAR ÜZERİNE GELİNCE AÇILAN KUTUCUK (TOOLTIP) */
+        .bar-item {
+            flex: 1;
+            background: #e2e8f0; /* Gelecek aylar sönük */
+            border-radius: 4px;
+            position: relative;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+            /* Ocak, Şubat ve Mart (Yaşanan aylar) Lacivert */
+            .bar-item.past, .bar-item.active {
+                background: #0f172a;
+            }
+
+            /* ÜZERİNE GELİNCE: Beyaz yazı, lacivert kutu efekti */
+            .bar-item:hover::after {
+                content: attr(data-val);
+                position: absolute;
+                top: -35px;
+                left: 50%;
+                transform: translateX(-50%);
+                background: #0f172a;
+                color: white;
+                padding: 4px 10px;
+                border-radius: 6px;
+                font-size: 0.7rem;
+                font-weight: 700;
+                white-space: nowrap;
+                box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+                z-index: 10;
+            }
+
+            /* Küçük ok ucu */
+            .bar-item:hover::before {
+                content: '';
+                position: absolute;
+                top: -12px;
+                left: 50%;
+                transform: translateX(-50%);
+                border: 5px solid transparent;
+                border-top-color: #0f172a;
+            }
+
+        /*ÖNEMLİ O YER*/
+        /* 2. Ana içerik alanını ekran yüksekliğine mühürle */
+        .ik-content {
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden; /* İçerik taşmasın */
+            padding-bottom: 20px !important; /* Alt kısımdan biraz nefes payı */
+        }
+
+        /* 1. TABLO KUTUSU */
+        .data-table-box {
+            flex: 1;
+            overflow-y: auto;
+            /* Dünkü sayfada kullandığımız o dinamik yükseklik formülü */
+            max-height: calc(100vh - 380px);
+            background: white;
+            border-radius: 22px;
+            padding: 0 20px 20px 20px; /* Üst padding'i 0 yaptık ki başlık tam sıfırlansın */
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
+            position: relative;
+            margin-bottom: 20px;
+            scrollbar-width: none; /* Firefox için çubuğu gizle */
+        }
+
+            /* Kaydırma çubuğunu Chrome/Safari için tamamen gizle */
+            .data-table-box::-webkit-scrollbar {
+                display: none;
+            }
+
+        /* 2. BAŞLIKLAR: Sızdırmazlık buradaki 'background' ve 'z-index' içinde */
+        thead th {
+            position: sticky !important;
+            top: 0;
+            background-color: #ffffff !important;
+            z-index: 10 !important;
+            padding: 18px 15px !important;
+            color: #94a3b8;
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            border-bottom: 2px solid #f1f5f9 !important;
+        }
+
+        /* 3. TABLO YAPISI: border-collapse sticky'i bozmasın diye 'separate' yapma */
+        table {
+            width: 100%;
+            border-collapse: separate !important;
+            border-spacing: 0;
+        }
+
+        /* Satırların (td) kendi arka planı olsun ki kayarken başlığın arkasına geçince 'yok' olsunlar */
+        td {
+            background-color: #ffffff;
+            border-bottom: 1px solid #f1f5f9;
+            padding: 15px !important;
+        }
+        /*ÖNEMLİ BİTİŞ*/
+
+        /* NOT LİSTESİNİN OLDUĞU KUTUYU SABİTLE */
+        #noteList {
+            max-height: 200px; /* Kutunun boyunu mühürledik */
+            overflow-y: auto; /* Fazla not gelince kendi içinde kayar */
+            padding-right: 5px;
+            scrollbar-width: thin; /* Firefox için kibar çubuk */
+        }
+
+            /* Chrome/Safari için kibar kaydırma çubuğu */
+            #noteList::-webkit-scrollbar {
+                width: 4px;
+            }
+
+            #noteList::-webkit-scrollbar-thumb {
+                background: #cbd5e1;
+                border-radius: 10px;
+            }
+
+        /* Sayfanın genel taşmasını engellemek için içeriği mühürle */
+        .ik-content {
+            height: 100vh;
+            overflow: hidden; /* Sayfa asla komple kaymaz */
+            display: flex;
+            flex-direction: column;
+        }
+
+        #noteList {
+            max-height: 200px;
+            overflow-y: auto;
+            padding-right: 5px;
+            /* Çubuğu tamamen gizleyen sihirli komutlar */
+            scrollbar-width: none; /* Firefox için */
+            -ms-overflow-style: none; /* IE ve Edge için */
+        }
+
+            /* Chrome, Safari ve Opera için */
+            #noteList::-webkit-scrollbar {
+                display: none;
+            }
+
+        #noteList {
+            height: 180px; /* KUTUNUN BOYUNU SABİTLEDİK (3-4 not sığar) */
+            overflow-y: auto; /* 3 taneden fazla gelince içerde kayma başlar */
+            padding-right: 5px;
+            scrollbar-width: none;
+            -ms-overflow-style: none;
+        }
+
+            /* Chrome/Safari için çubuğu gizle */
+            #noteList::-webkit-scrollbar {
+                display: none;
+            }
+    </style>
+</head>
+<body class="ik-layout">
+    <div class="ik-sidebar">
+        <h2>🛡️ Guardia HK</h2>
+        <ul class="ik-nav-links">
+            <li class="active"><i class="fa-solid fa-chart-line"></i> Genel Bakış</li>
+            <li><a href="hk-sozlesme.html" style="text-decoration:none;color:inherit;display:flex;align-items:center;gap:12px;"><i class="fa-solid fa-file-signature"></i> Sözleşmeler</a></li>
+            <li><a href="hk-dava.html" style="text-decoration:none;color:inherit;display:flex;align-items:center;gap:12px;"><i class="fa-solid fa-scale-balanced"></i> Dava Dosyaları</a></li>
+            <li><a href="hk-mevzuat.html" style="text-decoration:none;color:inherit;display:flex;align-items:center;gap:12px;"><i class="fa-solid fa-book"></i> Mevzuat Takibi</a></li>
+            <li><a href="hk-arsiv.html" style="text-decoration:none;color:inherit;display:flex;align-items:center;gap:12px;"><i class="fa-solid fa-folder-open"></i> Arşiv</a></li>
+        
+        </ul>
+   
+     <div class="ik-user-tag" style="position: relative; display: flex; align-items: center;">
+    <div class="ik-user-avatar"><img src="img/selin_aksoy.jpg" alt=""></div>
+    <div class="ik-user-info"><span id="sidebarAdSoyad">Selin Aksoy</span><small id="sidebarDepartman">Hukuk Danışmanı</small></div>
+
+    <a href="javascript:void(0)" 
+       onclick="if(confirm('Oturumu kapatmak istediğinize emin misiniz?')) { window.location.href='admin-login.html'; }" 
+       style="position: absolute; right: 15px; color: white; opacity: 0.8; text-decoration: none; cursor: pointer;">
+        <i class="fa-solid fa-right-from-bracket" style="font-size: 1.1rem;"></i>
+    </a>
+</div>
+        
+    </div>
+
+   <div class="ik-content">
+    <div class="dept-header">
+        <div class="page-title-group">
+            <h1>Hukuk Operasyon Merkezi</h1>
+        </div>
+
+        <div class="notif-container">
+            <input type="checkbox" id="notif-toggle" aria-hidden="true" style="display:none;">
+            <label for="notif-toggle" class="notif-trigger">
+                <i class="fa-solid fa-bell"></i>
+                <span class="notif-badge">2</span>
+            </label>
+            <div class="notif-dropdown">
+    <h4>Mesaj Merkezi</h4>
+    
+    <div id="notif-incoming-list" class="notif-list">
+        <div class="notif-item" onclick="openReplyModal('İNSAN KAYNAKLARI', 'Bilgi İşlem departmanından ayrılacak personel için ekipman teslim ve erişim kapatma protokolü onayınızı bekliyor.')" style="cursor: pointer;">
+            <span class="notif-status" style="background: #f59e0b;"></span> <strong>İNSAN KAYNAKLARI</strong>
+            <span>İşten ayrılma protokolü bekliyor.</span>
+            <small style="display:block; color: #94a3b8; font-size: 0.75rem; margin-top: 5px;">
+                <i class="fa-regular fa-clock"></i> 08:45
+            </small>
+        </div>
+        
+        <div class="notif-item" onclick="openReplyModal('SATIN ALMA', 'Sunucu lisans yenileme tedarikçi sözleşmesi, talep ettiğiniz teknik maddeler eklenerek revize edildi.')" style="cursor: pointer;">
+            <span class="notif-status"></span>
+            <strong>SATIN ALMA</strong>
+            <span>Tedarikçi sözleşmesi revize edildi.</span>
+            <small style="display:block; color: #94a3b8; font-size: 0.75rem; margin-top: 5px;">
+                <i class="fa-regular fa-clock"></i> 13:20
+            </small>
+        </div>
+    </div>
+
+    <div id="notif-outgoing-list" class="notif-list" style="display:none;">
+        <div class="notif-item">
+            <strong>SİZDEN -> YÖNETİM</strong>
+            <span>Q1 dönemi BT altyapı maliyet raporu sunuldu.</span>
+            <small style="display:block; color: #94a3b8; font-size: 0.75rem; margin-top: 5px;">
+                <i class="fa-regular fa-clock"></i> 2 saat önce
+            </small>
+        </div>
+    </div>
+
+    <div class="notif-footer">
+     <button type="button" class="notif-action-btn active" onclick="showIncoming()">
+                <i class="fa-solid fa-bell"></i> Gelenler
+            </button>
+        <button type="button" class="notif-action-btn" onclick="showOutgoing()">
+            <i class="fa-solid fa-paper-plane"></i> Gidenler
+        </button>
+    </div>
+</div>
+        </div>
+    </div>
+
+<div class="win-banner">
+    <div>
+        <h2 style="color: #0f172a !important; font-weight: 800; opacity: 1 !important;">DAVA KAZANMA ORANI</h2>
+        <p style="margin: 3px 0 0 0; color: #64748b; font-size: 0.8rem; font-weight: 600;">
+            Kurumsal Hukuk Performans Endeksi (<span id="lastUpdateDate">Mart 2026</span>)
+        </p>
+    </div>
+    <div class="rate" id="winRateValue" style="color: #10b981; font-weight: 900;">%92.4</div>
+</div>
+
+<div class="mid-section">
+    <div class="glass-box" id="riskBox" style="background: white; border-radius: 22px; padding: 25px; border: 1px solid #e2e8f0; box-shadow: 0 4px 15px rgba(0,0,0,0.03);">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px;">
+        <h3 style="margin:0; font-size: 0.95rem; color: #0f172a;">
+            <i class="fa-solid fa-chart-pie" style="margin-right:8px; color:#0f172a;"></i> Risk Dağılım Analizi
+        </h3>
+        
+        <div style="display: flex; align-items: center; gap: 15px; background: #f8fafc; padding: 5px 15px; border-radius: 12px; border: 1px solid #e2e8f0;">
+            <i class="fa-solid fa-chevron-left" id="prevMonth" onclick="changeMonth(-1)" style="cursor: pointer; color: #3b82f6; font-size: 0.8rem;"></i>
+            <span id="currentMonthDisplay" style="font-size: 0.75rem; font-weight: 800; color: #0f172a; min-width: 80px; text-align: center;">MART 2026</span>
+            <i class="fa-solid fa-chevron-right" id="nextMonth" onclick="changeMonth(1)" style="color: #cbd5e1; font-size: 0.8rem; cursor: not-allowed;"></i> 
+        </div>
+    </div>
+
+    <div style="display: flex; align-items: center; gap: 35px;">
+    <div id="riskPie" style="width: 140px; height: 140px; border-radius: 50%; background: conic-gradient(#ef4444 0% 60%, #f59e0b 60% 80%, #10b981 80% 100%); transition: 0.6s cubic-bezier(0.4, 0, 0.2, 1); box-shadow: 0 10px 20px rgba(0,0,0,0.05);"></div>
+    
+    <div id="riskDetails" style="flex: 1; display: flex; flex-direction: column;">
+    <div style="display: flex; align-items: center; justify-content: space-between; font-size: 0.8rem; padding: 10px 15px; background: #fff1f2; border-radius: 10px; border-left: 4px solid #ef4444; margin-bottom: 8px;">
+        <span style="font-weight: 700; color: #b91c1c;">%60 Personel Riski</span>
+        <small style="font-weight: 800; color: #ef4444;">ACİL</small>
+    </div>
+    <div style="display: flex; align-items: center; justify-content: space-between; font-size: 0.8rem; padding: 10px 15px; background: #fffbeb; border-radius: 10px; border-left: 4px solid #f59e0b; margin-bottom: 8px;">
+        <span style="font-weight: 700; color: #92400e;">%20 Ticari Uyuşmazlık</span>
+        <small style="font-weight: 800; color: #f59e0b;">DİKKAT</small>
+    </div>
+    <div style="display: flex; align-items: center; justify-content: space-between; font-size: 0.8rem; padding: 10px 15px; background: #f0fdf4; border-radius: 10px; border-left: 4px solid #10b981;">
+        <span style="font-weight: 700; color: #166534;">%20 KVKK Uyum</span>
+        <small style="font-weight: 800; color: #10b981;">TAKİPTE</small>
+    </div>
+</div>
+</div></div>
+ 
+    <div class="glass-box">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+            <h3 style="margin:0; font-size: 0.95rem; color: #0f172a;"><i class="fa-solid fa-list-check" style="margin-right:8px; color:#f59e0b;"></i> Kritik İşler & Hatırlatıcılar</h3>
+            <button onclick="addNewNote()" style="background:none; border:none; color:#3b82f6; font-weight:700; cursor:pointer; font-size:0.8rem;">+ Yeni Ekle</button>
+        </div>
+        <div id="noteList">
+            <div class="task-row">
+                <div class="check-box" onclick="completeTask(this)"><i class="fa-solid fa-check" style="display:none; color:#10b981; font-size:0.7rem;"></i></div>
+                <div style="font-size: 0.85rem; color:#1e293b;"><b>Yarın 10:30</b> - Ahmet Yılmaz Duruşma Hazırlığı</div>
+            </div>
+            <div class="task-row">
+                <div class="check-box" onclick="completeTask(this)"><i class="fa-solid fa-check" style="display:none; color:#10b981; font-size:0.7rem;"></i></div>
+                <div style="font-size: 0.85rem; color:#1e293b;"><b>25 Mart</b> - Tedarikçi A.Ş. Sözleşme Revizyonu</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="bottom-panel">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
+        <h3 style="margin:0; font-size: 0.95rem; color: #0f172a;">
+            <i class="fa-solid fa-arrow-trend-up" style="margin-right:8px; color:#3b82f6;"></i> Aylık Dosya Hareketliliği
+        </h3>
+        
+        <div style="display: flex; align-items: center; gap: 12px; background: #f8fafc; padding: 4px 12px; border-radius: 10px; border: 1px solid #e2e8f0;">
+            <i class="fa-solid fa-chevron-left" id="prevYear" style="cursor: pointer; color: #3b82f6; font-size: 0.7rem;" onclick="changeYear(-1)"></i>
+            <span id="yearDisplay" style="font-size: 0.75rem; font-weight: 800; color: #0f172a; min-width: 40px; text-align: center;">2026</span>
+            <i class="fa-solid fa-chevron-right" id="nextYear" style="cursor: not-allowed; color: #cbd5e1; font-size: 0.7rem;" onclick="changeYear(1)"></i>
+        </div>
+    </div>
+
+    <div class="trend-bars" id="yearBarsContainer" style="gap: 8px; margin-top: 25px; height: 100px; display: flex; align-items: flex-end;">
+        </div>
+
+    <div id="monthLabels" style="display: flex; justify-content: space-between; margin-top: 12px; font-size: 0.55rem; color: #94a3b8; font-weight: 800;">
+        <span>OCA</span><span>ŞUB</span><span>MAR</span><span>NİS</span><span>MAY</span><span>HAZ</span><span>TEM</span><span>AĞU</span><span>EYL</span><span>EKİ</span><span>KAS</span><span>ARA</span>
+    </div>
+</div>
+
+    <input type="checkbox" id="note-box-toggle" aria-hidden="true">
+    <label for="note-box-toggle" class="quick-note-btn" aria-label="Birimler arası not"><i class="fa-solid fa-paper-plane"></i></label>
+    <div class="msg-box">
+        <div class="msg-box-head">
+            <span>Birimler Arası Not</span>
+            <label for="note-box-toggle" class="note-close-btn" aria-label="Kapat"><i class="fa-solid fa-xmark"></i></label>
+        </div>
+        <form action="#note-sent" method="get">
+            <p style="font-size:0.8rem; color:#94a3b8; margin-bottom:8px;">Hedef Birim (çoklu seçebilirsiniz)</p>
+            <ul class="target-list">
+                <li><input type="checkbox" name="target" id="t1" value="İnsan Kaynakları"><label for="t1">İnsan Kaynakları</label></li>
+                <li><input type="checkbox" name="target" id="t2" value="Satın Alma"><label for="t2">Satın Alma</label></li>
+                <li><input type="checkbox" name="target" id="t3" value="Bilgi İşlem"><label for="t3">Bilgi İşlem</label></li>
+                <li><input type="checkbox" name="target" id="t4" value="İdari İşler"><label for="t4">İdari İşler</label></li>
+            </ul>
+            <textarea name="note" rows="4" maxlength="1000" placeholder="Notunuzu yazın..."></textarea>
+            <button type="submit" class="btn-send">Notu Gönder</button>
+        </form>
+    </div>
+  <div id="note-sent">Notunuz seçilen birimlere iletildi.</div>
+    </div> 
+
+<div id="replyModal" class="reply-modal">
+    <div class="reply-content">
+        <div class="reply-header">
+            <i class="fa-solid fa-reply"></i>
+            <h3 id="replyTarget">HUKUK Birimine Cevap Yaz</h3>
+        </div>
+        
+        <div id="replyOriginalMessage" class="original-msg-preview">
+            "5 adet yeni iş sözleşmesi onaylandı."
+        </div>
+        
+        <textarea id="replyText" class="reply-textarea" placeholder="Cevabınızı buraya yazın..."></textarea>
+        
+        <div class="reply-actions">
+            <button class="btn-reply-cancel" onclick="closeReplyModal()">Vazgeç</button>
+            <button class="btn-reply-send" onclick="sendReply()">Cevapla</button>
+        </div>
+    </div>
+      <script>
+
+        
+          const kanal = new BroadcastChannel('guardia-hk');
+
+          kanal.onmessage = (e) => {
+              if (
+                  e.data.tip === 'dava-guncellendi' ||
+                  e.data.tip === 'sozlesme-guncellendi' ||
+                  e.data.tip === 'mevzuat-eklendi'
+              ) {
+                  console.log("Diğer sekmeden güncelleme sinyali alındı. Dashboard yenileniyor...");
+                  loadTumDashboard();
+                  hukukIstatistikleriniYukle(currentYear, currentMonthIdx + 1);
+              }
+          };
+
+          function apiFetch(url, options = {}) {
+              const token = localStorage.getItem('token');
+
+              let sayfaBirim = "HUKUK";
+              if (window.location.href.includes("ik-") || window.location.href.includes("ik-index")) {
+                  sayfaBirim = "INSAN_KAYNAKLARI"; 
+              }
+
+              options.headers = {
+                  ...options.headers,
+                  'Authorization': 'Bearer ' + token,
+                  'X-Aktif-Birim': sayfaBirim, 
+                  'Content-Type': 'application/json'
+              };
+
+              return fetch(url, options).then(res => {
+                  if (!res.ok) {
+                      throw new Error(`HTTP Hatası! Durum: ${res.status}`);
+                  }
+                  return res;
+              });
+          }
+
+          /* 1. API BAĞLANTI AYARLARI */
+          const API_BASE_URL = '/api/HukukKontrolcusu';
+          let currentYear = 2026;
+          let currentMonthIdx = 2; // Başlangıç: Mart 2026
+          const months = ["OCAK 2026", "ŞUBAT 2026", "MART 2026"];
+          let gidenMesajlar = [];
+
+          /* 2. DASHBOARD VERİLERİNİ ÇEKME (Kazanma Oranı ve Risk Analizi) */
+          async function hukukIstatistikleriniYukle(yil, ay) {
+              try {
+                  const response = await apiFetch(`${API_BASE_URL}/analiz?yil=${yil}&ay=${ay}`);
+                  if (!response.ok) throw new Error("Veri çekme hatası");
+
+                  const data = await response.json();
+
+                  // Kazanma Oranını Güncelle
+                  const rateEl = document.getElementById('winRateValue');
+                  if (rateEl) {
+                      rateEl.innerText = `%${data.genelKazanmaOrani}`;
+                    
+                      rateEl.style.color = data.genelKazanmaOrani >= 90 ? '#10b981' : '#f59e0b';
+                  }
+
+                
+                  renderRiskAnalizi(data.riskDagilimi);
+
+              } catch (error) {
+                  console.error("Hukuk istatistikleri yüklenemedi:", error);
+              }
+          }
+
+          async function loadTumDashboard() {
+              try {
+                  // 1. Sözleşme Sayaçlarını Bağla
+                  const sozRes = await apiFetch('/api/HukukKontrolcusu/dashboard');
+                  if (sozRes.ok) {
+                      const data = await sozRes.json();
+
+             
+                      const elSuresiDolan = document.getElementById('suresi-dolan-count');
+                      const elKritik = document.getElementById('kritik-count');
+                      const elYururlukte = document.getElementById('yururlukte-count');
+
+                      if (elSuresiDolan) elSuresiDolan.textContent = data.suresiDolanCount;
+                      if (elKritik) elKritik.textContent = data.kritikCount;
+                      if (elYururlukte) elYururlukte.textContent = data.yururlukteCount;
+                  }
+
+        
+                  const arsivRes = await apiFetch('/api/HukukKontrolcusu/arsiv-liste');
+                  if (arsivRes.ok) {
+                      const arsivData = await arsivRes.json();
+                   
+                      arsivData.filter(x => x.imhaGerekliMi).forEach(d => {
+                          ekleKritikUyari(`📁 ${d.dosyaAdi} — İmha Süresi Doldu!`, 'arsiv');
+                      });
+                  }
+              } catch (err) {
+                  console.error("Dashboard Hatası:", err);
+              }
+          }
+
+          function ekleKritikUyari(metin, tip) {
+              const list = document.getElementById('noteList');
+
+ 
+              if ([...list.querySelectorAll('b')].some(b => b.innerText.includes(metin))) return;
+
+              const row = document.createElement('div');
+              row.className = 'task-row';
+              row.style.borderLeft = "4px solid #ef4444";
+
+              row.innerHTML = `
+        <div class="check-box" onclick="this.closest('.task-row').remove()">
+            <i class="fa-solid fa-xmark" style="color:#ef4444; font-size:0.7rem;"></i>
+        </div>
+        <div style="font-size: 0.85rem; color:#1e293b;">
+            <b style="color:#ef4444;">DİKKAT</b> - ${metin}
+        </div>
+    `;
+              list.prepend(row); 
+          }
+
+ 
+          function renderRiskAnalizi(riskler) {
+              const pie = document.getElementById('riskPie');
+              const details = document.getElementById('riskDetails');
+
+              if (!riskler || riskler.length === 0) return;
+
+              let gradientParts = [];
+              let currentPos = 0;
+
+              details.innerHTML = ''; // Listeyi temizle
+
+              riskler.forEach(risk => {
+                  const row = `
+            <div style="display: flex; align-items: center; justify-content: space-between; font-size: 0.8rem; padding: 10px 15px; background: ${risk.renkKodu}; border-radius: 10px; border-left: 4px solid ${getBorderColor(risk.durumEtiketi)}; margin-bottom: 8px;">
+                <span style="font-weight: 700; color: #1e293b;">%${risk.yuzde} ${risk.kategoriAd}</span>
+                <small style="font-weight: 800; color: ${getBorderColor(risk.durumEtiketi)};">${risk.durumEtiketi}</small>
+            </div>
+        `;
+                  details.innerHTML += row;
+
+                  gradientParts.push(`${getBorderColor(risk.durumEtiketi)} ${currentPos}% ${currentPos + risk.yuzde}%`);
+                  currentPos += risk.yuzde;
+              });
+
+              pie.style.background = `conic-gradient(${gradientParts.join(', ')})`;
+          }
+
+          function getBorderColor(durum) {
+              switch (durum) {
+                  case 'ACİL': return '#ef4444';
+                  case 'DİKKAT': return '#f59e0b';
+                  case 'TAKİPTE': return '#10b981';
+                  case 'GÜVENLİ': return '#10b981';
+                  case 'STABİL': return '#3b82f6';
+                  default: return '#94a3b8';
+              }
+          }
+
+          /* 4. MODAL VE BİLDİRİM FONKSİYONLARI */
+         
+          function updateOutgoingList() {
+              const listContainer = document.getElementById('notif-outgoing-list');
+              if (!listContainer) return;
+
+              const gidenlerHafiza = JSON.parse(localStorage.getItem('guardia_giden_mesajlar') || '[]');
+              listContainer.innerHTML = "";
+
+              if (gidenlerHafiza.length === 0) {
+                  listContainer.innerHTML = '<div class="notif-item"><span>Henüz gönderilmiş bir not bulunmuyor.</span></div>';
+              } else {
+                  gidenlerHafiza.forEach(msg => {
+                      listContainer.innerHTML += `
+                <div class="notif-item">
+                    <strong>SİZDEN -> ${msg.hedef}</strong>
+                    <span>${msg.icerik}</span>
+                    <small style="display:block; color: #94a3b8; font-size: 0.75rem; margin-top: 5px;">
+                        <i class="fa-regular fa-clock"></i> ${msg.saat}
+                    </small>
+                </div>
+            `;
+                  });
+              }
+          }
+
+         
+
+          
+
+
+          function showToast(msg, type = 'success') {
+              const oldToast = document.querySelector('.toast-notification');
+              if (oldToast) oldToast.remove();
+
+              const toast = document.createElement('div');
+              toast.className = 'toast-notification';
+              toast.innerText = msg;
+              const bgColor = type === 'success' ? '#10b981' : '#ef4444';
+
+              toast.style.cssText = `
+        position: fixed; bottom: 30px; right: 90px; 
+        background: ${bgColor}; color: white; padding: 12px 24px; 
+        font-size: 14px; border-radius: 10px; z-index: 999999; 
+        font-weight: 600; box-shadow: 0 10px 25px rgba(0,0,0,0.2); 
+        opacity: 0; transition: all 0.4s ease; transform: translateY(20px);
+    `;
+
+              document.body.appendChild(toast);
+              setTimeout(() => {
+                  toast.style.opacity = '1';
+                  toast.style.transform = 'translateY(0)';
+              }, 100);
+
+              setTimeout(() => {
+                  toast.style.opacity = '0';
+                  toast.style.transform = 'translateY(20px)';
+                  setTimeout(() => toast.remove(), 400);
+              }, 2000);
+          }
+
+         
+          let aktifIletisimBirimi = "";
+
+          /*  GELEN MESAJLARI ÇEKER VE ÇAN SAYACINI GÜNCELLER */
+          async function showIncoming() {
+              const incoming = document.getElementById('notif-incoming-list');
+              const outgoing = document.getElementById('notif-outgoing-list');
+              const btnIn = document.querySelector('.notif-action-btn[onclick="showIncoming()"]');
+              const btnOut = document.querySelector('.notif-action-btn[onclick="showOutgoing()"]');
+
+              if (incoming && outgoing) {
+                  incoming.style.display = 'block';
+                  outgoing.style.display = 'none';
+                  if (btnIn) btnIn.classList.add('active');
+                  if (btnOut) btnOut.classList.remove('active');
+              }
+
+              try {
+                  const response = await apiFetch('/api/IkIstatistikKontrolcusu/mesajlar');
+                  const veriler = await response.json();
+
+                  if (incoming) {
+                      incoming.innerHTML = "";
+                      if (veriler.length === 0) {
+                          incoming.innerHTML = '<div class="notif-item"><span>Gelen kutunuz temiz. 📬</span></div>';
+                      } else {
+                          incoming.innerHTML = veriler.map(msg => {
+                              const temizMesaj = msg.mesaj.replace(/'/g, "\\'").replace(/"/g, '\\"');
+                              const durumRengi = msg.okunduMu ? '#cbd5e1' : '#3b82f6';
+
+                              return `
+                        <div class="notif-item" onclick="openReplyModal('${msg.birim}', '${temizMesaj}', this, ${msg.id})" style="cursor: pointer;">
+                            <span class="notif-status" style="background: ${durumRengi}; display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 5px;"></span>
+                            <strong>${msg.birim}</strong>
+                            <span>${msg.mesaj}</span>
+                            <small style="display:block; color: #94a3b8; font-size: 0.75rem; margin-top: 5px;">
+                                <i class="fa-regular fa-clock"></i> ${msg.saat}
+                            </small>
+                        </div>`;
+                          }).join('');
+                      }
+                  }
+
+                  guncelleCanSayaci(veriler);
+
+              } catch (err) {
+                  console.error("Gelen mesajlar veritabanından alınamadı:", err);
+              }
+          }
+
+          /* ÇAN SİMGESİ SAYACINI YÖNETEN FONKSİYON */
+          function guncelleCanSayaci(veriler) {
+              const okunmamislar = veriler.filter(m => !m.okunduMu).length;
+              const badge = document.querySelector('.notif-container .notif-badge');
+
+              if (badge) {
+                  badge.innerText = okunmamislar;
+                  badge.style.display = okunmamislar > 0 ? 'flex' : 'none';
+              }
+          }
+
+          /* GİDEN MESAJLARI (BİZZAT GÖNDERDİKLERİNİ) LİSTELER */
+          async function showOutgoing() {
+              const incoming = document.getElementById('notif-incoming-list');
+              const outgoing = document.getElementById('notif-outgoing-list');
+              const btnIn = document.querySelector('.notif-action-btn[onclick="showIncoming()"]');
+              const btnOut = document.querySelector('.notif-action-btn[onclick="showOutgoing()"]');
+
+              if (incoming && outgoing) {
+                  incoming.style.display = 'none';
+                  outgoing.style.display = 'block';
+                  if (btnOut) btnOut.classList.add('active');
+                  if (btnIn) btnIn.classList.remove('active');
+              }
+
+              try {
+                  const response = await apiFetch('/api/IkIstatistikKontrolcusu/giden-mesajlar');
+                  const veriler = await response.json();
+
+                  if (outgoing) {
+                      if (veriler.length === 0) {
+                          outgoing.innerHTML = '<div class="notif-item"><span>Henüz bir departmana not göndermediniz.</span></div>';
+                      } else {
+                          outgoing.innerHTML = veriler.map(msg => `
+                    <div class="notif-item">
+                        <strong>SİZDEN -> ${msg.birim}</strong>
+                        <span>${msg.mesaj}</span>
+                        <small style="display:block; color: #94a3b8; font-size: 0.75rem; margin-top: 5px;">
+                            <i class="fa-regular fa-clock"></i> ${msg.saat}
+                        </small>
+                    </div>
+                `).join('');
+                      }
+                  }
+              } catch (err) {
+                  console.error("Giden mesajlar veritabanından alınamadı:", err);
+              }
+          }
+
+          /* TIKLANAN MESAJI "OKUNDU" YAPAR VE CEVAP MODALINI AÇAR */
+          function openReplyModal(sender, originalMessage, element, mesajId) {
+              aktifIletisimBirimi = sender.replace("SİZDEN ->", "").trim();
+
+              document.getElementById('replyTarget').innerText = aktifIletisimBirimi + " Birimine Cevap Yaz";
+              document.getElementById('replyOriginalMessage').innerText = '"' + originalMessage + '"';
+              document.getElementById('replyModal').style.display = 'flex';
+
+              if (element) {
+                  const statusDot = element.querySelector('.notif-status');
+
+                  if (statusDot && (statusDot.style.background === 'rgb(59, 130, 246)' || statusDot.style.background === '#3b82f6' || statusDot.style.background.includes('3b82f6'))) {
+
+                      statusDot.style.background = '#cbd5e1';
+
+                      const badge = document.querySelector('.notif-container .notif-badge');
+                      if (badge && parseInt(badge.innerText) > 0) {
+                          const yeniSayi = parseInt(badge.innerText) - 1;
+                          badge.innerText = yeniSayi;
+                          if (yeniSayi === 0) badge.style.display = 'none';
+                      }
+
+                      if (mesajId) {
+                          apiFetch(`/api/IkIstatistikKontrolcusu/mesaj-okundu/${mesajId}`, {
+                              method: 'POST'
+                          }).catch(e => console.error("Mesaj okundu işareti veritabanına iletilemedi:", e));
+                      }
+                  }
+              }
+          }
+
+          function closeReplyModal() {
+              document.getElementById('replyModal').style.display = 'none';
+              const input = document.getElementById('replyText');
+              if (input) input.value = '';
+              aktifIletisimBirimi = "";
+          }
+
+          /* C# APİ'SİNE CEVAP GÖNDERİR */
+          async function sendReply() {
+              const replyInput = document.getElementById('replyText');
+              if (!replyInput) return;
+
+              const text = replyInput.value.trim();
+              if (text === "") {
+                  showToast("Lütfen boş bir mesaj göndermeyin.", "error");
+                  return;
+              }
+
+              const suAnkiSaat = new Date().toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' });
+
+              const gonderilecekCevapPaketi = {
+                  Birim: aktifIletisimBirimi,
+                  Mesaj: text,
+                  Saat: suAnkiSaat
+              };
+
+              try {
+                  const response = await apiFetch('/api/IkIstatistikKontrolcusu/mesaj-gonder', {
+                      method: 'POST',
+                      body: JSON.stringify(gonderilecekCevapPaketi)
+                  });
+
+                  if (response.ok) {
+                      showToast(`${aktifIletisimBirimi} birimine cevabınız başarıyla iletildi!`, "success");
+                      closeReplyModal();
+                      await showIncoming();
+                  } else {
+                      showToast("Cevap iletilirken sunucu katmanında bir hata oluştu.", "error");
+                  }
+              } catch (err) {
+                  console.error("Cevap gönderme hatası:", err);
+                  showToast("Bağlantı hatası! Cevap gönderilemedi.", "error");
+              }
+          }
+
+          /* KRİTİK HATIRLATICILAR SİSTEMİ */
+          async function hatirlaticilariYukle() {
+              try {
+                  const response = await apiFetch('/api/HukukKontrolcusu/hatirlaticilar');
+                  if (!response.ok) throw new Error("Notlar yüklenemedi");
+
+                  const notes = await response.json();
+                  const list = document.getElementById('noteList');
+                  list.innerHTML = '';
+
+                  notes.forEach(note => {
+                      const row = document.createElement('div');
+                      row.className = 'task-row';
+                      row.dataset.id = note.id;
+
+                      row.innerHTML = `
+                <div class="check-box" onclick="completeTask(this)">
+                    <i class="fa-solid fa-check" style="display:none; color:#10b981; font-size:0.7rem;"></i>
+                </div>
+                <div style="font-size: 0.85rem; color:#1e293b;">
+                    <b>${note.tarihEtiketi}</b> - ${note.icerik}
+                </div>
+            `;
+                      list.appendChild(row);
+                  });
+              } catch (error) {
+                  console.error("Hatırlatıcı hatası:", error);
+              }
+          }
+
+          async function completeTask(btn) {
+              const icon = btn.querySelector('i');
+              const row = btn.closest('.task-row');
+              const id = row.dataset.id;
+
+              if (!id) {
+                  console.error("Hata: Silinecek notun ID'si bulunamadı.");
+                  return;
+              }
+
+              icon.style.display = 'block';
+              btn.style.borderColor = '#10b981';
+              btn.style.background = '#ecfdf5';
+              row.style.opacity = '0.4';
+              row.style.textDecoration = 'line-through';
+              row.style.transition = 'all 0.5s cubic-bezier(0.4, 0, 0.2, 1)';
+
+              try {
+                  const response = await apiFetch(`/api/HukukKontrolcusu/hatirlatici-sil/${id}`, {
+                      method: 'DELETE'
+                  });
+
+                  if (response.ok) {
+                      setTimeout(() => {
+                          row.style.transform = 'translateX(50px)';
+                          row.style.opacity = '0';
+
+                          setTimeout(() => {
+                              row.remove();
+                              console.log(`ID: ${id} başarıyla sistemden silindi.`);
+                          }, 300);
+                      }, 700);
+                  } else {
+                      alert("Sunucu tarafında bir hata oluştu, not silinemedi.");
+                      row.style.opacity = '1';
+                      row.style.textDecoration = 'none';
+                      icon.style.display = 'none';
+                  }
+              } catch (error) {
+                  console.error("Bağlantı hatası:", error);
+                  alert("Bağlantı kurulamadı. Lütfen internetinizi veya sunucuyu kontrol edin.");
+              }
+          }
+
+          async function addNewNote() {
+              const noteText = prompt("Yeni kritik notunuzu girin:");
+
+              if (noteText && noteText.trim() !== "") {
+                  const yeniNot = {
+                      icerik: noteText.trim(),
+                      tarihEtiketi: "YENİ",
+                      isTamamlandi: false
+                  };
+
+                  try {
+                      const response = await apiFetch('/api/HukukKontrolcusu/hatirlatici-ekle', {
+                          method: 'POST',
+                          headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify(yeniNot)
+                      });
+
+                      if (response.ok) {
+                          await hatirlaticilariYukle();
+                          if (typeof showToast === 'function') {
+                              showToast("Not başarıyla kaydedildi", "success");
+                          }
+                      } else {
+                          alert("Not kaydedilirken bir sunucu hatası oluştu.");
+                      }
+                  } catch (error) {
+                      console.error("Not ekleme hatası:", error);
+                      alert("Bağlantı hatası! Lütfen backend'in çalıştığından emin olun.");
+                  }
+              }
+          }
+
+          /* RİSK ANALİZİ AY DEĞİŞTİRME FONKSİYONU */
+          function changeMonth(dir) {
+              let nextIdx = currentMonthIdx + dir;
+              if (nextIdx < 0 || nextIdx > 2) return;
+
+              currentMonthIdx = nextIdx;
+
+              const display = document.getElementById('currentMonthDisplay');
+              const pie = document.getElementById('riskPie');
+              const details = document.getElementById('riskDetails');
+              const prevBtn = document.getElementById('prevMonth');
+              const nextBtn = document.getElementById('nextMonth');
+
+              display.innerText = months[currentMonthIdx];
+
+              if (currentMonthIdx === 0) {
+                  prevBtn.style.color = "#cbd5e1";
+                  prevBtn.style.cursor = "not-allowed";
+                  prevBtn.style.opacity = "0.5";
+              } else {
+                  prevBtn.style.color = "#3b82f6";
+                  prevBtn.style.cursor = "pointer";
+                  prevBtn.style.opacity = "1";
+              }
+
+              if (currentMonthIdx === 2) {
+                  nextBtn.style.color = "#cbd5e1";
+                  nextBtn.style.cursor = "not-allowed";
+                  nextBtn.style.opacity = "0.5";
+              } else {
+                  nextBtn.style.color = "#3b82f6";
+                  nextBtn.style.cursor = "pointer";
+                  nextBtn.style.opacity = "1";
+              }
+
+              if (currentMonthIdx === 0) {
+                  pie.style.background = 'conic-gradient(#10b981 0% 75%, #3b82f6 75% 90%, #94a3b8 90% 100%)';
+                  details.innerHTML = `
+            <div style="display:flex; align-items:center; justify-content:space-between; font-size:0.8rem; padding:10px 15px; background:#f0fdf4; border-radius:10px; border-left:4px solid #10b981; margin-bottom:8px;">
+                <span style="font-weight:700; color:#166534;">%75 Personel Uyumu</span><small style="font-weight:800; color:#10b981;">GÜVENLİ</small>
+            </div>
+            <div style="display:flex; align-items:center; justify-content:space-between; font-size:0.8rem; padding:10px 15px; background:#eff6ff; border-radius:10px; border-left:4px solid #3b82f6; margin-bottom:8px;">
+                <span style="font-weight:700; color:#1e40af;">%15 Ticari Süreçler</span><small style="font-weight:800; color:#3b82f6;">STABİL</small>
+            </div>
+            <div style="display:flex; align-items:center; justify-content:space-between; font-size:0.8rem; padding:10px 15px; background:#f8fafc; border-radius:10px; border-left:4px solid #94a3b8;">
+                <span style="font-weight:700; color:#475569;">%10 Diğer</span><small style="font-weight:800; color:#94a3b8;">DÜŞÜK</small>
+            </div>`;
+              }
+              else if (currentMonthIdx === 1) {
+                  pie.style.background = 'conic-gradient(#ef4444 0% 50%, #f59e0b 50% 80%, #3b82f6 80% 100%)';
+                  details.innerHTML = `
+            <div style="display:flex; align-items:center; justify-content:space-between; font-size:0.8rem; padding:10px 15px; background:#fff1f2; border-radius:10px; border-left:4px solid #ef4444; margin-bottom:8px;">
+                <span style="font-weight:700; color:#b91c1c;">%50 Kritik Davalar</span><small style="font-weight:800; color:#ef4444;">ACİL</small>
+            </div>
+            <div style="display:flex; align-items:center; justify-content:space-between; font-size:0.8rem; padding:10px 15px; background:#fffbeb; border-radius:10px; border-left:4px solid #f59e0b; margin-bottom:8px;">
+                <span style="font-weight:700; color:#92400e;">%30 Ticari Risk</span><small style="font-weight:800; color:#f59e0b;">DİKKAT</small>
+            </div>
+            <div style="display:flex; align-items:center; justify-content:space-between; font-size:0.8rem; padding:10px 15px; background:#eff6ff; border-radius:10px; border-left:4px solid #3b82f6;">
+                <span style="font-weight:700; color:#1e40af;">%20 Sözleşmeler</span><small style="font-weight:800; color:#3b82f6;">TAKİPTE</small>
+            </div>`;
+              }
+              else {
+                  pie.style.background = 'conic-gradient(#ef4444 0% 60%, #f59e0b 60% 80%, #10b981 80% 100%)';
+                  details.innerHTML = `
+            <div style="display: flex; align-items: center; justify-content: space-between; font-size: 0.8rem; padding: 10px 15px; background: #fff1f2; border-radius: 10px; border-left: 4px solid #ef4444; margin-bottom: 8px;">
+                <span style="font-weight: 700; color: #b91c1c;">%60 Personel Riski</span>
+                <small style="font-weight: 800; color: #ef4444;">ACİL</small>
+            </div>
+            <div style="display: flex; align-items: center; justify-content: space-between; font-size: 0.8rem; padding: 10px 15px; background: #fffbeb; border-radius: 10px; border-left: 4px solid #f59e0b; margin-bottom: 8px;">
+                <span style="font-weight: 700; color: #92400e;">%20 Ticari Uyuşmazlık</span>
+                <small style="font-weight: 800; color: #f59e0b;">DİKKAT</small>
+            </div>
+            <div style="display: flex; align-items: center; justify-content: space-between; font-size: 0.8rem; padding: 10px 15px; background: #f0fdf4; border-radius: 10px; border-left: 4px solid #10b981;">
+                <span style="font-weight: 700; color: #166534;">%20 KVKK Uyum</span>
+                <small style="font-weight: 800; color: #10b981;">TAKİPTE</small>
+            </div>`;
+              }
+
+              const secilenAy = currentMonthIdx + 1;
+              hukukIstatistikleriniYukle(2026, secilenAy);
+          }
+
+          /* DİNAMİK TREND BARLARINI API'DEN ÇEKİP ÇİZME FONKSİYONU */
+          async function trendVerileriniYukle(yil) {
+              const display = document.getElementById('yearDisplay');
+              if (display) display.innerText = yil;
+
+              const prevBtn = document.getElementById('prevYear');
+              const nextBtn = document.getElementById('nextYear');
+
+              if (prevBtn && nextBtn) {
+                  prevBtn.style.color = yil === 2024 ? "#cbd5e1" : "#3b82f6";
+                  prevBtn.style.cursor = yil === 2024 ? "not-allowed" : "pointer";
+                  nextBtn.style.color = yil === 2026 ? "#cbd5e1" : "#3b82f6";
+                  nextBtn.style.cursor = yil === 2026 ? "not-allowed" : "pointer";
+              }
+
+              try {
+                  const response = await apiFetch(`/api/HukukKontrolcusu/trend?yil=${yil}`);
+                  const trendData = await response.json();
+
+                  const container = document.getElementById('yearBarsContainer');
+                  const monthLabels = document.getElementById('monthLabels').children;
+                  container.innerHTML = '';
+
+                  const maxVal = Math.max(...trendData.map(d => d.dosyaSayisi));
+
+                  trendData.forEach((item, index) => {
+                      const bar = document.createElement('div');
+                      bar.className = 'bar-item';
+
+                      const height = item.dosyaSayisi > 0 ? (item.dosyaSayisi / maxVal) * 100 : 15;
+                      bar.style.height = height + '%';
+
+                      if (monthLabels[index]) monthLabels[index].style.color = "#94a3b8";
+
+                      if (item.dosyaSayisi > 0 || item.isAktif) {
+                          bar.classList.add('past');
+                          bar.setAttribute('data-val', item.dosyaSayisi + ' Dosya');
+                          if (item.isAktif) {
+                              bar.classList.add('active');
+                              if (monthLabels[index]) monthLabels[index].style.color = "#0f172a";
+                          }
+                      } else {
+                          bar.style.opacity = "0.3";
+                          bar.setAttribute('data-val', 'Beklenen');
+                      }
+
+                      container.appendChild(bar);
+                  });
+              } catch (error) {
+                  console.error("Trend verileri yüklenirken hata oluştu:", error);
+              }
+          }
+
+          function changeYear(dir) {
+              let nextYear = currentYear + dir;
+              if (nextYear >= 2024 && nextYear <= 2026) {
+                  currentYear = nextYear;
+                  trendVerileriniYukle(currentYear);
+              }
+          }
+
+          /* SİSTEM BAŞLATICISI (DOM READY) */
+          document.addEventListener('DOMContentLoaded', function () {
+
+              const adminAdSoyad = localStorage.getItem('adminAdSoyad');
+              const adminDepartman = localStorage.getItem('adminDepartman');
+
+              if (adminAdSoyad) {
+                  document.getElementById('sidebarAdSoyad').textContent = adminAdSoyad;
+              }
+              if (adminDepartman) {
+                  document.getElementById('sidebarDepartman').textContent = adminDepartman;
+              }
+
+
+              // Sayfaya özel veri yüklemeleri
+              if (typeof loadTumDashboard === 'function') loadTumDashboard();
+              if (typeof hatirlaticilariYukle === 'function') hatirlaticilariYukle();
+              if (typeof hukukIstatistikleriniYukle === 'function') {
+                  const currentYear = new Date().getFullYear();
+                  const currentMonth = new Date().getMonth() + 1;
+                  hukukIstatistikleriniYukle(currentYear, currentMonth);
+              }
+              if (typeof trendVerileriniYukle === 'function') trendVerileriniYukle(new Date().getFullYear());
+
+              showIncoming();
+
+              // DOM Element Seçicileri
+              const noteToggle = document.getElementById('note-box-toggle');
+              const notifToggle = document.getElementById('notif-toggle');
+              const msgBox = document.querySelector('.msg-box');
+              const quickNoteBtn = document.querySelector('.quick-note-btn');
+              const notifContainer = document.querySelector('.notif-container');
+              const notifTrigger = document.querySelector('.notif-trigger');
+              const noteForm = document.querySelector('.msg-box form');
+
+              if (quickNoteBtn) {
+                  quickNoteBtn.addEventListener('click', function (e) {
+                      e.preventDefault(); e.stopPropagation();
+                      if (noteToggle) noteToggle.checked = !noteToggle.checked;
+                  });
+              }
+
+              if (notifTrigger) {
+                  notifTrigger.addEventListener('click', function (e) {
+                      e.stopPropagation();
+                      // Zile tıklandığı an kırmızı balonu komple gizle
+                      const badge = document.querySelector('.notif-container .notif-badge');
+                      if (badge) badge.style.display = 'none';
+                  });
+              }
+
+              if (msgBox && notifContainer) {
+                  [msgBox, notifContainer].forEach(box => {
+                      if (box) { box.addEventListener('click', function (e) { e.stopPropagation(); }); }
+                  });
+              }
+
+              document.addEventListener('click', function () {
+                  if (noteToggle) noteToggle.checked = false;
+                  if (notifToggle) notifToggle.checked = false;
+              });
+
+              // CANLI VERİTABANI BAĞLANTISI: Birimler arası not fırlatma formu
+              if (noteForm) {
+                  noteForm.addEventListener('submit', async function (e) {
+                      e.preventDefault();
+                      const targets = noteForm.querySelectorAll('input[name="target"]:checked');
+                      const noteTextarea = noteForm.querySelector('textarea[name="note"]');
+
+                      if (targets.length === 0) {
+                          showToast("Lütfen en az bir birim seçin!", "error");
+                          return;
+                      }
+                      if (noteTextarea.value.trim() === "") {
+                          showToast("Lütfen mesajınızı yazın.", "error");
+                          return;
+                      }
+
+                      const birimKatar = Array.from(targets).map(t => t.value).join(",");
+                      const suAnkiSaat = new Date().toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' });
+
+                      const gonderilecekPaket = {
+                          Birim: birimKatar,
+                          Mesaj: noteTextarea.value.trim(),
+                          Saat: suAnkiSaat 
+                      };
+
+                      try {
+                          const response = await apiFetch('/api/IkIstatistikKontrolcusu/mesaj-gonder', {
+                              method: 'POST',
+                              body: JSON.stringify(gonderilecekPaket)
+                          });
+
+                          if (response.ok) {
+                              if (noteToggle) noteToggle.checked = false;
+                              showToast("Notunuz seçilen birimlere iletildi!", "success");
+                              noteForm.reset();
+                              await showIncoming(); 
+                          } else {
+                              showToast("Not iletilirken bir sunucu hatası oluştu.", "error");
+                          }
+                      } catch (err) {
+                          console.error("Mesaj fırlatma hatası:", err);
+                          showToast("Bağlantı hatası! Mesaj gönderilemedi.", "error");
+                      }
+                  });
+              }
+          });
+          
+</script>
+</body>
+</html>

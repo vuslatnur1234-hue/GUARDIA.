@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="tr">
+
+<head>
+
+    <script>
+        if (!localStorage.getItem('token')) {
+            window.location.href = 'p-login.html';
+        }
+    </script>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Guardia | 2026 Bordrolarım</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/personel-style.css">
+    <style>
+        /* Sayfa çubuğunu gizlemek için 6 pdf olan için */
+        html {
+            overflow-y: scroll;
+        }
+
+        ::-webkit-scrollbar {
+            width: 0px;
+            background: transparent;
+        }
+
+        html {
+            scrollbar-width: none;
+            -ms-overflow-style: none;
+        }
+
+        /* Sayfa Başlığı ve Geri Butonu Yerleşimi */
+        header {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 25px;
+            padding-top: 15px;
+        }
+
+        .back-btn {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: var(--card);
+            border: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            color: var(--accent);
+        }
+
+        /* Filtreleme Paneli: Son 1, 3, 6 aylık seçim düğmelerini kapsayan alan */
+        .filter-panel {
+            display: flex;
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 5px;
+            margin-bottom: 30px;
+        }
+
+        /* Filtreleme Düğmeleri Stili */
+        .filter-btn {
+            flex: 1;
+            padding: 12px;
+            text-align: center;
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: var(--sub);
+            cursor: pointer;
+            border-radius: 15px;
+            transition: 0.3s;
+        }
+
+            /* Aktif Filtreleme Düğmesi: Mavi arka plan ve gölge efekti */
+            .filter-btn.active {
+                background: var(--accent);
+                color: #0f172a;
+                box-shadow: 0 5px 15px rgba(56, 189, 248, 0.3);
+            }
+
+        /* Bordro Listesi Konteyneri */
+        .bordro-list {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            padding-bottom: 50px;
+        }
+
+        /* Bordro Kartı Tasarımı: Dönem bilgisi ve indir butonu yan yana */
+        .bordro-card {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 22px;
+            padding: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            animation: slideUp 0.4s ease forwards;
+        }
+
+        /* Yükselme Animasyonu */
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .bordro-info h4 {
+            margin: 0;
+            font-size: 1rem;
+            color: var(--text);
+        }
+
+        .bordro-info span {
+            font-size: 0.75rem;
+            color: var(--sub);
+        }
+
+        /* İndirme (PDF) Butonu Tasarımı */
+        .download-btn {
+            width: 45px;
+            height: 45px;
+            border-radius: 15px;
+            background: rgba(56, 189, 248, 0.1);
+            border: 1px solid var(--accent);
+            color: var(--accent);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+
+            .download-btn:hover {
+                background: var(--accent);
+                color: #0f172a;
+            }
+
+        /* En yeni bordro için 'YENİ' etiketi stili */
+        .today-badge {
+            background: var(--accent) !important;
+            color: #ffffff !important;
+            font-weight: 800 !important;
+            padding: 2px 10px !important;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+            border-radius: 10px;
+            font-size: 0.6rem;
+            font-weight: 700;
+            margin-left: 8px;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="container">
+        <header>
+            <div class="back-btn" onclick="history.back()"><i class="fa-solid fa-chevron-left"></i></div>
+            <h2 style="margin:0; font-size:1.2rem; font-weight:600; color:var(--text);">2026 Maaş Bordroları</h2>
+        </header>
+
+        <div class="filter-panel">
+            <div class="filter-btn active" onclick="filtrele(1, this)">Son 1 Ay</div>
+            <div class="filter-btn" onclick="filtrele(3, this)">Son 3 Ay</div>
+            <div class="filter-btn" onclick="filtrele(6, this)">Son 6 Ay</div>
+        </div>
+
+        <span
+            style="margin-left: 10px; color: var(--sub); font-size: 0.75rem; font-weight: 600; display: block; margin-bottom: 15px; letter-spacing: 1px;">ÖDEME
+            DÖNEMLERİ</span>
+
+        <div class="bordro-list" id="bordro-container">
+        </div>
+    </div>
+    <script>
+
+
+        function apiFetch(url, options = {}) {
+            const token = localStorage.getItem('token');
+
+            // Başlıkları koruyarak Authorization JWT token'ını mühürlüyoruz
+            options.headers = {
+                ...options.headers,
+                'Authorization': 'Bearer ' + token
+            };
+
+            return fetch(url, options).then(res => {
+                if (!res.ok) {
+                    throw new Error(`HTTP Hatası! Durum: ${res.status}`);
+                }
+                return res;
+            });
+        }
+
+        let bordrolar = [];
+
+        async function verileriCek() {
+            try {
+                const aktifSicil = localStorage.getItem("aktifKullanici");
+                const token = localStorage.getItem('token');
+
+                const response = await apiFetch('https://localhost:7183/api/IkBordroKontrolcusu/liste');
+
+                if (response.ok) {
+                    const tumBordrolar = await response.json();
+                    bordrolar = tumBordrolar.filter(b => b.sicilNo == aktifSicil);
+
+                    const ilkButon = document.querySelector('.filter-btn.active');
+                    if (ilkButon) filtrele(1, ilkButon);
+                }
+            } catch (error) {
+                console.error("Bordrolar çekilemedi:", error);
+            }
+        }
+
+        function filtrele(aySayisi, element) {
+            document.querySelectorAll('.filter-btn').forEach(btn => btn.classList.remove('active'));
+            if (element) element.classList.add('active');
+
+            const container = document.getElementById('bordro-container');
+            if (!container) return;
+
+            container.innerHTML = "";
+
+            for (let i = 0; i < Math.min(aySayisi, bordrolar.length); i++) {
+                const b = bordrolar[i];
+                const rawDurum = (b.durum || '').toUpperCase()
+                    .replace(/İ/g, 'I').replace(/Ş/g, 'S')
+                    .replace(/Ğ/g, 'G').replace(/Ü/g, 'U')
+                    .replace(/Ö/g, 'O').replace(/Ç/g, 'C');
+
+                const isOdendi = rawDurum.includes('ODEND') || rawDurum.includes('PAID');
+                let badgeColor = isOdendi ? 'var(--accent)' : 'var(--sub)';
+
+                const brutF = (b.brutMaas || 0).toLocaleString('tr-TR');
+                const kesintiF = (b.kesintiler || 0).toLocaleString('tr-TR');
+                const netF = (b.netMaas || 0).toLocaleString('tr-TR');
+
+                // Mantık Koruması: Sadece ÖDENDİ ise indir fonksiyonunu çağır, değilse uyarı ver.
+                const clickAction = isOdendi
+                    ? `indirBordroPDF('${b.adSoyad}', '${b.sicilNo}', '${b.departman || ''}', '${brutF}', '${kesintiF}', '${netF}', '${b.vergiOraniGosterge || 15}', '${b.donem}')`
+                    : `alert('Bu bordro henüz onaylanıp ödenmediği için resmi belge olarak indirilemez.')`;
+
+                const card = `
+                <div class="bordro-card">
+                    <div class="bordro-info">
+                        <h4>${b.donem} <span class="today-badge" style="background:${badgeColor}!important;">${b.durum}</span></h4>
+                        <span>Durum: ${b.durum}</span>
+                    </div>
+                    <div class="download-btn" onclick="${clickAction}" style="opacity: ${isOdendi ? '1' : '0.5'}; cursor: ${isOdendi ? 'pointer' : 'not-allowed'};">
+                        <i class="fa-solid fa-file-pdf"></i>
+                    </div>
+                </div>
+                `;
+                container.innerHTML += card;
+            }
+        }
+
+        function indirBordroPDF(adSoyad, sicil, departman, brut, kesinti, net, vergiOrani, donem) {
+            const element = document.createElement('div');
+            element.innerHTML = `
+            <div style="padding: 40px; font-family: 'Inter', sans-serif; color: #1e293b; background: #fff;">
+                <div style="text-align: center; border-bottom: 3px solid #0f172a; padding-bottom: 20px; margin-bottom: 30px;">
+                    <h1 style="margin: 0; color: #0f172a; letter-spacing: 1px;">GUARDIA ENDÜSTRİYEL</h1>
+                    <p style="margin: 5px 0; color: #64748b; font-weight: 600;">RESMİ MAAŞ BORDROSU - ${donem.toUpperCase()}</p>
+                </div>
+
+                <div style="display: flex; justify-content: space-between; margin-bottom: 40px; background: #f8fafc; padding: 20px; border-radius: 12px;">
+                    <div>
+                        <p style="margin: 2px 0;"><strong>Personel Ad Soyad:</strong> ${adSoyad}</p>
+                        <p style="margin: 2px 0;"><strong>Sicil Numarası:</strong> ${sicil}</p>
+                    </div>
+                    <div style="text-align: right;">
+                        <p style="margin: 2px 0;"><strong>Departman:</strong> ${departman}</p>
+                        <p style="margin: 2px 0;"><strong>Düzenleme Tarihi:</strong> ${new Date().toLocaleDateString('tr-TR')}</p>
+                    </div>
+                </div>
+
+                <table style="width: 100%; border-collapse: collapse; margin-bottom: 30px;">
+                    <thead>
+                        <tr style="background: #0f172a; color: white;">
+                            <th style="padding: 15px; text-align: left; border: 1px solid #0f172a;">ÖDEME KALEMLERİ</th>
+                            <th style="padding: 15px; text-align: right; border: 1px solid #0f172a;">TUTAR</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td style="padding: 12px; border: 1px solid #e2e8f0;">Aylık Brüt Kazanç</td>
+                            <td style="padding: 12px; border: 1px solid #e2e8f0; text-align: right;">₺ ${brut}</td>
+                        </tr>
+                        <tr>
+                            <td style="padding: 12px; border: 1px solid #e2e8f0;">Yasal Kesintiler Toplamı</td>
+                            <td style="padding: 12px; border: 1px solid #e2e8f0; text-align: right; color: #e11d48;">- ₺ ${kesinti}</td>
+                        </tr>
+                        <tr style="background: #f0fdf4; font-weight: 800; font-size: 1.1rem;">
+                            <td style="padding: 15px; border: 2px solid #10b981;">NET ELE GEÇEN</td>
+                            <td style="padding: 15px; border: 2px solid #10b981; text-align: right; color: #166534;">₺ ${net}</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <div style="margin-top: 50px; padding-top: 20px; border-top: 1px solid #e2e8f0; font-size: 0.75rem; color: #94a3b8; text-align: center;">
+                    <p>Bu belge dijital olarak Guardia İK Operasyon Merkezi üzerinden onaylanmış ve mühürlenmiştir.</p>
+                    <p>Vergi Dilimi: %${vergiOrani} | Belge ID: ${Math.random().toString(36).substr(2, 9).toUpperCase()}</p>
+                </div>
+            </div>
+            `;
+
+            const opt = {
+                margin: 10,
+                filename: `Bordro_${donem.replace(/\s+/g, '_')}_${adSoyad.replace(/\s+/g, '_')}.pdf`,
+                html2canvas: { scale: 2 },
+                jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+            };
+
+            html2pdf().set(opt).from(element).save();
+        }
+
+        window.onload = verileriCek;
+
+        if (localStorage.getItem('temaTercihi') === 'light') {
+            document.body.classList.add('light-mode');
+        }
+    </script>
+</body>
+
+</html>

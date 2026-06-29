@@ -1,0 +1,879 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <script>
+        if (!localStorage.getItem('token')) {
+            window.location.href = 'admin-login.html';
+        }
+    </script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Guardia | Help Desk</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/ik-sidebar.css">
+    <link rel="stylesheet" href="css/dept-common.css">
+    <style>
+        :root {
+            --sidebar: #0f172a;
+            --text-main: #1e293b;
+            --text-sub: #64748b;
+            --white: #fff;
+        }
+
+        .hero {
+            margin-bottom: 24px;
+        }
+
+            .hero h2 {
+                margin: 0 0 6px 0;
+                font-size: 1.5rem;
+                color: var(--sidebar);
+            }
+
+            .hero p {
+                margin: 0;
+                font-size: 0.9rem;
+                color: var(--text-sub);
+            }
+
+        .data-table-box {
+            background: var(--white);
+            padding: 24px;
+            border-radius: 20px;
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th {
+            text-align: left;
+            padding: 14px;
+            border-bottom: 2px solid #f1f5f9;
+            color: #64748b;
+            font-size: 0.9rem;
+        }
+
+        td {
+            padding: 14px;
+            border-bottom: 1px solid #f1f5f9;
+            font-size: 0.9rem;
+        }
+
+        .badge {
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
+            .badge.kritik {
+                background: #fef2f2;
+                color: #b91c1c;
+                border: 1px solid #fecaca;
+            }
+
+            .badge.cozuldu {
+                background: #f1f5f9;
+                color: #64748b;
+                opacity: 0.85;
+            }
+
+        tr.cozuldu {
+            opacity: 0.7;
+        }
+
+        .ik-content {
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden; /* İçerik taşmasın */
+            padding-bottom: 20px !important; /* Alt kısımdan biraz nefes payı */
+        }
+
+        .data-table-box {
+            background: white;
+            border-radius: 22px;
+            padding: 0 20px 20px 20px;
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
+            height: 450px !important;
+            overflow-y: auto !important;
+            display: block;
+            scrollbar-width: none;
+            margin-bottom: 20px;
+        }
+
+            .data-table-box::-webkit-scrollbar {
+                display: none;
+            }
+
+        thead {
+            position: sticky;
+            top: 0;
+            z-index: 10;
+            background: white;
+        }
+            /* 2. BAŞLIKLAR: Sızdırmazlık buradaki 'background' ve 'z-index' içinde */
+            thead th {
+                position: sticky !important;
+                top: 0;
+                /* ÖNEMLİ: Arka plan transparan kalmasın diye bembeyaz olması */
+                background-color: #ffffff !important;
+                z-index: 10 !important;
+                padding: 18px 15px !important;
+                color: #94a3b8;
+                font-size: 0.75rem;
+                font-weight: 700;
+                text-transform: uppercase;
+                border-bottom: 2px solid #f1f5f9 !important;
+            }
+
+        /* 3. TABLO YAPISI: border-collapse */
+        table {
+            width: 100%;
+            border-collapse: separate !important;
+            border-spacing: 0;
+        }
+
+        td {
+            background-color: #ffffff;
+            border-bottom: 1px solid #f1f5f9;
+            padding: 15px !important;
+        }
+    </style>
+</head>
+<body class="ik-layout">
+    <div class="ik-sidebar">
+        <h2>🛡️ Guardia Bİ</h2>
+        <ul class="ik-nav-links">
+            <li><a href="bi-index.html" style="text-decoration:none;color:inherit;display:flex;align-items:center;gap:12px;"><i class="fa-solid fa-chart-line"></i> Genel Bakış</a></li>
+            <li><a href="bi-envanter.html" style="text-decoration:none;color:inherit;display:flex;align-items:center;gap:12px;"><i class="fa-solid fa-laptop"></i> Envanter Takibi</a></li>
+            <li class="active"><i class="fa-solid fa-headset"></i> Destek Talepleri</li>
+            <li><a href="bi-guvenlik.html" style="text-decoration:none;color:inherit;display:flex;align-items:center;gap:12px;"><i class="fa-solid fa-network-wired" ></i> Ağ & Güvenlik</a></li>
+            <li><a href="bi-yedekleme.html" style="text-decoration:none;color:inherit;display:flex;align-items:center;gap:12px;"><i class="fa-solid fa-database"></i> Yedekleme Planı</a></li>
+        </ul>
+        <div class="ik-user-tag">
+            <div class="ik-user-avatar"><img src="img/selin_aksoy.jpg" alt=""></div>
+            <div class="ik-user-info"><span>Selin Aksoy</span><small>Bilgi İşlem Uzmanı</small></div>
+        </div>
+    </div>
+
+  <div class="ik-content">
+    <div class="dept-header">
+        <div class="page-title-group">
+            <h1>Help Desk & Destek Talepleri</h1>
+            <p class="page-desc">Personelden gelen teknik arıza ve destek taleplerini öncelik sırasına göre yönetin.</p>
+        </div>
+
+        <div class="notif-container">
+            <input type="checkbox" id="notif-toggle" aria-hidden="true" style="display:none;">
+            <label for="notif-toggle" class="notif-trigger">
+                <i class="fa-solid fa-bell"></i>
+                <span class="notif-badge">2</span>
+            </label>
+            <div class="notif-dropdown">
+    <h4>Mesaj Merkezi</h4>
+    
+    <div id="notif-incoming-list" class="notif-list">
+        <div class="notif-item" onclick="openReplyModal('SİSTEM', 'Kritik: Üretim hattı server hatası! Teknik ekip müdahale ediyor.')" style="cursor: pointer;">
+            <span class="notif-status"></span> <strong>SİSTEM SİNYALİ</strong>
+            <span>Üretim hattı server hatası!</span>
+            <small style="display:block; color: #94a3b8; font-size: 0.75rem; margin-top: 5px;">
+                <i class="fa-regular fa-clock"></i> 08:15
+            </small>
+        </div>
+        
+        <div class="notif-item" onclick="openReplyModal('BİLGİ İŞLEM', '2 yeni şifre yenileme talebi var. Onayınız bekleniyor.')" style="cursor: pointer;">
+            <span class="notif-status"></span>
+            <strong>BİLGİ İŞLEM</strong>
+            <span>2 yeni şifre yenileme talebi.</span>
+            <small style="display:block; color: #94a3b8; font-size: 0.75rem; margin-top: 5px;">
+                <i class="fa-regular fa-clock"></i> 09:30
+            </small>
+        </div>
+    </div>
+
+    <div id="notif-outgoing-list" class="notif-list" style="display:none;">
+        <div class="notif-item">
+            <strong>SİZDEN -> BİLGİ İŞLEM</strong>
+            <span>Yeni personel için e-posta açılması talebi.</span>
+            <small style="display:block; color: #94a3b8; font-size: 0.75rem; margin-top: 5px;">
+                <i class="fa-regular fa-clock"></i> 10:20
+            </small>
+        </div>
+    </div>
+
+    <div class="notif-footer">
+        <button type="button" class="notif-action-btn" onclick="showIncoming()">
+            <i class="fa-solid fa-bell"></i> Gelenler
+        </button>
+        <button type="button" class="notif-action-btn" onclick="showOutgoing()">
+            <i class="fa-solid fa-paper-plane"></i> Gidenler
+        </button>
+    </div>
+</div></div></div>
+
+    
+
+
+<div class="stats-container" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 25px; margin-bottom: 30px;">
+    
+    <div class="stat-card" style="background: white; padding: 25px; border-radius: 24px; display: flex; align-items: center; gap: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.03);">
+        <div class="icon-box" style="background: #fef2f2; color: #ef4444; width: 55px; height: 55px; border-radius: 16px; display: flex; align-items: center; justify-content: center; font-size: 1.5rem;">
+           <i class="fa-solid fa-bolt-lightning"></i>
+        </div>
+        <div class="card-info" style="flex: 1;">
+            <small style="color: #64748b; font-weight: 700; text-transform: uppercase; font-size: 0.65rem; letter-spacing: 0.8px; display: block; margin-bottom: 4px;">Bekleyen Kritik</small>
+            <p style="margin: 0; font-size: 1.3rem; font-weight: 800; color: #ef4444;"><span id="count-kritik">0</span> Adet</p>
+            <small id="card-kritik-sub" style="color: #94a3b8; font-size: 0.7rem;">—</small>
+        </div>
+    </div>
+
+    <div class="stat-card" style="background: white; padding: 25px; border-radius: 24px; display: flex; align-items: center; gap: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.03);">
+        <div class="icon-box" style="background: #eff6ff; color: #3b82f6; width: 55px; height: 55px; border-radius: 16px; display: flex; align-items: center; justify-content: center; font-size: 1.5rem;">
+            <i class="fa-solid fa-spinner fa-spin-fast" style="animation: spin 3s linear infinite;"></i>
+        </div>
+        <div class="card-info" style="flex: 1;">
+            <small style="color: #64748b; font-weight: 700; text-transform: uppercase; font-size: 0.65rem; letter-spacing: 0.8px; display: block; margin-bottom: 4px;">Aktif Talepler</small>
+            <p style="margin: 0; font-size: 1.3rem; font-weight: 800; color: #0f172a;"><span id="count-aktif">0</span> Adet</p>
+            <small id="card-aktif-sub" style="color: #94a3b8; font-size: 0.7rem;">—</small>
+        </div>
+    </div>
+
+    <div class="stat-card" style="background: white; padding: 25px; border-radius: 24px; display: flex; align-items: center; gap: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.03);">
+        <div class="icon-box" style="background: #f0fdf4; color: #10b981; width: 55px; height: 55px; border-radius: 16px; display: flex; align-items: center; justify-content: center; font-size: 1.5rem;">
+            <i class="fa-solid fa-circle-check"></i>
+        </div>
+        <div class="card-info" style="flex: 1;">
+            <small style="color: #64748b; font-weight: 700; text-transform: uppercase; font-size: 0.65rem; letter-spacing: 0.8px; display: block; margin-bottom: 4px;">Bugün Çözülen</small>
+            <p style="margin: 0; font-size: 1.3rem; font-weight: 800; color: #0f172a;"><span id="count-cozulen">0</span> Adet</p>
+            <small id="card-cozulen-hint" style="color: #10b981; font-weight: 700; font-size: 0.7rem; display: block; margin-top: 4px;">Henüz bugün kapanan kayıt yok</small>
+        </div>
+    </div>
+
+</div>
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; gap: 15px;">
+    <div style="position: relative; flex: 1;">
+        <i class="fa-solid fa-magnifying-glass" style="position: absolute; left: 15px; top: 12px; color: #94a3b8;"></i>
+        <input type="text" id="searchInput" onkeyup="filterTable()" placeholder="Kayıt no veya arıza ara..." 
+               style="width: 100%; padding: 10px 15px 10px 45px; border-radius: 12px; border: 1px solid #e2e8f0; outline: none; font-family: 'Inter', sans-serif; font-size: 0.85rem;">
+    </div>
+    
+    <select onchange="applyFilter(this.value)" style="padding: 10px; border-radius: 12px; border: 1px solid #e2e8f0; background: white; color: #475569; font-weight: 600; cursor: pointer; outline: none; font-size: 0.85rem;">
+        <option value="HEPSİ"> Tüm Talepler</option>
+        <option value="KRİTİK"> Kritik Seviye</option>
+        <option value="ORTA">Orta Seviye</option>
+        <option value="DÜŞÜK"> Düşük Seviye</option>
+    </select>
+
+    <button onclick="openNewTicketModal()" style="background: #0f172a; color: white; border: none; padding: 10px 20px; border-radius: 12px; cursor: pointer; font-weight: 700; font-size: 0.85rem; display: flex; align-items: center; gap: 8px;">
+        <i class="fa-solid fa-plus"></i> Yeni Kayıt Aç
+    </button>
+</div>
+
+<div class="data-table-box" style="background: white; border-radius: 20px; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.02); margin-top: -10px;">
+  <table style="width: 100%; border-collapse: collapse; font-family: 'Inter', sans-serif; table-layout: fixed;">
+    <thead>
+        <tr style="background: white; text-align: left; border-bottom: 2px solid #f1f5f9;">
+            <th style="width: 25%; padding: 12px 18px; color: #94a3b8; font-size: 0.75rem; text-transform: uppercase; font-weight: 700;">Kayıt / Personel</th>
+            <th style="width: 35%; padding: 12px 18px; color: #94a3b8; font-size: 0.75rem; text-transform: uppercase; font-weight: 700;">Arıza Teşhisi</th>
+            <th style="width: 15%; padding: 12px 18px; color: #94a3b8; font-size: 0.75rem; text-transform: uppercase; font-weight: 700;">Öncelik</th>
+            <th style="width: 10%; padding: 12px 18px; color: #94a3b8; font-size: 0.75rem; text-transform: uppercase; font-weight: 700;">Saat</th>
+            <th style="width: 15%; padding: 12px 18px; color: #94a3b8; font-size: 0.75rem; text-transform: uppercase; font-weight: 700; text-align: center;">Aksiyon</th>
+        </tr>
+    </thead>
+        <tbody>
+            <tr style="border-bottom: 1px solid #f8fafc; transition: 0.2s;" onmouseover="this.style.background='#fff1f2'" onmouseout="this.style.background='transparent'">
+                <td style="padding: 10px 18px;">
+                    <span style="font-weight: 700; color: #b91c1c; display: block; font-size: 0.85rem;">#D-201</span>
+                    <small style="color: #64748b; font-size: 0.75rem;"><b>Mehmet Öz</b> (Üretim)</small>
+                </td>
+                <td style="padding: 10px 18px;">
+                    <strong style="color: #1e293b; display: block; font-size: 0.85rem;">Server Bağlantı Hatası</strong>
+                    <small style="color: #94a3b8; font-size: 0.75rem;">Hat sonu terminali yanıt vermiyor.</small>
+                </td>
+                <td style="padding: 10px 18px;"><span style="background: #fef2f2; color: #ef4444; padding: 4px 10px; border-radius: 12px; font-size: 0.65rem; font-weight: 800; border: 1px solid #fecaca;">KRİTİK</span></td>
+                <td style="padding: 10px 18px; color: #64748b; font-size: 0.8rem; font-weight: 600;">08:15</td>
+                <td style="padding: 10px 18px; text-align: center;">
+                   <button onclick="executeAction('onar', '#D-201', 'Mehmet Öz')" 
+        style="background: #0f172a; color: white; border: none; padding: 7px 14px; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 0.75rem; display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-width: 95px; text-transform: lowercase;">
+    <i class="fa-solid fa-magnifying-glass" style="font-size: 0.7rem;"></i> incele
+</button>
+                </td>
+            </tr>
+
+            <tr style="border-bottom: 1px solid #f8fafc; transition: 0.2s;" onmouseover="this.style.background='#fffbeb'" onmouseout="this.style.background='transparent'">
+                <td style="padding: 10px 18px;">
+                    <span style="font-weight: 700; color: #0f172a; display: block; font-size: 0.85rem;">#D-205</span>
+                    <small style="color: #64748b; font-size: 0.75rem;"><b>Aslı Can</b> (Finans)</small>
+                </td>
+                <td style="padding: 10px 18px;">
+                    <strong style="color: #1e293b; display: block; font-size: 0.85rem;">Yazıcı Çıktı Hatası</strong>
+                    <small style="color: #94a3b8; font-size: 0.75rem;">Fatura yazıcısı kağıt sıkıştırıyor.</small>
+                </td>
+                <td style="padding: 10px 18px;"><span style="background: #fffbeb; color: #d97706; padding: 4px 10px; border-radius: 12px; font-size: 0.65rem; font-weight: 800; border: 1px solid #fef3c7;">ORTA</span></td>
+                <td style="padding: 10px 18px; color: #64748b; font-size: 0.8rem; font-weight: 600;">10:30</td>
+                <td style="padding: 10px 18px; text-align: center;">
+                    <button onclick="executeAction('incele', '#D-205', 'Aslı Can')" style="background: #f1f5f9; color: #0f172a; border: 1px solid #e2e8f0; padding: 7px 14px; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 0.75rem; display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-width: 95px;">
+                        <i class="fa-solid fa-magnifying-glass" style="font-size: 0.7rem;"></i> İncele
+                    </button>
+                </td>
+            </tr>
+
+            <tr style="border-bottom: 1px solid #f8fafc; transition: 0.2s;" onmouseover="this.style.background='#f0fdf4'" onmouseout="this.style.background='transparent'">
+                <td style="padding: 10px 18px;">
+                    <span style="font-weight: 700; color: #0f172a; display: block; font-size: 0.85rem;">#D-202</span>
+                    <small style="color: #64748b; font-size: 0.75rem;"><b>Selin Y.</b> (İK)</small>
+                </td>
+                <td style="padding: 10px 18px;">
+                    <strong style="color: #1e293b; display: block; font-size: 0.85rem;">Şifre Senkronu</strong>
+                    <small style="color: #94a3b8; font-size: 0.75rem;">E-posta şifre yenileme talebi.</small>
+                </td>
+                <td style="padding: 10px 18px;">
+    <span style="background: #f0fdf4; color: #10b981; padding: 4px 10px; border-radius: 12px; font-size: 0.65rem; font-weight: 800; border: 1px solid #bcf0da;">DÜŞÜK</span>
+</td>
+                <td style="padding: 10px 18px; color: #64748b; font-size: 0.8rem; font-weight: 600;">11:42</td>
+                <td style="padding: 10px 18px; text-align: center;">
+                    <button onclick="executeAction('sifirla', '#D-202', 'Selin Y.')" 
+        style="background: #f1f5f9; color: #0f172a; border: 1px solid #e2e8f0; padding: 7px 14px; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 0.75rem; display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-width: 95px; text-transform: lowercase;">
+    <i class="fa-solid fa-magnifying-glass" style="font-size: 0.7rem;"></i> incele
+</button>
+                </td>
+            </tr>
+
+            <tr style="border-bottom: 1px solid #f8fafc; transition: 0.2s;" onmouseover="this.style.background='#fffbeb'" onmouseout="this.style.background='transparent'">
+                <td style="padding: 10px 18px;">
+                    <span style="font-weight: 700; color: #0f172a; display: block; font-size: 0.85rem;">#D-203</span>
+                    <small style="color: #64748b; font-size: 0.75rem;"><b>Burcu Kılıç</b> (Bilgi İşlem)</small>
+                </td>
+                <td style="padding: 10px 18px;">
+                    <strong style="color: #1e293b; display: block; font-size: 0.85rem;">VPN oturumu kopuyor</strong>
+                    <small style="color: #94a3b8; font-size: 0.75rem;">Her 20 dakikada bir yeniden bağlanma gerekiyor.</small>
+                </td>
+                <td style="padding: 10px 18px;"><span style="background: #fffbeb; color: #d97706; padding: 4px 10px; border-radius: 12px; font-size: 0.65rem; font-weight: 800; border: 1px solid #fef3c7;">ORTA</span></td>
+                <td style="padding: 10px 18px; color: #64748b; font-size: 0.8rem; font-weight: 600;">09:05</td>
+                <td style="padding: 10px 18px; text-align: center;">
+                    <button onclick="executeAction('incele', '#D-203', 'Burcu Kılıç')" style="background: #f1f5f9; color: #0f172a; border: 1px solid #e2e8f0; padding: 7px 14px; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 0.75rem; display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-width: 95px;">
+                        <i class="fa-solid fa-magnifying-glass" style="font-size: 0.7rem;"></i> İncele
+                    </button>
+                </td>
+            </tr>
+
+            <tr style="border-bottom: 1px solid #f8fafc; transition: 0.2s;" onmouseover="this.style.background='#f0fdf4'" onmouseout="this.style.background='transparent'">
+                <td style="padding: 10px 18px;">
+                    <span style="font-weight: 700; color: #0f172a; display: block; font-size: 0.85rem;">#D-204</span>
+                    <small style="color: #64748b; font-size: 0.75rem;"><b>Emre Tan</b> (Lojistik)</small>
+                </td>
+                <td style="padding: 10px 18px;">
+                    <strong style="color: #1e293b; display: block; font-size: 0.85rem;">El terminali barkod okuma</strong>
+                    <small style="color: #94a3b8; font-size: 0.75rem;">Depo giriş istasyonunda kırmızı ışık yanıyor.</small>
+                </td>
+                <td style="padding: 10px 18px;"><span style="background: #f0fdf4; color: #10b981; padding: 4px 10px; border-radius: 12px; font-size: 0.65rem; font-weight: 800; border: 1px solid #bcf0da;">DÜŞÜK</span></td>
+                <td style="padding: 10px 18px; color: #64748b; font-size: 0.8rem; font-weight: 600;">12:10</td>
+                <td style="padding: 10px 18px; text-align: center;">
+                    <button onclick="executeAction('incele', '#D-204', 'Emre Tan')" style="background: #f1f5f9; color: #0f172a; border: 1px solid #e2e8f0; padding: 7px 14px; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 0.75rem; display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-width: 95px; text-transform: lowercase;">
+                        <i class="fa-solid fa-magnifying-glass" style="font-size: 0.7rem;"></i> incele
+                    </button>
+                </td>
+            </tr>
+
+            <tr style="border-bottom: 1px solid #f8fafc; transition: 0.2s;" onmouseover="this.style.background='#fff1f2'" onmouseout="this.style.background='transparent'">
+                <td style="padding: 10px 18px;">
+                    <span style="font-weight: 700; color: #b91c1c; display: block; font-size: 0.85rem;">#D-206</span>
+                    <small style="color: #64748b; font-size: 0.75rem;"><b>Deniz Arı</b> (Satın Alma)</small>
+                </td>
+                <td style="padding: 10px 18px;">
+                    <strong style="color: #1e293b; display: block; font-size: 0.85rem;">ERP ekranı donuyor</strong>
+                    <small style="color: #94a3b8; font-size: 0.75rem;">Sipariş modülü 30 sn üzeri yanıt vermiyor.</small>
+                </td>
+                <td style="padding: 10px 18px;"><span style="background: #fef2f2; color: #ef4444; padding: 4px 10px; border-radius: 12px; font-size: 0.65rem; font-weight: 800; border: 1px solid #fecaca;">KRİTİK</span></td>
+                <td style="padding: 10px 18px; color: #64748b; font-size: 0.8rem; font-weight: 600;">13:45</td>
+                <td style="padding: 10px 18px; text-align: center;">
+                    <button onclick="executeAction('onar', '#D-206', 'Deniz Arı')" style="background: #0f172a; color: white; border: none; padding: 7px 14px; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 0.75rem; display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-width: 95px; text-transform: lowercase;">
+                        <i class="fa-solid fa-magnifying-glass" style="font-size: 0.7rem;"></i> incele
+                    </button>
+                </td>
+            </tr>
+
+            <tr style="border-bottom: 1px solid #f8fafc; transition: 0.2s;" onmouseover="this.style.background='#fffbeb'" onmouseout="this.style.background='transparent'">
+                <td style="padding: 10px 18px;">
+                    <span style="font-weight: 700; color: #0f172a; display: block; font-size: 0.85rem;">#D-207</span>
+                    <small style="color: #64748b; font-size: 0.75rem;"><b>Gamze Lüleci</b> (Hukuk)</small>
+                </td>
+                <td style="padding: 10px 18px;">
+                    <strong style="color: #1e293b; display: block; font-size: 0.85rem;">E-imza sertifika uyarısı</strong>
+                    <small style="color: #94a3b8; font-size: 0.75rem;">Akıllı kart sürücüsü güncelleme istiyor.</small>
+                </td>
+                <td style="padding: 10px 18px;"><span style="background: #fffbeb; color: #d97706; padding: 4px 10px; border-radius: 12px; font-size: 0.65rem; font-weight: 800; border: 1px solid #fef3c7;">ORTA</span></td>
+                <td style="padding: 10px 18px; color: #64748b; font-size: 0.8rem; font-weight: 600;">14:20</td>
+                <td style="padding: 10px 18px; text-align: center;">
+                    <button onclick="executeAction('incele', '#D-207', 'Gamze Lüleci')" style="background: #f1f5f9; color: #0f172a; border: 1px solid #e2e8f0; padding: 7px 14px; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 0.75rem; display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-width: 95px;">
+                        <i class="fa-solid fa-magnifying-glass" style="font-size: 0.7rem;"></i> İncele
+                    </button>
+                </td>
+            </tr>
+
+            <tr style="border-bottom: 1px solid #f8fafc; transition: 0.2s;" onmouseover="this.style.background='#f0fdf4'" onmouseout="this.style.background='transparent'">
+                <td style="padding: 10px 18px;">
+                    <span style="font-weight: 700; color: #0f172a; display: block; font-size: 0.85rem;">#D-208</span>
+                    <small style="color: #64748b; font-size: 0.75rem;"><b>Oğuz Korkmaz</b> (Bakım)</small>
+                </td>
+                <td style="padding: 10px 18px;">
+                    <strong style="color: #1e293b; display: block; font-size: 0.85rem;">Saha Wi-Fi zayıf sinyal</strong>
+                    <small style="color: #94a3b8; font-size: 0.75rem;">Atölye B köşesinde bağlantı düşüyor.</small>
+                </td>
+                <td style="padding: 10px 18px;"><span style="background: #f0fdf4; color: #10b981; padding: 4px 10px; border-radius: 12px; font-size: 0.65rem; font-weight: 800; border: 1px solid #bcf0da;">DÜŞÜK</span></td>
+                <td style="padding: 10px 18px; color: #64748b; font-size: 0.8rem; font-weight: 600;">15:00</td>
+                <td style="padding: 10px 18px; text-align: center;">
+                    <button onclick="executeAction('incele', '#D-208', 'Oğuz Korkmaz')" style="background: #f1f5f9; color: #0f172a; border: 1px solid #e2e8f0; padding: 7px 14px; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 0.75rem; display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-width: 95px; text-transform: lowercase;">
+                        <i class="fa-solid fa-magnifying-glass" style="font-size: 0.7rem;"></i> incele
+                    </button>
+                </td>
+            </tr>
+
+            <tr style="border-bottom: 1px solid #f8fafc; transition: 0.2s;" onmouseover="this.style.background='#f0fdf4'" onmouseout="this.style.background='transparent'">
+                <td style="padding: 10px 18px;">
+                    <span style="font-weight: 700; color: #0f172a; display: block; font-size: 0.85rem;">#D-209</span>
+                    <small style="color: #64748b; font-size: 0.75rem;"><b>Aylin Mercan</b> (İdari İşler)</small>
+                </td>
+                <td style="padding: 10px 18px;">
+                    <strong style="color: #1e293b; display: block; font-size: 0.85rem;">Teams toplantısında ses kesilmesi</strong>
+                    <small style="color: #94a3b8; font-size: 0.75rem;">Kulaklık veya ağ gecikmesi şüphesi.</small>
+                </td>
+                <td style="padding: 10px 18px;"><span style="background: #f0fdf4; color: #10b981; padding: 4px 10px; border-radius: 12px; font-size: 0.65rem; font-weight: 800; border: 1px solid #bcf0da;">DÜŞÜK</span></td>
+                <td style="padding: 10px 18px; color: #64748b; font-size: 0.8rem; font-weight: 600;">15:33</td>
+                <td style="padding: 10px 18px; text-align: center;">
+                    <button onclick="executeAction('incele', '#D-209', 'Aylin Mercan')" style="background: #f1f5f9; color: #0f172a; border: 1px solid #e2e8f0; padding: 7px 14px; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 0.75rem; display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-width: 95px; text-transform: lowercase;">
+                        <i class="fa-solid fa-magnifying-glass" style="font-size: 0.7rem;"></i> incele
+                    </button>
+                </td>
+            </tr>
+        </tbody>
+    </table>
+</div>
+
+        <div id="note-sent">Notunuz seçilen birimlere iletildi.</div>
+<div id="replyModal" class="reply-modal">
+    <div class="reply-content">
+        <div class="reply-header">
+            <i class="fa-solid fa-reply"></i>
+            <h3 id="replyTarget">HUKUK Birimine Cevap Yaz</h3>
+        </div>
+        
+        <div id="replyOriginalMessage" class="original-msg-preview">
+            "5 adet yeni iş sözleşmesi onaylandı."
+        </div>
+        
+        <textarea id="replyText" class="reply-textarea" placeholder="Cevabınızı buraya yazın..."></textarea>
+        
+        <div class="reply-actions">
+            <button class="btn-reply-cancel" onclick="closeReplyModal()">Vazgeç</button>
+            <button class="btn-reply-send" onclick="sendReply()">Cevapla</button>
+        </div>
+    </div>
+    </div>
+
+<div id="newTicketModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(15, 23, 42, 0.7); z-index:9999; align-items:center; justify-content:center;">
+    <div style="background:white; padding:30px; border-radius:24px; width:420px; box-shadow:0 20px 50px rgba(0,0,0,0.2); font-family: 'Inter', sans-serif;">
+        <h3 style="margin-top:0; color:#0f172a; display:flex; align-items:center; gap:10px;">
+            <i class="fa-solid fa-file-medical"></i> Yeni Teknik Kayıt
+        </h3>
+        
+        <label style="display:block; margin-top:15px; font-size:0.75rem; font-weight:700; color:#94a3b8; text-transform:uppercase;">Kayıt / Personel</label>
+        <input type="text" id="newPers" placeholder="Ad Soyad (Birim)" style="width:100%; padding:12px; margin-top:5px; border-radius:10px; border:1px solid #e2e8f0; outline:none;">
+
+        <label style="display:block; margin-top:15px; font-size:0.75rem; font-weight:700; color:#94a3b8; text-transform:uppercase;">Arıza Teşhisi</label>
+        <textarea id="newDetail" placeholder="Sorunu buraya kısaca yazın (Örn: Şifre hatası)" style="width:100%; padding:12px; margin-top:5px; border-radius:10px; border:1px solid #e2e8f0; height:80px; outline:none; resize:none;"></textarea>
+
+        <label style="display:block; margin-top:15px; font-size:0.75rem; font-weight:700; color:#94a3b8; text-transform:uppercase;">Öncelik Seviyesi</label>
+        <select id="newPriority" style="width:100%; padding:12px; margin-top:5px; border-radius:10px; border:1px solid #e2e8f0; background:white; cursor:pointer;">
+            <option value="KRİTİK"> Kritik</option>
+            <option value="ORTA"> Orta</option>
+            <option value="DÜŞÜK"> Düşük</option>
+        </select>
+
+        <div style="display:flex; gap:10px; margin-top:25px;">
+            <button onclick="document.getElementById('newTicketModal').style.display='none'" style="flex:1; padding:12px; border-radius:12px; border:1px solid #e2e8f0; cursor:pointer; font-weight:600; background:#f8fafc;">Vazgeç</button>
+            <button onclick="saveTicket()" style="flex:1; padding:12px; border-radius:12px; border:none; background:#0f172a; color:white; font-weight:700; cursor:pointer;">Sisteme İşle</button>
+        </div>
+    </div>
+</div>
+    <script>
+         /* 1. MEVCUT CANLI TAKİP MODALLARI */
+function openLiveTracking() { document.getElementById('liveTrackingModal').style.display = 'flex'; }
+function closeLiveTracking() { document.getElementById('liveTrackingModal').style.display = 'none'; }
+
+/* 2. BİLDİRİM LİSTESİ GEÇİŞLERİ (Gelen/Giden) */
+function showIncoming() {
+    const incoming = document.getElementById('notif-incoming-list');
+    const outgoing = document.getElementById('notif-outgoing-list');
+    const btnIn = document.querySelector('.notif-action-btn[onclick="showIncoming()"]');
+    const btnOut = document.querySelector('.notif-action-btn[onclick="showOutgoing()"]');
+    if (incoming && outgoing) {
+        incoming.style.display = 'block';
+        outgoing.style.display = 'none';
+        btnIn.classList.add('active');
+        btnOut.classList.remove('active');
+    }
+}
+
+function showOutgoing() {
+    const incoming = document.getElementById('notif-incoming-list');
+    const outgoing = document.getElementById('notif-outgoing-list');
+    const btnIn = document.querySelector('.notif-action-btn[onclick="showIncoming()"]');
+    const btnOut = document.querySelector('.notif-action-btn[onclick="showOutgoing()"]');
+    if (incoming && outgoing) {
+        incoming.style.display = 'none';
+        outgoing.style.display = 'block';
+        btnOut.classList.add('active');
+        btnIn.classList.remove('active');
+    }
+}
+
+/* 3. YENİ HIZLI CEVAPLAMA SİSTEMİ */
+function openReplyModal(sender, message) {
+    document.getElementById('replyTarget').innerText = sender + " Birimine Cevap Yaz";
+    document.getElementById('replyOriginalMessage').innerText = '"' + message + '"';
+    document.getElementById('replyModal').style.display = 'flex';
+}
+
+function closeReplyModal() {
+    document.getElementById('replyModal').style.display = 'none';
+    document.getElementById('replyText').value = '';
+}
+
+function sendReply() {
+    const text = document.getElementById('replyText').value;
+    const target = document.getElementById('replyTarget').innerText.replace(" Cevap Yaz", "");
+    if(text.trim() !== "") {
+        alert("cevabınız " + target + " birimine iletildi.");
+        closeReplyModal();
+    } else {
+        alert("Lütfen boş bir mesaj göndermeyin.");
+    }
+}
+
+/* 4. GENEL TIKLAMA VE BAŞLANGIÇ AYARLARI */
+window.onclick = function(event) {
+    let liveModal = document.getElementById('liveTrackingModal');
+    let replyModal = document.getElementById('replyModal');
+    
+    // Hangi modal açıksa ve dışına tıklandıysa onu kapat
+    if (event.target == liveModal) { liveModal.style.display = "none"; }
+    if (event.target == replyModal) { replyModal.style.display = "none"; }
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    const btnIn = document.querySelector('.notif-action-btn[onclick="showIncoming()"]');
+    if(btnIn) btnIn.classList.add('active');
+});
+function sendReply() {
+    const text = document.getElementById('replyText').value;
+    
+    // trim() metni temizler, eğer sonuç boş değilse gönderir
+    if(text.trim() !== "") {
+        alert("Cevabınız başarıyla iletildi.");
+        closeReplyModal();
+    } else {
+        // Kutu boşsa burası çalışır ve engeller
+        alert("Lütfen boş bir mesaj göndermeyin.");
+    }
+}// Boş alana tıklandığında açık olan her şeyi kapat
+document.addEventListener('click', function(event) {
+    // 1. Checkbox ile açılan menüleri kapat (Bildirimler ve Not Kutusu)
+    const notifToggle = document.getElementById('notif-toggle');
+    const noteToggle = document.getElementById('note-box-toggle');
+    
+    // Bildirimler için: Tıklanan yer bildirim alanı değilse ve menü açıksa kapat
+    const notifContainer = document.querySelector('.notif-container');
+    if (notifToggle.checked && !notifContainer.contains(event.target)) {
+        notifToggle.checked = false;
+    }
+
+    // Not Kutusu için: Tıklanan yer not kutusu veya onu açan buton değilse kapat
+    const msgBox = document.querySelector('.msg-box');
+    const quickNoteBtn = document.querySelector('.quick-note-btn');
+    if (noteToggle.checked && !msgBox.contains(event.target) && !quickNoteBtn.contains(event.target)) {
+        noteToggle.checked = false;
+    }
+
+    // 2. Modal'lar için 
+    const replyModal = document.getElementById('replyModal');
+    if (event.target === replyModal) {
+        closeReplyModal();
+    }
+});
+function executeAction(type, ticketId, name) {
+ 
+    let message = "";
+    if (type === 'onar') {
+        message = "TEKNİK MÜDAHALE:\n\n" + ticketId + " nolu arıza için Selin Aksoy tarafından uzaktan müdahale sağlandı. Sistem normale döndü.";
+    } else if (type === 'incele') {
+        message = " ANALİZ BAŞLATILDI:\n\n" + name + " kullanıcısının cihaz logları Selin Aksoy tarafından incelendi. Donanımsal bir sorun saptanmadı.";
+    } else if (type === 'sifirla') {
+        message = " ŞİFRE RESETLENDİ:\n\n" + name + " kullanıcısının şifresi sıfırlandı ve SMS ile yeni giriş kodu gönderildi.";
+    } else if (type === 'engelle') {
+        message = " GÜVENLİK ENGELLENDİ:\n\nŞüpheli IP adresi Selin Aksoy tarafından karantinaya alındı.";
+    }
+
+    alert(message);
+
+    incrementCozulen(type, ticketId, name);
+
+    // 2. Butonu "Tamamlandı" Hali
+    let btn = event.currentTarget;
+    let row = btn.closest('tr');
+
+    btn.innerHTML = "Tamamlandı ";
+    btn.style.background = "#22c55e"; 
+    btn.style.color = "white";
+    btn.style.border = "none";
+    btn.disabled = true;
+
+    // 3. 2 Saniye Sonra Satırı Silme
+    setTimeout(() => {
+        row.style.opacity = "0";
+        row.style.transform = "translateX(20px)";
+        row.style.transition = "all 0.8s ease";
+
+        setTimeout(() => {
+            row.remove(); 
+            
+            //  YENİ EKLEME 2: Satır silindiği için kartlardaki sayıları tekrar saydır 
+            updateDashboardStats(); 
+            
+            checkTableEmpty(); 
+        }, 800);
+    }, 2000);
+}
+
+// Tablo tamamen boşalırsa güzel bir mesaj çıksın 
+function checkTableEmpty() {
+    const tableBody = document.querySelector("table tbody");
+    if (tableBody.rows.length === 0) {
+        tableBody.innerHTML = `<tr><td colspan="5" style="text-align:center; padding:40px; color:#94a3b8;">
+            <i class="fa-solid fa-circle-check" style="font-size:2rem; display:block; margin-bottom:10px; color:#22c55e;"></i>
+            Tüm talepler çözüldü. Selin Hanım, şu an bekleyen iş yok!
+        </td></tr>`;
+    }
+}
+// ARAMA FONKSİYONU
+function filterTable() {
+    let input = document.getElementById("searchInput").value.toUpperCase();
+    let table = document.querySelector("table");
+    let tr = table.getElementsByTagName("tr");
+
+    for (let i = 1; i < tr.length; i++) { // Başlığı atla
+        let text = tr[i].innerText.toUpperCase();
+        if (text.indexOf(input) > -1) {
+            tr[i].style.display = "";
+        } else {
+            tr[i].style.display = "none";
+        }
+    }
+}
+
+// FİLTRELEME FONKSİYONU (Kritik, Orta vb.)
+function applyFilter(level) {
+    let table = document.querySelector("table");
+    let tr = table.getElementsByTagName("tr");
+
+    for (let i = 1; i < tr.length; i++) {
+        let priority = tr[i].innerText.toUpperCase();
+        if (level === 'HEPSİ' || priority.indexOf(level) > -1) {
+            tr[i].style.display = "";
+        } else {
+            tr[i].style.display = "none";
+        }
+    }
+}
+function openNewTicketModal() { document.getElementById('newTicketModal').style.display = 'flex'; }
+
+function saveTicket() {
+    const pers = document.getElementById('newPers').value;
+    const detail = document.getElementById('newDetail').value;
+    const priority = document.getElementById('newPriority').value;
+
+    if(!pers || !detail) { alert("Lütfen boş alan bırakmayın!"); return; }
+
+    // 1. AKILLI ANALİZ (İkon ve Aksiyon Belirleme)
+    let autoAction = 'incele'; 
+    let icon = 'fa-magnifying-glass'; // Varsayılan ikon
+    let detailLower = detail.toLowerCase();
+
+    if(detailLower.includes("şifre") || detailLower.includes("giriş")) { 
+        autoAction = 'sifirla'; 
+        icon = 'fa-rotate-right';
+    } else if(detailLower.includes("server") || detailLower.includes("hata") || detailLower.includes("bağlantı")) { 
+        autoAction = 'onar'; 
+        icon = 'fa-wrench';
+    }
+
+    const ticketId = "#D-" + Math.floor(Math.random() * 800 + 200);
+    const currentTime = new Date().toLocaleTimeString().slice(0,5);
+
+    // 2. TASARIM AYARLARI (Renkler ve Stiller) 
+    const isKritik = (priority === 'KRİTİK');
+    const isOrta = (priority === 'ORTA');
+    const isDusuk = (priority === 'DÜŞÜK'); // Yeşil kontrolü eklendi
+
+    // Numaralar ve Hover renkleri
+    let idColor = isKritik ? "#b91c1c" : "#0f172a"; 
+    let rowHover = "#f8fafc"; // Varsayılan gri hover
+
+    if (isKritik) rowHover = "#fff1f2";      // Kırmızımsı hover
+    else if (isOrta) rowHover = "#fffbeb";  // Sarımsı hover
+    else if (isDusuk) rowHover = "#f0fdf4"; // YEŞİL HOVER 
+
+    // Badge Stili (Renkli çerçeveli kutucuklar)
+    let badgeStyle = "background: #f1f5f9; color: #475569; border: 1px solid #e2e8f0;"; // Gri (Varsayılan)
+
+    if (isKritik) {
+        badgeStyle = "background: #fef2f2; color: #ef4444; border: 1px solid #fecaca;";
+    } else if (isOrta) {
+        badgeStyle = "background: #fffbeb; color: #d97706; border: 1px solid #fef3c7;";
+    } else if (isDusuk) {
+        // YEŞİL TASARIM 
+        badgeStyle = "background: #f0fdf4; color: #10b981; border: 1px solid #bcf0da;";
+    }
+
+    // BUTON STİLİ (Kritikse Koyu, değilse Zarif Gri)
+    let finalBtnStyle = isKritik 
+        ? "background: #0f172a; color: white; border: none;" 
+        : "background: #f1f5f9; color: #0f172a; border: 1px solid #e2e8f0;";
+
+    // 3. TABLOYA EKLEME 
+    const tableBody = document.querySelector("table tbody");
+    const newRow = tableBody.insertRow(0);
+    
+    newRow.style.borderBottom = "1px solid #f8fafc";
+    newRow.style.transition = "0.2s";
+    
+    // Hover efektleri
+    newRow.onmouseover = function() { this.style.background = rowHover; };
+    newRow.onmouseout = function() { this.style.background = 'transparent'; };
+
+    newRow.innerHTML = `
+        <td style="padding: 10px 18px;">
+            <span style="font-weight: 700; color: ${idColor}; display: block; font-size: 0.85rem;">${ticketId}</span>
+            <small style="color: #64748b; font-size: 0.75rem;"><b>${pers}</b></small>
+        </td>
+        <td style="padding: 10px 18px;">
+            <strong style="color: #1e293b; display: block; font-size: 0.85rem;">${detail}</strong>
+            <small style="color: #94a3b8; font-size: 0.75rem;">Manuel Giriş</small>
+        </td>
+        <td style="padding: 10px 18px;">
+            <span style="${badgeStyle} padding: 4px 10px; border-radius: 12px; font-size: 0.65rem; font-weight: 800;">${priority}</span>
+        </td>
+        <td style="padding: 10px 18px; color: #64748b; font-size: 0.8rem; font-weight: 600;">${currentTime}</td>
+        <td style="padding: 10px 18px; text-align: center;">
+            <button onclick="executeAction('${autoAction}', '${ticketId}', '${pers}')" 
+                    style="${finalBtnStyle} padding: 7px 14px; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 0.75rem; display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-width: 95px; text-transform: lowercase;">
+                <i class="fa-solid ${icon}" style="font-size: 0.7rem;"></i> ${autoAction}
+            </button>
+        </td>
+    `;
+
+    //  4. KAPANIŞ VE GÜNCELLEME 
+    document.getElementById('newPers').value = "";
+    document.getElementById('newDetail').value = "";
+    document.getElementById('newTicketModal').style.display = 'none';
+
+    updateDashboardStats(); 
+    alert(" Kayıt Başarıyla Oluşturuldu.");
+}
+function countDestekTableRows() {
+    var tableBody = document.querySelector("table tbody");
+    if (!tableBody) return { aktif: 0, kritik: 0, orta: 0, dusuk: 0 };
+    var rows = tableBody.querySelectorAll("tr");
+    var aktif = 0, kritik = 0, orta = 0, dusuk = 0;
+    rows.forEach(function (row) {
+        if (!row.cells || row.cells.length < 5) return;
+        aktif++;
+        var p = (row.cells[2] && row.cells[2].innerText) ? row.cells[2].innerText.trim().toUpperCase() : "";
+        if (p.indexOf("KRİTİK") !== -1) kritik++;
+        else if (p.indexOf("ORTA") !== -1) orta++;
+        else if (p.indexOf("DÜŞÜK") !== -1) dusuk++;
+    });
+    return { aktif: aktif, kritik: kritik, orta: orta, dusuk: dusuk };
+}
+
+function updateDashboardStats() {
+    var counts = countDestekTableRows();
+    var elA = document.getElementById("count-aktif");
+    var elK = document.getElementById("count-kritik");
+    var subK = document.getElementById("card-kritik-sub");
+    var subA = document.getElementById("card-aktif-sub");
+    if (elA) elA.innerText = counts.aktif;
+    if (elK) elK.innerText = counts.kritik;
+    if (subK) {
+        subK.textContent = counts.kritik > 0
+            ? counts.kritik + " kayıt acil müdahale sırasında"
+            : "Bekleyen kritik talep yok";
+    }
+    if (subA) {
+        subA.textContent = counts.aktif > 0
+            ? "Kuyrukta " + counts.aktif + " açık kayıt (" + counts.orta + " orta, " + counts.dusuk + " düşük öncelik)"
+            : "Kuyrukta bekleyen talep yok";
+    }
+}
+
+var cozulenToplam = 0;
+
+function incrementCozulen(type, ticketId, name) {
+    cozulenToplam++;
+    var cnt = document.getElementById("count-cozulen");
+    if (cnt) cnt.innerText = cozulenToplam;
+    var hint = document.getElementById("card-cozulen-hint");
+    if (!hint) return;
+    var idPart = ticketId ? ticketId + " · " : "";
+    var who = name ? name : "Kullanıcı";
+    if (type === "onar") {
+        hint.textContent = "Son işlem: Uzaktan müdahale — " + idPart + who;
+    } else if (type === "incele") {
+        hint.textContent = "Son işlem: Log analizi / inceleme — " + idPart + who;
+    } else if (type === "sifirla") {
+        hint.textContent = "Son işlem: Şifre sıfırlama — " + idPart + who;
+    } else if (type === "engelle") {
+        hint.textContent = "Son işlem: Güvenlik engeli — " + idPart + who;
+    } else {
+        hint.textContent = "Son işlem: Kayıt kapatıldı — " + idPart + who;
+    }
+}
+
+    // Sayfa her açıldığında giden mesajları ortak hafızadan (localStorage) çek
+    document.addEventListener('DOMContentLoaded', function() {
+        updateOutgoingList();
+        updateDashboardStats();
+    });
+
+    function updateOutgoingList() {
+        const listContainer = document.getElementById('notif-outgoing-list');
+        if (!listContainer) return;
+
+        // Tarayıcının ortak hafızasından mesajları alıyor
+        const gidenMesajlar = JSON.parse(localStorage.getItem('guardia_giden_mesajlar') || '[]');
+
+        listContainer.innerHTML = ""; 
+
+        if (gidenMesajlar.length === 0) {
+            listContainer.innerHTML = '<div class="notif-item"><span>Henüz gönderilmiş bir not bulunmuyor.</span></div>';
+        } else {
+            gidenMesajlar.forEach(msg => {
+                listContainer.innerHTML += `
+                    <div class="notif-item">
+                        <strong>SİZDEN -> ${msg.hedef}</strong>
+                        <span>${msg.icerik}</span>
+                        <small style="display:block; color: #94a3b8; font-size: 0.75rem; margin-top: 5px;">
+                            <i class="fa-regular fa-clock"></i> ${msg.saat}
+                        </small>
+                    </div>`;
+            });
+        }
+    }
+</script>
+</body>
+</html>

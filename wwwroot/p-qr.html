@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="tr">
+
+<head>
+    <script>
+        if (!localStorage.getItem('token')) {
+            window.location.href = 'p-login.html';
+        }
+    </script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Guardia | QR Geçiş</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/personel-style.css">
+
+    <style>
+        /* QR sayfasının içeriğini ekranın ortasına hizalayan ana konteyner */
+        .qr-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 75vh;
+            text-align: center;
+        }
+
+        /* QR Kodun içine konulduğu beyaz kart */
+        .qr-card {
+            background: white;
+            padding: 30px;
+            border-radius: 35px;
+            box-shadow: 0 20px 60px rgba(56, 189, 248, 0.3);
+            position: relative;
+            margin-bottom: 30px;
+            overflow: hidden;
+        }
+
+        /* QR kodu ve animasyonun boyutlarını belirleyen çerçeve */
+        .qr-frame {
+            width: 220px;
+            height: 220px;
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* Lazer Tarama Çizgisi: QR kodun üzerinde yukarı aşağı hareket eden mavi çizgi */
+        .scan-line {
+            position: absolute;
+            width: 100%;
+            height: 4px;
+            background: var(--accent);
+            box-shadow: 0 0 15px var(--accent), 0 0 30px var(--accent);
+            top: 0;
+            left: 0;
+            z-index: 10;
+            animation: scanning 2.5s infinite ease-in-out;
+            /* Animasyon hızı ve döngüsü */
+        }
+
+        /* Tarama Animasyonu: Çizginin yukarıdan aşağı inip tekrar çıkmasını sağlar */
+        @keyframes scanning {
+            0% {
+                top: 0;
+                opacity: 0;
+            }
+
+            50% {
+                top: 100%;
+                opacity: 1;
+            }
+
+            100% {
+                top: 0;
+                opacity: 0;
+            }
+        }
+
+        /* Durum Rozeti: Sistemin o an aktif ve hazır olduğunu gösteren yeşil etiket */
+        .status-badge {
+            background: rgba(34, 197, 94, 0.1);
+            color: #22c55e;
+            padding: 10px 20px;
+            border-radius: 50px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            margin-bottom: 20px;
+            border: 1px solid rgba(34, 197, 94, 0.3);
+        }
+
+        .qr-info h3 {
+            margin: 10px 0 5px 0;
+            font-size: 1.2rem;
+        }
+
+        .qr-info p {
+            color: var(--sub);
+            font-size: 0.85rem;
+            padding: 0 40px;
+            line-height: 1.5;
+        }
+
+        /*Vuslat ekledi*/
+
+        .status-waiting {
+            background: rgba(234, 179, 8, 0.1);
+            color: #eab308;
+            border-color: rgba(234, 179, 8, 0.3);
+        }
+
+        .status-error {
+            background: rgba(239, 68, 68, 0.1);
+            color: #ef4444;
+            border-color: rgba(239, 68, 68, 0.3);
+        }
+
+        /* Mevcut .status-badge yeşil renkleri kaldır, sadece layout bırak */
+        .status-badge {
+            padding: 10px 20px;
+            border-radius: 50px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            margin-bottom: 20px;
+            border: 1px solid;
+            transition: all 0.4s ease;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="container qr-container">
+
+        <!-- Sadece bu tek badge var, dinamik olarak güncelleniyor -->
+        <div id="statusBadge" class="status-badge status-waiting">
+            <i class="fa-solid fa-spinner fa-spin"></i> SİSTEM BAĞLANIYOR...
+        </div>
+
+        <div class="qr-card">
+            <div class="qr-frame">
+                <img id="qrImage" src="" alt="QR Code" style="width: 100%; border-radius: 10px; display:none;">
+                <div id="qrLoading" style="color: #64748b; font-size: 0.8rem;">
+                    <i class="fa-solid fa-spinner fa-spin"></i><br>QR Oluşturuluyor...
+                </div>
+                <div class="scan-line"></div>
+            </div>
+        </div>
+
+        <div class="qr-info">
+            <h3>Güvenli Geçiş</h3>
+            <p>Lütfen kodu turnikedeki okuyucuya 15cm mesafeden tutunuz.</p>
+        </div>
+    </div>
+
+    <nav class="bottom-nav">
+        <a href="p-index.html" class="nav-item"><i class="fa-solid fa-house"></i><span>Panel</span></a>
+        <a href="p-ai.html" class="nav-item"><i class="fa-solid fa-brain"></i><span>AI</span></a>
+        <a href="p-qr.html" class="nav-item active"><i class="fa-solid fa-qrcode"></i><span>QR</span></a>
+        <a href="p-ayarlar.html" class="nav-item"><i class="fa-solid fa-gear"></i><span>Ayarlar</span></a>
+    </nav>
+
+    <script>
+        function apiFetch(url, options = {}) {
+            const token = localStorage.getItem('token');
+            options.headers = { ...options.headers, 'Authorization': 'Bearer ' + token };
+            return fetch(url, options).then(res => {
+                if (!res.ok) throw new Error(`HTTP Hatası! Durum: ${res.status}`);
+                return res;
+            });
+        }
+
+        if (localStorage.getItem('temaTercihi') === 'light') {
+            document.body.classList.add('light-mode');
+        }
+
+        function setBadge(durum) {
+            const badge = document.getElementById('statusBadge');
+            badge.className = 'status-badge';
+            if (durum === 'basarili') {
+                badge.classList.add('status-success');
+                badge.innerHTML = "<i class='fa-solid fa-circle-check'></i> SİSTEM EŞLEŞTİ";
+            } else if (durum === 'hata') {
+                badge.classList.add('status-error');
+                badge.innerHTML = "<i class='fa-solid fa-circle-xmark'></i> SİSTEM HATASI";
+            } else {
+                badge.classList.add('status-waiting');
+                badge.innerHTML = "<i class='fa-solid fa-spinner fa-spin'></i> SİSTEM BAĞLANIYOR...";
+            }
+        }
+
+        async function qrGetir() {
+            console.log("QR isteği C#'a gönderiliyor...");
+            const img = document.getElementById('qrImage');
+            const loading = document.getElementById('qrLoading');
+
+            setBadge('bekliyor');
+
+            navigator.geolocation.getCurrentPosition(
+                async (position) => {
+                    const lat = position.coords.latitude;
+                    const lng = position.coords.longitude;
+
+                    try {
+                        const aktifSicil = localStorage.getItem("aktifKullanici");
+                        if (!aktifSicil) {
+                            alert("Oturum bulunamadı!");
+                            window.location.href = "login.html";
+                            return;
+                        }
+
+                        const response = await apiFetch(
+                            `https://localhost:7183/api/qr/getir/${aktifSicil}?lat=${lat}&lng=${lng}`
+                        );
+                        const data = await response.json();
+
+                        const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${data.qrData}`;
+                        img.src = qrUrl;
+                        img.onload = () => {
+                            img.style.display = 'block';
+                            loading.style.display = 'none';
+                            setBadge('basarili');
+                        };
+
+                    } catch (error) {
+                        console.error("QR Kodu yüklenemedi:", error);
+                        img.style.display = 'none';
+                        loading.style.display = 'block';
+                        setBadge('hata');
+
+                        if (error.message.includes('401')) {
+                            loading.innerHTML = "<i class='fa-solid fa-location-dot'></i> Konum Dışındasınız!<br><small>QR yalnızca bina içinde görüntülenebilir.</small>";
+                        } else {
+                            loading.innerHTML = "<i class='fa-solid fa-circle-exclamation'></i> QR Yüklenemedi!<br><small>Sunucu kapalı olabilir.</small>";
+                        }
+                        loading.style.color = "var(--danger)";
+                    }
+                },
+                (hata) => {
+                    console.error("Konum alınamadı:", hata);
+                    loading.style.display = 'block';
+                    loading.innerHTML = "<i class='fa-solid fa-location-dot'></i> Konum İzni Gerekli!<br><small>Lütfen tarayıcı konum iznini açın.</small>";
+                    loading.style.color = "var(--danger)";
+                    setBadge('hata');
+                },
+                { enableHighAccuracy: true, timeout: 10000 }
+            );
+        }
+
+        window.onload = () => {
+            qrGetir();
+            setInterval(qrGetir, 30000);
+        };
+    </script>
+</body>
+
+</html>
